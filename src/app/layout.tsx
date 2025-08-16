@@ -1,4 +1,5 @@
 import { ThemeProvider } from 'next-themes'
+import { QueryClient } from '@tanstack/react-query'
 
 export default function RootLayout({
   children,
@@ -8,9 +9,9 @@ export default function RootLayout({
   return (
     <html lang="ar" suppressHydrationWarning>
       <body>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          {children}
-        </ThemeProvider>
+          <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+            {children}
+          </ThemeProvider>
       </body>
     </html>
   )

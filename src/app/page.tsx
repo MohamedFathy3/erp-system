@@ -1,15 +1,48 @@
+"use client";
+
 import MainLayout from '../components/MainLayout'
+import DashboardCards from '../components/dashboard/DashboardCards'
+import EmployeeChart from '../components/dashboard/charts/EmployeeChart'
+import IssuesChart from '../components/dashboard/charts/IssuesChart'
+import DevicesChart from '../components/dashboard/charts/DevicesChart'
+import CompaniesChart from '../components/dashboard/charts/CompaniesChart'
+import { Suspense } from 'react'
+import ChartSkeleton from '../components/skeletons/ChartSkeleton'
+import CardSkeleton from '../components/skeletons/CardSkeleton'
 import '../styles/globals.css'
+import QueryProvider from "@/providers/QueryProvider";
+
 
 export default function Home() {
   return (
     <MainLayout>
-      <div className="p-4">
-        <h1 className="text-2xl font-bold mb-4">ERP System Dashboard</h1>
-        <p className="text-gray-600 dark:text-gray-400">
-          Welcome to your high-performance ERP system
-        </p>
+      
+      <div className="p-4 space-y-6">
+        <h1 className="text-2xl font-bold mb-4">لوحة تحكم نظام ERP</h1>
+        
+        {/* بطاقات الإحصائيات */}
+          <DashboardCards />
+        
+        {/* الرسوم البيانية */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Suspense fallback={<ChartSkeleton />}>
+            <EmployeeChart />
+          </Suspense>
+          
+          {/* <Suspense fallback={<ChartSkeleton />}>
+            <IssuesChart />
+          </Suspense> */}
+{/*           
+          <Suspense fallback={<ChartSkeleton />}>
+            <DevicesChart />
+          </Suspense>
+           */}
+          {/* <Suspense fallback={<ChartSkeleton />}>
+            <CompaniesChart />
+          </Suspense> */}
+        </div>
       </div>
+
     </MainLayout>
   )
 }

@@ -1,11 +1,11 @@
-'use client'
+'use client';
 
 import { useRouter } from 'next/navigation'
 import MainLayout from '@/components/MainLayout'
 import { useEffect, useState } from 'react'
 import { Search, Edit, Trash2, Plus, ArrowLeft, Check, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-
+import Loading from './loading';
 interface ManagePageProps {
   params: { id: string }
 }
@@ -51,7 +51,7 @@ export default function ManagePage({ params }: ManagePageProps) {
 
       setLoading(false)
     }, 500)
-  }, [id])
+  }, [])
 
   // فلترة وبحث
   const filteredItems = items.filter(item => {
@@ -102,11 +102,7 @@ export default function ManagePage({ params }: ManagePageProps) {
 
   if (loading) {
     return (
-      <MainLayout>
-        <div className="p-6 flex justify-center items-center h-64">
-          <div className="animate-pulse text-gray-500 dark:text-gray-400">Loading...</div>
-        </div>
-      </MainLayout>
+      <Loading />
     )
   }
 

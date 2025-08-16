@@ -38,6 +38,8 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     return (
       <button
         className={buttonVariants({ variant, size, className })}
+            style={{borderRadius:12}}
+
         ref={ref}
         {...props}
       />
