@@ -1,11 +1,12 @@
+
 'use client'
 import MainLayout from "@/components/MainLayout";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchEmployees, updateEmployee, deleteEmployee, addEmployee } from "@/services/employeeService";
 import { Employee } from "@/types/employee";
 import { useState } from "react";
-import { FiEdit, FiTrash2, FiSearch, FiPlus, FiChevronDown, FiX } from "react-icons/fi";
-import { FaLaptop, FaMobileAlt, FaServer } from "react-icons/fa";
+import { FiEdit, FiTrash2, FiSearch, FiPlus, FiChevronDown,  FiUser, FiLoader,FiX  } from "react-icons/fi";
+import { FaLaptop, FaMobileAlt, FaServer ,} from "react-icons/fa";
 
 export default function EmployeesPage() {
   const queryClient = useQueryClient();
@@ -35,7 +36,7 @@ export default function EmployeesPage() {
   const updateEmployeeMutation = useMutation({
     mutationFn: updateEmployee,
     onSuccess: () => {
-      queryClient.invalidateQueries(['employees']);
+queryClient.invalidateQueries({ queryKey: ['employees'] });
       setEditModalOpen(false);
     }
   });
@@ -44,7 +45,7 @@ export default function EmployeesPage() {
   const addEmployeeMutation = useMutation({
     mutationFn: addEmployee,
     onSuccess: () => {
-      queryClient.invalidateQueries(['employees']);
+queryClient.invalidateQueries({ queryKey: ['employees'] });
       setAddModalOpen(false);
       setNewEmployee({
         name: '',
@@ -64,7 +65,7 @@ export default function EmployeesPage() {
   const deleteEmployeeMutation = useMutation({
     mutationFn: deleteEmployee,
     onSuccess: () => {
-      queryClient.invalidateQueries(['employees']);
+queryClient.invalidateQueries({ queryKey: ['employees'] });
     }
   });
 
@@ -114,7 +115,7 @@ export default function EmployeesPage() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 space-y-4 md:space-y-0">
           <div>
             <h1 className="text-3xl font-bold text-gray-800">Employee Management</h1>
-            <p className="text-gray-600 mt-1">Manage your organization's employees</p>
+            <p className="text-gray-600 mt-1">Manage your organizations employees</p>
           </div>
           <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
             <div className="relative w-full sm:w-64">
@@ -329,12 +330,12 @@ export default function EmployeesPage() {
                         <select
                           className="w-full px-4 py-2 border border-gray-200 rounded-lg appearance-none focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-8"
                           value={currentEmployee.device}
-                          onChange={(e) => setCurrentEmployee({...currentEmployee, device: e.target.value})}
+                          onChange={(e) => setCurrentEmployee({ ...currentEmployee, device: "Laptop" })
+}
                           required
                         >
                           <option value="Laptop">Laptop</option>
-                          <option value="Mobile">Mobile</option>
-                          <option value="Server">Server</option>
+                          
                         </select>
                         <FiChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                       </div>
@@ -374,142 +375,263 @@ export default function EmployeesPage() {
         )}
 
         {/* Add Employee Modal */}
-        {addModalOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-30 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden">
-              <div className="flex justify-between items-center border-b border-gray-200 px-6 py-4">
-                <h2 className="text-xl font-bold text-gray-800">Add New Employee</h2>
-                <button
-                  onClick={() => setAddModalOpen(false)}
-                  className="text-gray-400 hover:text-gray-500 p-1 rounded-full hover:bg-gray-100"
-                >
-                  <FiX size={24} />
-                </button>
+       {addModalOpen && (
+  <div className="fixed inset-0 bg-black bg-opacity-30 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+    <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl overflow-hidden">
+      <div className="flex justify-between items-center border-b border-gray-200 px-6 py-4">
+        <h2 className="text-xl font-bold text-gray-800">Add New Employee</h2>
+        <button
+          onClick={() => setAddModalOpen(false)}
+          className="text-gray-400 hover:text-gray-500 p-1 rounded-full hover:bg-gray-100"
+        >
+          <FiX size={24} />
+        </button>
+      </div>
+      
+      <form onSubmit={handleAddSubmit}>
+        <div className="p-6 max-h-[70vh] overflow-y-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Personal Information */}
+            <div className="space-y-4">
+              <h3 className="font-medium text-gray-700 border-b pb-2">Personal Information</h3>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Full Name*</label>
+                <input
+                  type="text"
+                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  value={newEmployee.name}
+                  onChange={(e) => setNewEmployee({...newEmployee, name: e.target.value})}
+                  required
+                />
               </div>
-              <form onSubmit={handleAddSubmit}>
-                <div className="p-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-                      <input
-                        type="text"
-                        className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        value={newEmployee.name}
-                        onChange={(e) => setNewEmployee({...newEmployee, name: e.target.value})}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                      <input
-                        type="email"
-                        className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        value={newEmployee.email}
-                        onChange={(e) => setNewEmployee({...newEmployee, email: e.target.value})}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                      <input
-                        type="password"
-                        className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        value={newEmployee.password}
-                        onChange={(e) => setNewEmployee({...newEmployee, password: e.target.value})}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Company</label>
-                      <input
-                        type="text"
-                        className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        value={newEmployee.company}
-                        onChange={(e) => setNewEmployee({...newEmployee, company: e.target.value})}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Branch</label>
-                      <input
-                        type="text"
-                        className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        value={newEmployee.branch}
-                        onChange={(e) => setNewEmployee({...newEmployee, branch: e.target.value})}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
-                      <div className="relative">
-                        <select
-                          className="w-full px-4 py-2 border border-gray-200 rounded-lg appearance-none focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-8"
-                          value={newEmployee.country}
-                          onChange={(e) => setNewEmployee({...newEmployee, country: e.target.value})}
-                          required
-                        >
-                          <option value="Egypt">Egypt</option>
-                          <option value="USA">USA</option>
-                          <option value="UK">UK</option>
-                          <option value="UAE">UAE</option>
-                        </select>
-                        <FiChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
-                      <div className="relative">
-                        <select
-                          className="w-full px-4 py-2 border border-gray-200 rounded-lg appearance-none focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-8"
-                          value={newEmployee.role}
-                          onChange={(e) => setNewEmployee({...newEmployee, role: e.target.value})}
-                          required
-                        >
-                          <option value="Employee">Employee</option>
-                          <option value="Manager">Manager</option>
-                          <option value="Admin">Admin</option>
-                        </select>
-                        <FiChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Device</label>
-                      <div className="relative">
-                        <select
-                          className="w-full px-4 py-2 border border-gray-200 rounded-lg appearance-none focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-8"
-                          value={newEmployee.device}
-                          onChange={(e) => setNewEmployee({...newEmployee, device: e.target.value})}
-                          required
-                        >
-                          <option value="Laptop">Laptop</option>
-                          <option value="Mobile">Mobile</option>
-                          <option value="Server">Server</option>
-                        </select>
-                        <FiChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                      </div>
-                    </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email*</label>
+                <input
+                  type="email"
+                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  value={newEmployee.email}
+                  onChange={(e) => setNewEmployee({...newEmployee, email: e.target.value})}
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Password*</label>
+                <input
+                  type="password"
+                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  value={newEmployee.password}
+                  onChange={(e) => setNewEmployee({...newEmployee, password: e.target.value})}
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                <input
+                  type="tel"
+                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  value={newEmployee.phone}
+                  onChange={(e) => setNewEmployee({...newEmployee, phone: e.target.value})}
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Photo</label>
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
+                    {newEmployee.photo ? (
+                      <img src={newEmployee.photo} alt="Profile" className="w-full h-full object-cover" />
+                    ) : (
+                      <FiUser className="text-gray-400 text-xl" />
+                    )}
                   </div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    id="photo-upload"
+                    onChange={(e) => handlePhotoUpload(e)}
+                  />
+                  <label htmlFor="photo-upload" className="text-sm text-blue-500 hover:underline cursor-pointer">
+                    Upload Photo
+                  </label>
                 </div>
-                <div className="flex justify-end space-x-3 px-6 py-4 bg-gray-50 border-t border-gray-200">
-                  <button
-                    type="button"
-                    onClick={() => setAddModalOpen(false)}
-                    className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-lg hover:from-blue-700 hover:to-blue-600 transition-all"
-                    disabled={addEmployeeMutation.isLoading}
-                  >
-                    {addEmployeeMutation.isLoading ? 'Adding...' : 'Add Employee'}
-                  </button>
-                </div>
-              </form>
+              </div>
+            </div>
+
+            {/* Company Information */}
+            <div className="space-y-4">
+              <h3 className="font-medium text-gray-700 border-b pb-2">Company Information</h3>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Company*</label>
+                <select
+                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  value={newEmployee.company}
+                  onChange={(e) => setNewEmployee({...newEmployee, company: e.target.value})}
+                  required
+                >
+                  <option value="">Select Company</option>
+                  <option value="ISG">ISG</option>
+                  <option value="TechSolutions">TechSolutions</option>
+                  <option value="GlobalSoft">GlobalSoft</option>
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Branch*</label>
+                <select
+                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  value={newEmployee.branch}
+                  onChange={(e) => setNewEmployee({...newEmployee, branch: e.target.value})}
+                  required
+                >
+                  <option value="">Select Branch</option>
+                  <option value="Cairo">Cairo</option>
+                  <option value="Alexandria">Alexandria</option>
+                  <option value="Giza">Giza</option>
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Department*</label>
+                <select
+                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  value={newEmployee.department}
+                  onChange={(e) => setNewEmployee({...newEmployee, department: e.target.value})}
+                  required
+                >
+                  <option value="">Select Department</option>
+                  <option value="IT">IT</option>
+                  <option value="HR">HR</option>
+                  <option value="Finance">Finance</option>
+                  <option value="Operations">Operations</option>
+                  <option value="Marketing">Marketing</option>
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Position*</label>
+                <input
+                  type="text"
+                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  value={newEmployee.position}
+                  onChange={(e) => setNewEmployee({...newEmployee, position: e.target.value})}
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Employee ID*</label>
+                <input
+                  type="text"
+                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  value={newEmployee.employeeId}
+                  onChange={(e) => setNewEmployee({...newEmployee, employeeId: e.target.value})}
+                  required
+                />
+              </div>
+            </div>
+
+            {/* Additional Information */}
+            <div className="space-y-4">
+              <h3 className="font-medium text-gray-700 border-b pb-2">Additional Information</h3>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Country*</label>
+                <select
+                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  value={newEmployee.country}
+                  onChange={(e) => setNewEmployee({...newEmployee, country: e.target.value})}
+                  required
+                >
+                  <option value="">Select Country</option>
+                  <option value="Egypt">Egypt</option>
+                  <option value="USA">USA</option>
+                  <option value="UK">UK</option>
+                  <option value="UAE">UAE</option>
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Governorate*</label>
+                <select
+                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  value={newEmployee.governorate}
+                  onChange={(e) => setNewEmployee({...newEmployee, governorate: e.target.value})}
+                  required
+                >
+                  <option value="">Select Governorate</option>
+                  <option value="Cairo">Cairo</option>
+                  <option value="Giza">Giza</option>
+                  <option value="Alexandria">Alexandria</option>
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">City*</label>
+                <input
+                  type="text"
+                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  value={newEmployee.city}
+                  onChange={(e) => setNewEmployee({...newEmployee, city: e.target.value})}
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                <textarea
+                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  value={newEmployee.address}
+                  onChange={(e) => setNewEmployee({...newEmployee, address: e.target.value})}
+                  rows={2}
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Postal Code</label>
+                <input
+                  type="text"
+                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  value={newEmployee.postalCode}
+                  onChange={(e) => setNewEmployee({...newEmployee, postalCode: e.target.value})}
+                />
+              </div>
             </div>
           </div>
-        )}
+        </div>
+        
+        <div className="flex justify-end space-x-3 px-6 py-4 bg-gray-50 border-t border-gray-200">
+          <button
+            type="button"
+            onClick={() => setAddModalOpen(false)}
+            className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-lg hover:from-blue-700 hover:to-blue-600 transition-all"
+            disabled={addEmployeeMutation.isLoading}
+          >
+            {addEmployeeMutation.isLoading ? (
+              <span className="flex items-center gap-2">
+                <FiLoader className="animate-spin" />
+                Adding...
+              </span>
+            ) : (
+              'Add Employee'
+            )}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+)}
       </div>
     </MainLayout>
   );

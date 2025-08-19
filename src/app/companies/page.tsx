@@ -13,7 +13,6 @@ type Company = {
   active: boolean;
 };
 
-// بيانات وهمية
 const dummyCompanies: Company[] = [
   { id: 1, name: "Techno Corp", created_at: "2023-02-15", hq: "Cairo", branches: 3, active: true },
   { id: 2, name: "Green Energy", created_at: "2022-09-10", hq: "Dubai", branches: 1, active: false },
@@ -42,7 +41,6 @@ export default function CompaniesPage() {
   return (
     <MainLayout>
       <div className="space-y-8 p-6">
-        {/* Cards Dashboard */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white p-6 rounded-3xl shadow-xl transform hover:scale-105 transition-all duration-300">
             <h2 className="text-lg font-medium">Total Companies</h2>

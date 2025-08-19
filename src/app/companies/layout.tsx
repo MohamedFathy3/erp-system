@@ -9,7 +9,6 @@ export default function RootLayout({
 }: {
   children: ReactNode;
 }) {
-  // لازم تستخدم useState عشان تمنع إعادة إنشاء queryClient كل مرة
   const [queryClient] = useState(() => new QueryClient());
 
   return (

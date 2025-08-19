@@ -15,7 +15,7 @@ import {
 
 export default function EmployeeChart() {
   const [timeRange, setTimeRange] = useState('monthly')
-  const [data, setData] = useState<any[]>([])
+  const [data, setData] = useState<[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 

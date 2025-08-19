@@ -17,7 +17,6 @@ export default function NotFound() {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[100dvh] bg-gradient-to-br from-background to-muted text-foreground p-6 transition-colors duration-300">
-      {/* زر تبديل الوضع */}
       <div className="absolute top-4 right-4">
         <Button
           variant="ghost"
@@ -34,7 +33,7 @@ export default function NotFound() {
           ) : (
             <Sun className="h-5 w-5" />
           )}
-          <span className="sr-only">تبديل الوضع المظلم</span>
+          <span className="sr-only"> toggle</span>
         </Button>
       </div>
 
@@ -45,16 +44,16 @@ export default function NotFound() {
           </div>
           
           <div className="space-y-2">
-            <h1 className="text-3xl font-bold tracking-tight">الصفحة غير موجودة</h1>
+            <h1 className="text-3xl font-bold tracking-tight">Page not found</h1>
             <p className="text-muted-foreground">
-              عذراً، لم نتمكن من العثور على الصفحة المطلوبة
+              Sorry, we couldn't find the page you were looking for
             </p>
           </div>
           
           <div className="bg-card/50 dark:bg-card/80 backdrop-blur-sm p-4 rounded-lg border border-border shadow-sm">
-            <p className="text-sm font-medium text-muted-foreground">مسار الخطأ:</p>
+            <p className="text-sm font-medium text-muted-foreground">Error path:</p>
             <code className="mt-1 text-sm font-mono break-all bg-accent/30 dark:bg-accent/50 text-foreground p-2 rounded-md inline-block">
-              {pathname || 'غير معروف'}
+              {pathname || 'Unknown'}
             </code>
           </div>
         </div>
@@ -63,19 +62,19 @@ export default function NotFound() {
           <Button  variant="default" className="gap-2">
             <Link href="/">
               <Home className="h-4 w-4" />
-              الصفحة الرئيسية
+              Home
             </Link>
           </Button>
           
           <Button variant="outline" className="gap-2" onClick={() => window.history.back()}>
             <ArrowLeft className="h-4 w-4" />
-            العودة للخلف
+            Back
           </Button>
         </div>
       </div>
       
       <footer className="mt-12 text-sm text-muted-foreground">
-        <p>إذا استمرت المشكلة، يرجى <Link href="/contact" className="text-primary hover:underline">الاتصال بنا</Link></p>
+        <p>If the problem persists, please <Link href="/contact" className="text-primary hover:underline">contact us</Link></p>
       </footer>
     </div>
   )

@@ -71,7 +71,7 @@ export const fetchDashboardStats: QueryFunction<DashboardStats> = async () => {
 }
 
 // دوال مخبأة للرسوم البيانية
-const chartCache = new Map<string, any>()
+const chartCache = new Map<string, []>()
 
 export const fetchEmployeeStats = async (range: string) => {
   const cacheKey = `employees-${range}`

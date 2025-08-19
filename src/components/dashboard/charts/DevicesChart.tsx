@@ -8,7 +8,7 @@ const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042']
 
 export default function DevicesChart() {
   const [deviceType, setDeviceType] = useState('all')
-  const [data, setData] = useState<any[]>([])
+  const [data, setData] = useState<[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 

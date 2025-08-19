@@ -10,11 +10,13 @@ import { Suspense } from 'react'
 import ChartSkeleton from '../components/skeletons/ChartSkeleton'
 import CardSkeleton from '../components/skeletons/CardSkeleton'
 import '../styles/globals.css'
-import QueryProvider from "@/providers/QueryProvider";
+import { AuthProvider } from '../contexts/AuthContext';
+
 
 
 export default function Home() {
   return (
+    
     <MainLayout>
       
       <div className="p-4 space-y-6">
@@ -29,17 +31,17 @@ export default function Home() {
             <EmployeeChart />
           </Suspense>
           
-          {/* <Suspense fallback={<ChartSkeleton />}>
+          <Suspense fallback={<ChartSkeleton />}>
             <IssuesChart />
-          </Suspense> */}
-{/*           
+          </Suspense>
+          
           <Suspense fallback={<ChartSkeleton />}>
             <DevicesChart />
           </Suspense>
-           */}
-          {/* <Suspense fallback={<ChartSkeleton />}>
+          
+          <Suspense fallback={<ChartSkeleton />}>
             <CompaniesChart />
-          </Suspense> */}
+          </Suspense>
         </div>
       </div>
 

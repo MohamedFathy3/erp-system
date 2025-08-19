@@ -6,7 +6,7 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 
 export default function CompaniesChart() {
   const [timeRange, setTimeRange] = useState('yearly')
-  const [data, setData] = useState<any>([])
+  const [data, setData] = useState<[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
