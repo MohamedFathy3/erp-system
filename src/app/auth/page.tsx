@@ -7,13 +7,10 @@ const FiLock = dynamic(() => import('react-icons/fi').then(mod => mod.FiLock))
 const FiUser = dynamic(() => import('react-icons/fi').then(mod => mod.FiUser))
 const FiArrowRight = dynamic(() => import('react-icons/fi').then(mod => mod.FiArrowRight))
 
-// ✅ استيراد الـ CSS العام
 import '@/styles/globals.css'
 
-// ✅ استخدم useRouter من next/navigation
 import { useRouter } from 'next/navigation'
 
-// ✅ استدعاء الـ context الخاص بالمصادقة
 import { useAuth } from '@/contexts/AuthContext'
 
 export default function AuthPage() {
@@ -107,7 +104,6 @@ export default function AuthPage() {
       const animate = () => {
         ctx.clearRect(0, 0, canvas.width, canvas.height)
 
-        // خلفية شفافة شوي لتمويه جميل
         ctx.fillStyle = 'rgba(0, 0, 0, 0.2)'
         ctx.fillRect(0, 0, canvas.width, canvas.height)
 
