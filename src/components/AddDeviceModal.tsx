@@ -4,8 +4,13 @@ import { useState } from 'react';
 import { X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-
-const SelectInput = ({ label, value, options, onChange }: any) => (
+interface SelectInputProps {
+  label: string;
+  value: string;
+  options: string[];
+  onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+}
+const SelectInput = ({ label, value, options, onChange }: SelectInputProps) => (
   <div className="space-y-1">
     <label className="text-sm font-medium">{label}</label>
     <select

@@ -1,19 +1,30 @@
 'use client'
+import dynamic from 'next/dynamic'
 import React, { useState, useEffect } from 'react'
-import { FiMail, FiLock, FiUser, FiArrowRight } from 'react-icons/fi'
+
+const FiMail = dynamic(() => import('react-icons/fi').then(mod => mod.FiMail))
+const FiLock = dynamic(() => import('react-icons/fi').then(mod => mod.FiLock))
+const FiUser = dynamic(() => import('react-icons/fi').then(mod => mod.FiUser))
+const FiArrowRight = dynamic(() => import('react-icons/fi').then(mod => mod.FiArrowRight))
+
+// ✅ استيراد الـ CSS العام
 import '@/styles/globals.css'
+
+// ✅ استخدم useRouter من next/navigation
 import { useRouter } from 'next/navigation'
+
+// ✅ استدعاء الـ context الخاص بالمصادقة
 import { useAuth } from '@/contexts/AuthContext'
 
 export default function AuthPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [rememberMe, setRememberMe] = useState(false)
+  const [remember, setRememberMe] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const router = useRouter()
-  const { login } = useAuth()  // استدعاء ال hook في بداية الكومبوننت
+  const { login } = useAuth()  
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -21,15 +32,19 @@ export default function AuthPage() {
     setError(null)
 
     try {
-      const success = await login({ email, password, rememberMe })
+      const success = await login({ email, password, remember })
 
       if (success) {
         router.push('/')
       } else {
         setError('Login failed. Please check your credentials.')
       }
-    } catch (err: any) {
-      setError(err.message || 'Something went wrong')
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message)
+      } else {
+        setError('Something went wrong')
+      }
     } finally {
       setIsLoading(false)
     }
@@ -203,18 +218,18 @@ password
       <input
         type="checkbox"
         id="rememberMe"
-        checked={rememberMe}
+        checked={remember}
         onChange={(e) => setRememberMe(e.target.checked)}
         className="sr-only"
       />
       <div
         className={`w-11 h-6 rounded-full shadow-inner transition-colors duration-300 ${
-          rememberMe ? 'bg-indigo-500' : 'bg-gray-500/50'
+          remember ? 'bg-indigo-500' : 'bg-gray-500/50'
         }`}
       ></div>
       <div
         className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-md transform transition-transform duration-300 ${
-          rememberMe ? 'translate-x-5' : ''
+          remember ? 'translate-x-5' : ''
         }`}
       ></div>
     </div>

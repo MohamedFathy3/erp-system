@@ -1,35 +1,19 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+import * as DialogPrimitive from '@radix-ui/react-dialog';
+import { ReactNode } from 'react';
 
-export default function CompanyDialogDemo() {
-  const [open, setOpen] = useState(false);
-
+export function Dialog({ children, open, onOpenChange }: { children: ReactNode; open: boolean; onOpenChange: (open: boolean) => void }) {
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="default">إضافة شركة</Button>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>إضافة شركة جديدة</DialogTitle>
-        </DialogHeader>
-        <form className="space-y-4">
-          <input
-            type="text"
-            placeholder="اسم الشركة"
-            className="w-full border p-2 rounded"
-          />
-          <input
-            type="text"
-            placeholder="المقر الرئيسي"
-            className="w-full border p-2 rounded"
-          />
-          <Button type="submit">حفظ</Button>
-        </form>
-      </DialogContent>
-    </Dialog>
+    <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
+      {children}
+    </DialogPrimitive.Root>
   );
 }
+
+export const DialogTrigger = DialogPrimitive.Trigger;
+export const DialogContent = DialogPrimitive.Content;
+export function DialogHeader({ children }: { children: ReactNode }) {
+  return <div className="p-4 border-b">{children}</div>;
+}
+export const DialogTitle = DialogPrimitive.Title;

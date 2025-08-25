@@ -24,7 +24,6 @@ export default function ProfilePage() {
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
 
-  // بعد تحميل بيانات المستخدم، نحطها في الفورم
   useEffect(() => {
     if (user) {
       setFormData({

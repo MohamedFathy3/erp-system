@@ -24,9 +24,11 @@ import {
 
 export default function Navbar({
   sidebarOpen,
+  setSidebarOpen,
   toggleSidebar,
 }: {
   sidebarOpen: boolean
+  setSidebarOpen: React.Dispatch<React.SetStateAction<boolean>>
   toggleSidebar: () => void
 }) {
   const { user, logout } = useAuth()
@@ -134,7 +136,8 @@ export default function Navbar({
                 <p className="text-xs text-gray-600 dark:text-gray-400 truncate">{user?.email ?? ''}</p>
               </div>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => window.location.href = '/profile'}>
+              
+              <DropdownMenuItem onClick={() => window.location.href = '/Profile'}>
                 <User className="mr-2 h-4 w-4" />
                 <span>Profile</span>
               </DropdownMenuItem>

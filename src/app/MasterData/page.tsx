@@ -2,8 +2,6 @@
 
 import MainLayout from '@/components/MainLayout'
 import '@/styles/globals.css'
-import Link from 'next/link'
-import type { InferGetStaticPropsType, GetStaticProps } from 'next'
 import Cards from '@/components/dashboard/SmalCard';
 import MasterDataPage from '@/components/dashboard/catagrycard';
 import {
@@ -56,9 +54,3 @@ export default function ITModulePage() {
   )
 }
 
-export async function GetStaticProps() {
-  return {
-    props: {}, 
-    revalidate: 86400 
-  }
-}

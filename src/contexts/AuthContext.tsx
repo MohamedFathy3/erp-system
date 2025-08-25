@@ -1,19 +1,35 @@
 'use client';
 
-
-import { createContext, useContext } from 'react';
+import { createContext, useContext, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from '@/lib/api';
 import TokenManager from '@/lib/tokenManager';
 
-const AuthContext = createContext({
+interface AuthUser {
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+  avatar?: string;
+  remember: boolean;
+  role: string | string[];
+}
+
+interface AuthContextType {
+  user: AuthUser | null;
+  loading: boolean;
+  login: (credentials: { email: string; password: string; remember?: boolean }) => Promise<boolean>;
+  logout: () => void;
+}
+
+const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
   login: async () => false,
   logout: () => {},
 });
 
-async function fetchUser() {
+async function fetchUser(): Promise<AuthUser> {
   const token = TokenManager.getToken();
   if (!token) throw new Error('No token');
 
@@ -21,22 +37,24 @@ async function fetchUser() {
   return res.data;
 }
 
-export function AuthProvider({ children }) {
+export function AuthProvider({ children }: { children: React.ReactNode }) {
   const queryClient = useQueryClient();
 
-  const { data: user, isLoading } = useQuery({
+  const { data: user, isLoading, error } = useQuery<AuthUser, Error>({
     queryKey: ['user'],
     queryFn: fetchUser,
     staleTime: 5 * 60 * 1000,
-    cacheTime: 10 * 60 * 1000,
     retry: false,
-    onError: () => {
-      TokenManager.clearToken();
-    },
   });
 
+  useEffect(() => {
+    if (error) {
+      TokenManager.clearToken();
+    }
+  }, [error]);
+
   const loginMutation = useMutation({
-    mutationFn: async (credentials) => {
+    mutationFn: async (credentials: { email: string; password: string; remember?: boolean }) => {
       const res = await apiFetch('/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -46,11 +64,11 @@ export function AuthProvider({ children }) {
       return res;
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries(['user']);
+await queryClient.invalidateQueries({ queryKey: ['user'] });
     },
   });
 
-  const login = async (credentials) => {
+  const login = async (credentials: { email: string; password: string; remember?: boolean }) => {
     try {
       await loginMutation.mutateAsync(credentials);
       return true;
@@ -61,7 +79,7 @@ export function AuthProvider({ children }) {
 
   const logout = () => {
     TokenManager.clearToken();
-    queryClient.removeQueries(['user']);
+    queryClient.removeQueries({ queryKey: ['user'] });
     window.location.href = '/auth';
   };
 

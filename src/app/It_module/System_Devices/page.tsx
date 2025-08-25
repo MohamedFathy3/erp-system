@@ -77,10 +77,3 @@ export default function SystemDevicesPage() {
   );
 }
 
-
-export async function GetStaticProps() {
-  return {
-    props: {}, 
-    revalidate: 86400 
-  }
-}

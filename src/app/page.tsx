@@ -1,11 +1,7 @@
 "use client";
 
 import MainLayout from '../components/MainLayout'
-import DashboardCards from '../components/dashboard/DashboardCards'
-import EmployeeChart from '../components/dashboard/charts/EmployeeChart'
-import IssuesChart from '../components/dashboard/charts/IssuesChart'
-import DevicesChart from '../components/dashboard/charts/DevicesChart'
-import CompaniesChart from '../components/dashboard/charts/CompaniesChart'
+
 import { Suspense } from 'react'
 import ChartSkeleton from '../components/skeletons/ChartSkeleton'
 import CardSkeleton from '../components/skeletons/CardSkeleton'
@@ -22,12 +18,10 @@ export default function Home() {
       <div className="p-4 space-y-6">
         <h1 className="text-2xl font-bold mb-4">لوحة تحكم نظام ERP</h1>
         
-        {/* بطاقات الإحصائيات */}
-          <DashboardCards />
+          {/* <DashboardCards /> */}
         
-        {/* الرسوم البيانية */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Suspense fallback={<ChartSkeleton />}>
+          {/* <Suspense fallback={<ChartSkeleton />}>
             <EmployeeChart />
           </Suspense>
           
@@ -41,7 +35,7 @@ export default function Home() {
           
           <Suspense fallback={<ChartSkeleton />}>
             <CompaniesChart />
-          </Suspense>
+          </Suspense> */}
         </div>
       </div>
 
