@@ -18,7 +18,7 @@ export default function AuthPage() {
   const [password, setPassword] = useState('')
   const [remember, setRememberMe] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [, setError] = useState<string | null>(null)
 
   const router = useRouter()
   const { login } = useAuth()  

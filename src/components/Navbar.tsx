@@ -24,7 +24,6 @@ import {
 
 export default function Navbar({
   sidebarOpen,
-  setSidebarOpen,
   toggleSidebar,
 }: {
   sidebarOpen: boolean

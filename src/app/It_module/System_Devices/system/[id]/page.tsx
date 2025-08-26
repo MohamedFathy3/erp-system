@@ -1,15 +1,15 @@
 "use client";
-
 import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import MainLayout from "@/components/MainLayout";
 import { apiFetch } from "@/lib/api";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/button";
+import Image from "next/image";
+
 import { 
   Cpu, 
   MemoryStick, 
-  Smartphone, 
   Calendar, 
   Shield, 
   User, 
@@ -236,7 +236,7 @@ export default function DeviceDetailsPage() {
               <CardContent className="p-6">
                 {device.history && device.history.length > 0 ? (
                   <div className="space-y-4">
-                    {device.history.slice(0, 3).map((action: any, idx: number) => (
+                    {device.history.slice(0, 3).map((action: { title: string; createdAt: string; createdBy?: { name: string } }, idx: number) => (
                       <div
                         key={idx}
                         className="p-4 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50/50 dark:bg-gray-700/30 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors"
@@ -277,8 +277,10 @@ export default function DeviceDetailsPage() {
               <CardContent className="p-6">
                 <div className="flex items-center gap-4">
                   {device.createdBy?.avatar ? (
-                    <img
+                    <Image
                       src={device.createdBy.avatar}
+                      width={56}
+                      height={56}
                       alt={device.createdBy.name}
                       className="w-14 h-14 rounded-full border-2 border-white dark:border-gray-700 shadow-sm"
                     />

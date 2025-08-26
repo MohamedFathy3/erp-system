@@ -5,9 +5,9 @@ import Sidebar from "./Sidebar";
 
 export default function SidebarWrapper({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
+  const [sidebarCollapsed,] = useState(true);
 
-  const toggleSidebar = () => setSidebarCollapsed(!sidebarCollapsed);
+  // const toggleSidebar = () => setSidebarCollapsed(!sidebarCollapsed);
 
   return (
     <>

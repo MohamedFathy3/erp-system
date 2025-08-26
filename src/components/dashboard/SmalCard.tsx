@@ -3,8 +3,6 @@ import {
   Server, 
   Network, 
   ShieldCheck,
-  Settings,
-  Bell,
 } from 'lucide-react';
 
 

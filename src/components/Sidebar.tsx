@@ -1,8 +1,8 @@
 'use client'
 
 import { 
-  Home, Users, Database, Building2, Laptop, AlertTriangle, Settings, 
-  ChevronDown, ChevronRight, LucideIcon, Plus, List , Italic, Computer, ComputerIcon,
+  Home, Database,
+  ChevronDown, ChevronRight, LucideIcon, ComputerIcon,
   User as UserIcon
 } from "lucide-react"
 import { useAuth } from '@/contexts/AuthContext'

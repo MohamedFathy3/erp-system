@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useEffect, useState } from 'react'
 import { apiFetch } from '@/lib/api'
 import MainLayout from '@/components/MainLayout'
-
+import Image from 'next/image'
 interface FormData {
   name: string
   email: string
@@ -69,8 +69,10 @@ export default function ProfilePage() {
         <h1 className="text-3xl font-bold mb-8 text-center">My Profile</h1>
 
         <div className="flex justify-center mb-6">
-          <img
+          <Image
             src={user?.avatar || '/default-avatar.png'}
+            width={96}
+            height={96}
             alt="Avatar"
             className="w-24 h-24 rounded-full border-2 border-indigo-500 object-cover"
           />

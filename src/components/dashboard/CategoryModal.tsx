@@ -31,7 +31,7 @@ export default function CategoryModal({ isOpen, onClose, onSave, category }: Cat
     e.preventDefault();
     onSave({
       name,
-      type: typeId ? parseInt(typeId) : null
+      type: typeId 
     });
   };
 

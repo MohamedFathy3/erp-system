@@ -2,10 +2,6 @@
 
 import MainLayout from "@/components/MainLayout";
 import { 
-  Laptop, 
-  Server, 
-  Network, 
-  ShieldCheck,
   Settings,
   Bell,
 } from 'lucide-react';

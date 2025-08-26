@@ -1,6 +1,5 @@
 // src/components/ui/input.tsx
 import * as React from "react";
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   isInvalid?: boolean;
 }

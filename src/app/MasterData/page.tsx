@@ -4,37 +4,7 @@ import MainLayout from '@/components/MainLayout'
 import '@/styles/globals.css'
 import Cards from '@/components/dashboard/SmalCard';
 import MasterDataPage from '@/components/dashboard/catagrycard';
-import {
-  Building2,
-  Landmark,
-  Layers,
-  Users,
-  Briefcase,
-  Wallet,
-  Clock,
-  CalendarX2,
-  CalendarCheck2,
-  FileText,
-  GraduationCap,
-  LineChart,
-  Archive,
-  Megaphone,
-  Cpu,
-  HardDrive,
-  MonitorSmartphone,
-  Laptop2,
-  ShieldCheck,
-  Settings,
-  Network,
-  Server,
-  BadgePercent,
-  UserCog,
-  BookText,
-  Tag,
-Globe,
-DollarSign,
-Warehouse,
-} from 'lucide-react';
+
 
 
 

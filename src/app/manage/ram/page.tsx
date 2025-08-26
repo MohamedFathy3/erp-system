@@ -7,12 +7,9 @@ import { Input } from "@/components/ui/input";
 
 export interface Category {
   id: number;
-  name: string;
   type: string;
-  createdAt?: string;
-  updatedAt?: string;
-  deletedAt?: string | null;
-  deleted?: boolean;
+  size: number;
+
 }
 
 interface PaginationMeta {
@@ -59,7 +56,7 @@ export default function Page() {
   async function fetchCategories(page = 1) {
     try {
       setLoading(true);
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/type?page=${page}`);
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/memory?page=${page}`);
       if (!res.ok) {
         throw new Error("Failed to fetch data");
       }
@@ -83,25 +80,25 @@ export default function Page() {
 
     try {
       if (editingCategory) {
-        // Update existing category - PATCH to /type/{id}
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/type/${editingCategory.id}`, {
+        // Update existing category - PATCH to /memory/{id}
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/memory/${editingCategory.id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(categoryData),
         });
         
         if (!res.ok) {
-          throw new Error("Failed to update category");
+          throw new Error("Failed to update memory");
         }
       } else {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/type`, {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/memory`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(categoryData),
         });
         
         if (!res.ok) {
-          throw new Error("Failed to create category");
+          throw new Error("Failed to create memory");
         }
       }
       
@@ -115,16 +112,16 @@ export default function Page() {
   };
 
   const handleDelete = async (id: number) => {
-    if (confirm("Are you sure you want to delete this category?")) {
+    if (confirm("Are you sure you want to delete this memory?")) {
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/type/delete`, {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/memory/delete`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ ids: [id] }),
         });
         
         if (!res.ok) {
-          throw new Error("Failed to delete category");
+          throw new Error("Failed to delete memory");
         }
         
         fetchCategories(currentPage);
@@ -136,18 +133,18 @@ export default function Page() {
 
   const handleBulkDelete = async () => {
     if (selectedItems.size === 0) return;
-    
-    if (confirm(`Are you sure you want to delete ${selectedItems.size} categories?`)) {
+
+    if (confirm(`Are you sure you want to delete ${selectedItems.size} memory(s)?`)) {
       try {
         const ids = Array.from(selectedItems);
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/type/delete`, {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/memory/delete`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ ids }),
         });
         
         if (!res.ok) {
-          throw new Error("Failed to delete categories");
+          throw new Error("Failed to delete memory");
         }
         
         setSelectedItems(new Set());
@@ -183,7 +180,7 @@ export default function Page() {
     setSelectedItems(newSet);
   };
 
-  // مكون Checkbox البديل إذا لم يكن لديك مكون UI جاهز
+
   const Checkbox = ({ checked, onChange, indeterminate, className }: CheckboxProps) => (
     <input
       type="checkbox"
@@ -219,7 +216,6 @@ export default function Page() {
   }
 
   const filteredData = data.filter((item) =>
-    item.name.toLowerCase().includes(search.toLowerCase()) ||
     item.type.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -232,7 +228,7 @@ export default function Page() {
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Device type</h1>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Memory</h1>
             <p className="text-gray-600 dark:text-gray-400 mt-1">
               Showing {((currentPage - 1) * pagination.per_page) + 1} to {Math.min(currentPage * pagination.per_page, pagination.total)} of {pagination.total} entries
             </p>
@@ -254,14 +250,14 @@ export default function Page() {
                 setOpen(true);
               }}
             >
-              + Add Device type
+              + Add memory
             </Button>
           </div>
         </div>
 
         {/* Search */}
         <Input
-          placeholder="Search Device type..."
+          placeholder="Search memory..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="max-w-md text-black dark:text-gray-100 rounded-xl border border-gray-300 dark:border-gray-600 shadow-sm focus:ring-2 focus:ring-indigo-400 dark:bg-gray-800 dark:placeholder-gray-400"
@@ -280,7 +276,7 @@ export default function Page() {
                     className="h-4 w-4"
                   />
                 </th>
-                {["ID", "Name", "Type", "Actions"].map((header) => (
+                {["ID", "type", "size", "Actions"].map((header) => (
                   <th key={header} className="px-6 py-3 text-center text-gray-700 dark:text-gray-300 font-medium uppercase tracking-wider">
                     {header}
                   </th>
@@ -299,17 +295,10 @@ export default function Page() {
                       />
                     </td>
                     <td className="px-6 py-4 font-medium text-gray-900 dark:text-gray-100">{item.id}</td>
-                    <td className="px-6 py-4 text-gray-700 dark:text-gray-300">{item.name}</td>
-                    <td className="px-6 py-4">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        item.type === 'device' 
-                          ? 'bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100' 
-                          : 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100'
-                      }`}>
-                        {item.type}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 flex justify-center gap-2">
+                    <td className="px-6 py-4 text-gray-700 dark:text-gray-300">{item.type}</td>
+                    <td className="px-6 py-4 text-gray-700 dark:text-gray-300">{item.size}</td>
+                   
+                    <td className="px-6 py-4 flex justify-center  gap-2">
                       <Button
                         variant="outline"
                         size="sm"
@@ -333,7 +322,7 @@ export default function Page() {
               ) : (
                 <tr>
                   <td colSpan={6} className="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
-                    No categories found
+                    No brand found
                   </td>
                 </tr>
               )}
@@ -441,27 +430,17 @@ export default function Page() {
                 ✖
               </button>
               <h2 className="text-2xl font-semibold mb-6 text-gray-900 dark:text-gray-100">
-                {editingCategory ? "Edit Category" : "Add Category"}
+                {editingCategory ? "Edit brand" : "Add brand"}
               </h2>
               <form className="space-y-4" onSubmit={handleSave}>
                 <Input
-                  name="name"
-                  placeholder="Category Name"
-                  defaultValue={editingCategory?.name || ""}
+                  name="type"
+                  placeholder="memory Type"
+                  defaultValue={editingCategory?.type || ""}
                   required
                   className="rounded-xl dark:bg-gray-800 dark:text-gray-100"
                 />
-                <div className="flex flex-col space-y-2">
-                  <label className="text-gray-900 dark:text-gray-100">Type</label>
-                  <select
-                    name="type"
-                    defaultValue={editingCategory?.type || "device"}
-                    className="rounded-xl p-2 dark:bg-gray-800 dark:text-gray-100 border border-gray-300 dark:border-gray-600"
-                  >
-                    <option value="device">Device</option>
-                    <option value="issue">Issue</option>
-                  </select>
-                </div>
+               
                 <Button type="submit" className="w-full bg-indigo-600 text-white hover:bg-indigo-700 transition-all rounded-xl">
                   {editingCategory ? "Update" : "Create"}
                 </Button>

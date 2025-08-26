@@ -2,11 +2,7 @@
 
 import MainLayout from '../components/MainLayout'
 
-import { Suspense } from 'react'
-import ChartSkeleton from '../components/skeletons/ChartSkeleton'
-import CardSkeleton from '../components/skeletons/CardSkeleton'
 import '../styles/globals.css'
-import { AuthProvider } from '../contexts/AuthContext';
 
 
 
