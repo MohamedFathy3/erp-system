@@ -9,8 +9,8 @@ import toast from 'react-hot-toast';
 
 export interface Category {
   id: number;
-  model: string;
-  vram: string;
+  name: string;
+  type: string;
 }
 
 interface PaginationMeta {
@@ -63,28 +63,59 @@ export default function Page() {
   useEffect(() => {
     
   if (!showFilter) {
-    fetchCategories(currentPage);
+    fetchCategories();
   }
     
   }, [currentPage]);
 
-  async function fetchCategories(page = 1) {
-    try {
-      setLoading(true);
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/graphic-card?page=${page}`);
-      if (!res.ok) {
-        throw new Error("Failed to fetch data");
-      }
-      const json: ApiResponse = await res.json();
-      setData(json.data || []);
-      setPagination(json.meta);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred");
-    } finally {
-      setLoading(false);
-      toast.success('Fetched graphic cards successfully!');
+   const payload = {
+      filters: {
+        type: 'issue',
+      },
+      orderBy: 'id',  
+      orderByDirection: 'asc',
+      page: currentPage,
+      paginate: true,
+      deleted: false,
+    };
+async function fetchCategories() {
+  try {
+    setLoading(true);
+
+   
+
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/type/index`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error('❌ API Error:', errorText);
+      toast.error('Failed to fetch types');
+      throw new Error(`Request failed: ${res.status}`);
     }
+
+    const json: ApiResponse = await res.json();
+
+    // الآن نقوم بتحديث البيانات والـ pagination
+    setData(json.data || []);
+    setPagination(json.meta || {});  // تأكد من أن الـ meta تحتوي على البيانات المتعلقة بالتصفح مثل current_page
+
+    toast.success('Fetched type issue successfully!');  // إشعار النجاح
+
+  } catch (err) {
+    toast.error('Failed to fetch types');
+    setError(err instanceof Error ? err.message : 'An error occurred');
+  } finally {
+    setLoading(false);
   }
+}
+
+
   
 
 
@@ -102,8 +133,8 @@ export default function Page() {
 
   const formData = new FormData(form);
   const categoryData = {
-    model: formData.get("model") as string,
-    vram: formData.get("vram") as string,
+    name: formData.get("name") as string,
+    type: 'issue',
   };
 
   try {
@@ -111,14 +142,14 @@ export default function Page() {
 
     if (editingCategory) {
       // Update category
-      res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/graphic-card/${editingCategory.id}`, {
+      res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/type/${editingCategory.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(categoryData),
       });
     } else {
       // Create new category
-      res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/graphic-card`, {
+      res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/type`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(categoryData),
@@ -127,7 +158,7 @@ export default function Page() {
 
     if (!res.ok) throw new Error("Failed to save type");
     toast.success('Saved successfully!');
-    fetchCategories(currentPage);
+    fetchCategories();
 
     if (closeAfterSave) {
       setOpen(false);
@@ -141,22 +172,22 @@ export default function Page() {
 
 
  const handleDelete = async (id: number) => {
-  if (confirm("Are you sure you want to delete this graphic-card?")) {
+  if (confirm("Are you sure you want to delete this type?")) {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/graphic-card/delete`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/type/delete`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ Items: [id] }),
       });
 
       if (!res.ok) {
-        throw new Error("Failed to delete graphic-card");
+        throw new Error("Failed to delete type");
       }
 
       toast.success('Deleted successfully!');
-      fetchCategories(currentPage);
+      fetchCategories();
     } catch (err) {
-      toast.error('Failed to delete graphic-card');
+      toast.error('Failed to delete type');
       setError(err instanceof Error ? err.message : "An error occurred");
     }
   }
@@ -170,6 +201,7 @@ async function bodyfilter() {
  const payload = {
   filters: {
     [orderBy]: filterValue || '',  
+     type: 'issue',
   },
   orderBy,
   orderByDirection,
@@ -181,7 +213,7 @@ async function bodyfilter() {
 
 
 
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/graphic-card/index`, {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/type/index`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -192,7 +224,7 @@ async function bodyfilter() {
     if (!res.ok) {
       const errorText = await res.text();
       console.error('❌ API Error:', errorText);
-    toast.error('Failed to fetch graphic-card');
+    toast.error('Failed to fetch types');
 
       throw new Error(`Request failed: ${res.status}`);
 
@@ -203,7 +235,7 @@ async function bodyfilter() {
     setPagination(json.meta || {}); // تأكد إن meta بيرجع
 
   } catch (err) {
-    toast.error('Failed to fetch graphic-card');
+    toast.error('Failed to fetch types');
     setError(err instanceof Error ? err.message : 'An error occurred');
   } finally {
     setLoading(false);
@@ -215,10 +247,10 @@ async function bodyfilter() {
   const handleBulkDelete = async () => {
     if (selectedItems.size === 0) return;
 
-    if (confirm(`Are you sure you want to delete ${selectedItems.size} graphic-card?`)) {
+    if (confirm(`Are you sure you want to delete ${selectedItems.size} types?`)) {
       try {
         const ids = Array.from(selectedItems);
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/graphic-card/delete`, {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/type/delete`, {
           method: "DELETE",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ Items: ids }),
@@ -229,7 +261,7 @@ async function bodyfilter() {
         }
         toast.success('Deleted successfully!');
         setSelectedItems(new Set());
-        fetchCategories(currentPage);
+        fetchCategories();
       } catch (err) {
         setError(err instanceof Error ? err.message : "An error occurred");
       }
@@ -269,12 +301,16 @@ const fetchDeletedItems = async () => {
     setShowingDeleted(true);
 
     const payload = {
+       filters: {
+    [orderBy]: filterValue || '',  
+     type: 'issue',
+  },
       deleted: true,
       paginate: true,
     
     };
 
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/graphic-card/index`, {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/type/index`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -298,14 +334,18 @@ const fetchNormalItems = async () => {
   try {
     setLoading(true);
     setShowingDeleted(false); 
-    fetchCategories(1); 
+    fetchCategories(); 
 
     const payload = {
+        filters: {
+    [orderBy]: filterValue || '',  
+     type: 'issue',
+  },
       deleted: false,
       paginate: true,
     };
 
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/graphic-card/index`, {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/type/index`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -336,7 +376,7 @@ const handleBulkRestore = async () => {
     try {
       const ids = Array.from(selectedItems);
 
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/graphic-card/restore`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/type/restore`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ Items: ids }),
@@ -395,7 +435,7 @@ const handleBulkRestore = async () => {
   }
 
   const filteredData = data.filter((item) =>
-    item.model.toLowerCase().includes(search.toLowerCase())
+    item.name.toLowerCase().includes(search.toLowerCase())
   );
 
   const allSelected = filteredData.length > 0 && filteredData.every(item => selectedItems.has(item.id));
@@ -407,7 +447,7 @@ const handleBulkRestore = async () => {
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Graphic-card</h1>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Type</h1>
            
           </div>
           <div className="flex gap-2">
@@ -523,7 +563,7 @@ const handleBulkRestore = async () => {
     setOrderBy('id');  
     setOrderByDirection('asc'); 
     setShowFilter(false); 
-    fetchCategories(currentPage); 
+    fetchCategories(); 
   }}
   className="w-full bg-gray-500 text-white hover:bg-gray-600 transition-all rounded-md px-5 h-12 text-lg flex items-center justify-center gap-2 dark:bg-gray-600 dark:hover:bg-gray-500"
 >
@@ -548,7 +588,7 @@ const handleBulkRestore = async () => {
                     className="h-4 w-4"
                   />
                 </th>
-                {["ID", "Model","VRAM","Actions"].map((header) => (
+                {["ID", "Name","Type","Actions"].map((header) => (
                   <th key={header} className="px-6 py-3 text-center text-gray-700 dark:text-gray-300 font-medium uppercase tracking-wider">
                     {header}
                   </th>
@@ -567,9 +607,9 @@ const handleBulkRestore = async () => {
                       />
                     </td>
                     <td className="px-6 py-4 font-medium text-gray-900 dark:text-gray-100">{item.id}</td>
-                    <td className="px-6 py-4 text-gray-700 dark:text-gray-300">{item.model}</td>
-                    <td className="px-6 py-4 text-gray-700 dark:text-gray-300">{item.vram}</td>
-
+                    <td className="px-6 py-4 text-gray-700 dark:text-gray-300">{item.name}</td>
+                    <td className="px-6 py-4 text-gray-700 dark:text-gray-300">{item.type}</td>
+                 
                     <td className="px-6 py-4 flex justify-center gap-2">
                       <Button
                         variant="outline"
@@ -702,13 +742,13 @@ const handleBulkRestore = async () => {
         ✖
       </button>
       <h2 className="text-2xl font-semibold mb-6 text-gray-900 dark:text-gray-100">
-        {editingCategory ? "Edit graphic-card" : "Add graphic-card"}
+        {editingCategory ? "Edit type" : "Add type"}
       </h2>
       <form className="space-y-4" onSubmit={(e) => handleSave(e, true)}>
         <Input
           name="name"
-          placeholder="graphic-card Name"
-          defaultValue={editingCategory?.model || ""}
+          placeholder="type Name"
+          defaultValue={editingCategory?.name || ""}
           required
           className="rounded-xl dark:bg-gray-800 dark:text-gray-100"
         />

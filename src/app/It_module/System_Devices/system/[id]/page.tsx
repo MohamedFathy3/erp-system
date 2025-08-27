@@ -5,6 +5,7 @@ import MainLayout from "@/components/MainLayout";
 import { apiFetch } from "@/lib/api";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/button";
+import ActionModal from '@/components/dashboard/ActionModal';
 import Image from "next/image";
 
 import { 
@@ -112,18 +113,19 @@ export default function DeviceDetailsPage() {
               </div>
             </div>
 
-            <Button
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 px-4 py-2.5 rounded-lg shadow-md"
-              onClick={() => {
-                const event = new CustomEvent("open-action-modal", { detail: device });
-                window.dispatchEvent(event);
-              }}
-            >
-              <Plus className="h-5 w-5" />
-              Add Action
-            </Button>
+          <Button
+  className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 px-4 py-2.5 rounded-lg shadow-md text-white"
+  onClick={() => {
+    const event = new CustomEvent("open-action-modal", { detail: device });
+    window.dispatchEvent(event);
+  }}
+>
+  <Plus className="h-5 w-5" />
+  Add Action
+</Button>
           </div>
         </div>
+<ActionModal />
 
         {/* Tabs Navigation */}
         <div className="flex border-b border-gray-200 dark:border-gray-700 mb-6">
@@ -307,6 +309,7 @@ export default function DeviceDetailsPage() {
 }
 
 // Component for consistent detail items
+
 function DetailItem({ label, value, icon, status }: { label: string; value: string; icon?: React.ReactNode; status?: string }) {
   return (
     <div className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">

@@ -9,8 +9,9 @@ import toast from 'react-hot-toast';
 
 export interface Category {
   id: number;
-  model: string;
-  vram: string;
+  name: string;
+  short_description: string;
+  type_id: number;
 }
 
 interface PaginationMeta {
@@ -71,7 +72,7 @@ export default function Page() {
   async function fetchCategories(page = 1) {
     try {
       setLoading(true);
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/graphic-card?page=${page}`);
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/category?page=${page}`);
       if (!res.ok) {
         throw new Error("Failed to fetch data");
       }
@@ -82,7 +83,7 @@ export default function Page() {
       setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
       setLoading(false);
-      toast.success('Fetched graphic cards successfully!');
+      toast.success('Fetched categories successfully!');
     }
   }
   
@@ -102,8 +103,8 @@ export default function Page() {
 
   const formData = new FormData(form);
   const categoryData = {
-    model: formData.get("model") as string,
-    vram: formData.get("vram") as string,
+    name: formData.get("name") as string,
+    type: formData.get("type") as string,
   };
 
   try {
@@ -111,14 +112,14 @@ export default function Page() {
 
     if (editingCategory) {
       // Update category
-      res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/graphic-card/${editingCategory.id}`, {
+      res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/category/${editingCategory.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(categoryData),
       });
     } else {
       // Create new category
-      res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/graphic-card`, {
+      res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/type`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(categoryData),
@@ -141,22 +142,22 @@ export default function Page() {
 
 
  const handleDelete = async (id: number) => {
-  if (confirm("Are you sure you want to delete this graphic-card?")) {
+  if (confirm("Are you sure you want to delete this category?")) {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/graphic-card/delete`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/category/delete`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ Items: [id] }),
       });
 
       if (!res.ok) {
-        throw new Error("Failed to delete graphic-card");
+        throw new Error("Failed to delete category");
       }
 
       toast.success('Deleted successfully!');
       fetchCategories(currentPage);
     } catch (err) {
-      toast.error('Failed to delete graphic-card');
+      toast.error('Failed to delete category');
       setError(err instanceof Error ? err.message : "An error occurred");
     }
   }
@@ -181,7 +182,7 @@ async function bodyfilter() {
 
 
 
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/graphic-card/index`, {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/category/index`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -192,7 +193,7 @@ async function bodyfilter() {
     if (!res.ok) {
       const errorText = await res.text();
       console.error('❌ API Error:', errorText);
-    toast.error('Failed to fetch graphic-card');
+    toast.error('Failed to fetch category');
 
       throw new Error(`Request failed: ${res.status}`);
 
@@ -203,7 +204,7 @@ async function bodyfilter() {
     setPagination(json.meta || {}); // تأكد إن meta بيرجع
 
   } catch (err) {
-    toast.error('Failed to fetch graphic-card');
+    toast.error('Failed to fetch category');
     setError(err instanceof Error ? err.message : 'An error occurred');
   } finally {
     setLoading(false);
@@ -215,17 +216,17 @@ async function bodyfilter() {
   const handleBulkDelete = async () => {
     if (selectedItems.size === 0) return;
 
-    if (confirm(`Are you sure you want to delete ${selectedItems.size} graphic-card?`)) {
+    if (confirm(`Are you sure you want to delete ${selectedItems.size} category?`)) {
       try {
         const ids = Array.from(selectedItems);
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/graphic-card/delete`, {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/category/delete`, {
           method: "DELETE",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ Items: ids }),
         });
         
         if (!res.ok) {
-          throw new Error("Failed to delete types");
+          throw new Error("Failed to delete category");
         }
         toast.success('Deleted successfully!');
         setSelectedItems(new Set());
@@ -274,7 +275,7 @@ const fetchDeletedItems = async () => {
     
     };
 
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/graphic-card/index`, {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/category/index`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -305,7 +306,7 @@ const fetchNormalItems = async () => {
       paginate: true,
     };
 
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/graphic-card/index`, {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/category/index`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -336,7 +337,7 @@ const handleBulkRestore = async () => {
     try {
       const ids = Array.from(selectedItems);
 
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/graphic-card/restore`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/category/restore`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ Items: ids }),
@@ -395,7 +396,7 @@ const handleBulkRestore = async () => {
   }
 
   const filteredData = data.filter((item) =>
-    item.model.toLowerCase().includes(search.toLowerCase())
+    item.name.toLowerCase().includes(search.toLowerCase())
   );
 
   const allSelected = filteredData.length > 0 && filteredData.every(item => selectedItems.has(item.id));
@@ -407,8 +408,8 @@ const handleBulkRestore = async () => {
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Graphic-card</h1>
-           
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Category</h1>
+
           </div>
           <div className="flex gap-2">
             {selectedItems.size > 0 && (
@@ -458,14 +459,14 @@ const handleBulkRestore = async () => {
                 setOpen(true);
               }}
             >
-              + Add type
+              + Add category
             </Button>
           </div>
         </div>
 
         {/* Search */}
         <Input
-          placeholder="Search categories..."
+          placeholder="Search category..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="max-w-md text-black dark:text-gray-100 rounded-xl border border-gray-300 dark:border-gray-600 shadow-sm focus:ring-2 focus:ring-indigo-400 dark:bg-gray-800 dark:placeholder-gray-400"
@@ -548,7 +549,7 @@ const handleBulkRestore = async () => {
                     className="h-4 w-4"
                   />
                 </th>
-                {["ID", "Model","VRAM","Actions"].map((header) => (
+                {["ID", "Name","short_description","Type_id","Actions"].map((header) => (
                   <th key={header} className="px-6 py-3 text-center text-gray-700 dark:text-gray-300 font-medium uppercase tracking-wider">
                     {header}
                   </th>
@@ -567,9 +568,10 @@ const handleBulkRestore = async () => {
                       />
                     </td>
                     <td className="px-6 py-4 font-medium text-gray-900 dark:text-gray-100">{item.id}</td>
-                    <td className="px-6 py-4 text-gray-700 dark:text-gray-300">{item.model}</td>
-                    <td className="px-6 py-4 text-gray-700 dark:text-gray-300">{item.vram}</td>
-
+                    <td className="px-6 py-4 text-gray-700 dark:text-gray-300">{item.name}</td>
+                    <td className="px-6 py-4 text-gray-700 dark:text-gray-300">{item.short_description}</td>
+                    <td className="px-6 py-4 text-gray-700 dark:text-gray-300">{item.type_id}</td>
+                 
                     <td className="px-6 py-4 flex justify-center gap-2">
                       <Button
                         variant="outline"
@@ -594,7 +596,7 @@ const handleBulkRestore = async () => {
               ) : (
                 <tr>
                   <td colSpan={6} className="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
-                    No type found
+                    No category found
                   </td>
                 </tr>
               )}
@@ -702,13 +704,13 @@ const handleBulkRestore = async () => {
         ✖
       </button>
       <h2 className="text-2xl font-semibold mb-6 text-gray-900 dark:text-gray-100">
-        {editingCategory ? "Edit graphic-card" : "Add graphic-card"}
+        {editingCategory ? "Edit category" : "Add category"}
       </h2>
       <form className="space-y-4" onSubmit={(e) => handleSave(e, true)}>
         <Input
           name="name"
-          placeholder="graphic-card Name"
-          defaultValue={editingCategory?.model || ""}
+          placeholder="Category Name"
+          defaultValue={editingCategory?.name || ""}
           required
           className="rounded-xl dark:bg-gray-800 dark:text-gray-100"
         />

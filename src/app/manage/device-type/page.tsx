@@ -1,18 +1,16 @@
 "use client";
 
-import { useState, useEffect, FormEvent } from "react";
+import { useState, useEffect, FormEvent,MouseEvent } from "react";
 import MainLayout from "@/components/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Filter } from "lucide-react";
+import toast from 'react-hot-toast';
 
 export interface Category {
   id: number;
   name: string;
   type: string;
-  createdAt?: string;
-  updatedAt?: string;
-  deletedAt?: string | null;
-  deleted?: boolean;
 }
 
 interface PaginationMeta {
@@ -43,7 +41,17 @@ export default function Page() {
   const [open, setOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [showFilter, setShowFilter] = useState(false);
+  const [perPage, ] = useState(1);
+  const [showingDeleted, setShowingDeleted] = useState(false);
+
+  const [orderBy, setOrderBy] = useState('id');
+
+  const [filterValue, setFilterValue] = useState('');
+
+  const [orderByDirection, setOrderByDirection] = useState('asc');
   const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set());
+
   const [pagination, setPagination] = useState<PaginationMeta>({
     current_page: 1,
     last_page: 1,
@@ -53,103 +61,206 @@ export default function Page() {
   });
 
   useEffect(() => {
-    fetchCategories(currentPage);
+    
+  if (!showFilter) {
+    fetchCategories();
+  }
+    
   }, [currentPage]);
 
-  async function fetchCategories(page = 1) {
-    try {
-      setLoading(true);
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/type?page=${page}`);
-      if (!res.ok) {
-        throw new Error("Failed to fetch data");
-      }
-      const json: ApiResponse = await res.json();
-      setData(json.data || []);
-      setPagination(json.meta);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  const handleSave = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const categoryData = {
-      name: formData.get("name") as string,
-      type: formData.get("type") as string
+   const payload = {
+      filters: {
+        type: 'device',
+      },
+      orderBy: 'id',  
+      orderByDirection: 'asc',
+      perPage: 5, 
+      paginate: true,
+      deleted: false,
     };
+async function fetchCategories(page = 1) {
+  try {
+    setLoading(true);
 
-    try {
-      if (editingCategory) {
-        // Update existing category - PATCH to /type/{id}
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/type/${editingCategory.id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(categoryData),
-        });
-        
-        if (!res.ok) {
-          throw new Error("Failed to update category");
-        }
-      } else {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/type`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(categoryData),
-        });
-        
-        if (!res.ok) {
-          throw new Error("Failed to create category");
-        }
-      }
-      
-      // Refresh data and close modal
-      fetchCategories(currentPage);
+   
+
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/type/index`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error('❌ API Error:', errorText);
+      toast.error('Failed to fetch types');
+      throw new Error(`Request failed: ${res.status}`);
+    }
+
+    const json: ApiResponse = await res.json();
+
+    // الآن نقوم بتحديث البيانات والـ pagination
+    setData(json.data || []);
+    setPagination(json.meta || {});  // تأكد من أن الـ meta تحتوي على البيانات المتعلقة بالتصفح مثل current_page
+
+    toast.success('Fetched categories successfully!');  // إشعار النجاح
+
+  } catch (err) {
+    toast.error('Failed to fetch types');
+    setError(err instanceof Error ? err.message : 'An error occurred');
+  } finally {
+    setLoading(false);
+  }
+}
+
+
+  
+
+
+
+
+
+ const handleSave = async (
+  e: FormEvent<HTMLFormElement> | MouseEvent<HTMLButtonElement>,
+  closeAfterSave: boolean = true
+) => {
+  e.preventDefault();
+
+  const form = (e.target as HTMLElement).closest("form");
+  if (!form) return;
+
+  const formData = new FormData(form);
+  const categoryData = {
+    name: formData.get("name") as string,
+    type: 'device',
+  };
+
+  try {
+    let res;
+
+    if (editingCategory) {
+      // Update category
+      res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/type/${editingCategory.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(categoryData),
+      });
+    } else {
+      // Create new category
+      res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/type`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(categoryData),
+      });
+    }
+
+    if (!res.ok) throw new Error("Failed to save type");
+    toast.success('Saved successfully!');
+    fetchCategories(currentPage);
+
+    if (closeAfterSave) {
       setOpen(false);
       setEditingCategory(null);
+    }
+  } catch (err) {
+    setError(err instanceof Error ? err.message : "An error occurred");
+    toast.error('Something went wrong!');
+  }
+};
+
+
+ const handleDelete = async (id: number) => {
+  if (confirm("Are you sure you want to delete this type?")) {
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/type/delete`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ Items: [id] }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to delete type");
+      }
+
+      toast.success('Deleted successfully!');
+      fetchCategories(currentPage);
     } catch (err) {
+      toast.error('Failed to delete type');
       setError(err instanceof Error ? err.message : "An error occurred");
     }
-  };
+  }
+};
 
-  const handleDelete = async (id: number) => {
-    if (confirm("Are you sure you want to delete this category?")) {
-      try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/type/delete`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ids: [id] }),
-        });
-        
-        if (!res.ok) {
-          throw new Error("Failed to delete category");
-        }
-        
-        fetchCategories(currentPage);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "An error occurred");
-      }
+
+async function bodyfilter() {
+  try {
+    setLoading(false);
+
+ const payload = {
+  filters: {
+    [orderBy]: filterValue || '',  
+     type: 'device',
+  },
+  orderBy,
+  orderByDirection,
+  perPage,
+  page: currentPage,
+  paginate: true,
+  deleted: false,
+  type: 'device',
+};
+
+
+
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/type/index`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error('❌ API Error:', errorText);
+    toast.error('Failed to fetch types');
+
+      throw new Error(`Request failed: ${res.status}`);
+
     }
-  };
+
+    const json: ApiResponse = await res.json();
+    setData(json.data || []);
+    setPagination(json.meta || {}); // تأكد إن meta بيرجع
+
+  } catch (err) {
+    toast.error('Failed to fetch types');
+    setError(err instanceof Error ? err.message : 'An error occurred');
+  } finally {
+    setLoading(false);
+  }
+}
+
+
 
   const handleBulkDelete = async () => {
     if (selectedItems.size === 0) return;
-    
-    if (confirm(`Are you sure you want to delete ${selectedItems.size} categories?`)) {
+
+    if (confirm(`Are you sure you want to delete ${selectedItems.size} types?`)) {
       try {
         const ids = Array.from(selectedItems);
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/type/delete`, {
-          method: "POST",
+          method: "DELETE",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ids }),
+          body: JSON.stringify({ Items: ids }),
         });
         
         if (!res.ok) {
-          throw new Error("Failed to delete categories");
+          throw new Error("Failed to delete types");
         }
-        
+        toast.success('Deleted successfully!');
         setSelectedItems(new Set());
         fetchCategories(currentPage);
       } catch (err) {
@@ -183,7 +294,114 @@ export default function Page() {
     setSelectedItems(newSet);
   };
 
-  // مكون Checkbox البديل إذا لم يكن لديك مكون UI جاهز
+
+
+const fetchDeletedItems = async () => {
+  try {
+    setLoading(true);
+    setShowingDeleted(true);
+
+    const payload = {
+       filters: {
+    [orderBy]: filterValue || '',  
+     type: 'device',
+  },
+      deleted: true,
+      paginate: true,
+      type: 'device',
+    
+    };
+
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/type/index`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    toast.success('Fetched deleted items successfully!');
+
+    if (!res.ok) throw new Error('Failed to fetch deleted items');
+
+    const json = await res.json();
+    setData(json.data || []);
+    setPagination(json.meta || {});
+  } catch (err) {
+    toast.error('Failed to fetch deleted items');
+    setError(err instanceof Error ? err.message : 'An error occurred');
+  } finally {
+    setLoading(false);
+  }
+};
+
+const fetchNormalItems = async () => {
+  try {
+    setLoading(true);
+    setShowingDeleted(false); 
+    fetchCategories(1); 
+
+    const payload = {
+        filters: {
+    [orderBy]: filterValue || '',  
+     type: 'device',
+  },
+      deleted: false,
+      paginate: true,
+    };
+
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/type/index`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    toast.success('Saved successfully!');
+
+    if (!res.ok) throw new Error('Failed to fetch normal items');
+
+    const json = await res.json();
+    setData(json.data || []);
+    setPagination(json.meta || {});
+  } catch (err) {
+    toast.error('Failed to fetch normal items');
+
+    setError(err instanceof Error ? err.message : 'An error occurred');
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+
+
+const handleBulkRestore = async () => {
+  if (selectedItems.size === 0) return;
+
+  if (confirm(`${selectedItems.size}  you want to restore?`)) {
+    try {
+      const ids = Array.from(selectedItems);
+
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/type/restore`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ Items: ids }),
+      });
+
+      if (!res.ok) {
+        toast.error('Failed to restore items');
+        throw new Error("Error restoring items");
+      }
+    toast.success('Saved successfully!');
+
+      setSelectedItems(new Set());
+      fetchDeletedItems(); 
+    } catch (err) {
+      toast.error('Failed to restore items');
+      setError(err instanceof Error ? err.message : "Error");
+    }
+  }
+};
+
+
+
+  
   const Checkbox = ({ checked, onChange, indeterminate, className }: CheckboxProps) => (
     <input
       type="checkbox"
@@ -219,8 +437,7 @@ export default function Page() {
   }
 
   const filteredData = data.filter((item) =>
-    item.name.toLowerCase().includes(search.toLowerCase()) ||
-    item.type.toLowerCase().includes(search.toLowerCase())
+    item.name.toLowerCase().includes(search.toLowerCase())
   );
 
   const allSelected = filteredData.length > 0 && filteredData.every(item => selectedItems.has(item.id));
@@ -232,10 +449,8 @@ export default function Page() {
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Device type</h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-1">
-              Showing {((currentPage - 1) * pagination.per_page) + 1} to {Math.min(currentPage * pagination.per_page, pagination.total)} of {pagination.total} entries
-            </p>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Type</h1>
+           
           </div>
           <div className="flex gap-2">
             {selectedItems.size > 0 && (
@@ -247,32 +462,127 @@ export default function Page() {
                 Delete Selected ({selectedItems.size})
               </Button>
             )}
+
+
+               <Button
+              className="bg-green-500 text-white hover:bg-green-700 transition-all dark:bg-green-500 dark:hover:bg-green-500 rounded-xl"
+                   onClick={() => setShowFilter((prev) => !prev)}
+
+            >
+                <Filter className="w-4 h-4 mr-2" />
+
+                       {showFilter ? 'Hide Filters' : 'Show Filters'}
+
+            </Button>
+
+  <div className="flex gap-4 mb-4">
+  <Button onClick={fetchDeletedItems} className="bg-red-600 text-white">
+    Show Deleted Items
+  </Button>
+
+  {showingDeleted && (
+    <>
+      <Button onClick={handleBulkRestore} className="bg-green-600 text-white dark:bg-green-500">
+        Restore Selected
+      </Button>
+
+      <Button onClick={fetchNormalItems} className="bg-gray-500 text-white dark:bg-gray-600 ">
+        Back to Active Items
+      </Button>
+    </>
+  )}
+</div>
+
             <Button
-              className="bg-indigo-600 text-white hover:bg-indigo-700 transition-all"
+              className="bg-indigo-600 text-white hover:bg-indigo-700 transition-all dark:bg-indigo-500"
               onClick={() => {
                 setEditingCategory(null);
                 setOpen(true);
               }}
             >
-              + Add Device type
+              + Add type
             </Button>
           </div>
         </div>
 
         {/* Search */}
         <Input
-          placeholder="Search Device type..."
+          placeholder="Search categories..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="max-w-md text-black dark:text-gray-100 rounded-xl border border-gray-300 dark:border-gray-600 shadow-sm focus:ring-2 focus:ring-indigo-400 dark:bg-gray-800 dark:placeholder-gray-400"
         />
+{showFilter && (
+  <div className="w-full bg-gray-100 dark:bg-gray-700 p-6 rounded-md space-y-6">
+  
+    <div className="flex flex-wrap items-center gap-4">
+     
+     <input
+      type="text"
+      name={orderBy} 
+      placeholder={`Enter ${orderBy}...`} 
+      value={filterValue}
+      onChange={(e) => setFilterValue(e.target.value)}
+      className="h-12 px-4 rounded-md border border-gray-300 focus:ring-2 focus:ring-green-500 focus:outline-none text-gray-800 dark:bg-gray-800 dark:text-white dark:border-gray-600 text-lg min-w-[250px] flex-grow"
+    />
+     
+       <select
+      name="sort"
+      id="sort"
+      value={orderBy}
+      onChange={(e) => setOrderBy(e.target.value)}
+      className="h-12 px-3 rounded-md bg-white text-gray-800 border border-gray-300 hover:border-green-400 focus:ring-2 focus:ring-green-400 focus:outline-none dark:bg-gray-800 dark:text-white dark:border-gray-600 text-lg min-w-[200px]"
+    >
+      <option value="id">Sort by ID</option>
+      <option value="name">Sort by Name</option>
+    </select>
+
+      {/* Order Direction */}
+      <select
+        name="group"
+        id="group"
+        value={orderByDirection}
+        onChange={(e) => setOrderByDirection(e.target.value)}
+        className="h-12 px-3 rounded-md bg-white text-gray-800 border border-gray-300 hover:border-green-400 focus:ring-2 focus:ring-green-400 focus:outline-none dark:bg-gray-800 dark:text-white dark:border-gray-600 text-lg min-w-[200px]"
+      >
+        <option value="asc">A → Z</option>
+        <option value="desc">Z → A</option>
+      </select>
+    </div>
+
+    <div className="flex flex-col md:flex-row gap-4">
+      <Button
+        onClick={bodyfilter}
+        className="w-full bg-green-500 text-white hover:bg-green-600 transition-all rounded-md px-5 h-12 text-lg flex items-center justify-center gap-2 dark:bg-green-600 dark:hover:bg-green-500"
+      >
+        <Filter className="w-5 h-5" />
+        Filter
+      </Button>
+
+     <Button
+  onClick={() => {
+    setFilterValue(''); 
+    setOrderBy('id');  
+    setOrderByDirection('asc'); 
+    setShowFilter(false); 
+    fetchCategories(currentPage); 
+  }}
+  className="w-full bg-gray-500 text-white hover:bg-gray-600 transition-all rounded-md px-5 h-12 text-lg flex items-center justify-center gap-2 dark:bg-gray-600 dark:hover:bg-gray-500"
+>
+  <Filter className="w-5 h-5" />
+  Reset
+</Button>
+
+    </div>
+  </div>
+)}
 
         {/* Table */}
         <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-md border border-gray-100 dark:border-gray-700 overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead className="bg-gray-50 dark:bg-gray-800">
               <tr>
-                <th className="px-6 py-3 text-center">
+                <th className="px-6 py-3 text-left">
                   <Checkbox
                     checked={allSelected}
                     indeterminate={someSelected && !allSelected}
@@ -280,7 +590,7 @@ export default function Page() {
                     className="h-4 w-4"
                   />
                 </th>
-                {["ID", "Name", "Type", "Actions"].map((header) => (
+                {["ID", "Name","Type","Actions"].map((header) => (
                   <th key={header} className="px-6 py-3 text-center text-gray-700 dark:text-gray-300 font-medium uppercase tracking-wider">
                     {header}
                   </th>
@@ -300,15 +610,8 @@ export default function Page() {
                     </td>
                     <td className="px-6 py-4 font-medium text-gray-900 dark:text-gray-100">{item.id}</td>
                     <td className="px-6 py-4 text-gray-700 dark:text-gray-300">{item.name}</td>
-                    <td className="px-6 py-4">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        item.type === 'device' 
-                          ? 'bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100' 
-                          : 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100'
-                      }`}>
-                        {item.type}
-                      </span>
-                    </td>
+                    <td className="px-6 py-4 text-gray-700 dark:text-gray-300">{item.type}</td>
+                 
                     <td className="px-6 py-4 flex justify-center gap-2">
                       <Button
                         variant="outline"
@@ -333,7 +636,7 @@ export default function Page() {
               ) : (
                 <tr>
                   <td colSpan={6} className="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
-                    No categories found
+                    No type found
                   </td>
                 </tr>
               )}
@@ -428,47 +731,52 @@ export default function Page() {
         </div>
 
         {/* Modal */}
-        {open && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-            <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl w-full max-w-md p-6 relative transform scale-95 animate-fadeIn">
-              <button
-                onClick={() => {
-                  setOpen(false);
-                  setEditingCategory(null);
-                }}
-                className="absolute top-3 right-3 text-gray-500 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100 text-xl font-bold"
-              >
-                ✖
-              </button>
-              <h2 className="text-2xl font-semibold mb-6 text-gray-900 dark:text-gray-100">
-                {editingCategory ? "Edit Category" : "Add Category"}
-              </h2>
-              <form className="space-y-4" onSubmit={handleSave}>
-                <Input
-                  name="name"
-                  placeholder="Category Name"
-                  defaultValue={editingCategory?.name || ""}
-                  required
-                  className="rounded-xl dark:bg-gray-800 dark:text-gray-100"
-                />
-                <div className="flex flex-col space-y-2">
-                  <label className="text-gray-900 dark:text-gray-100">Type</label>
-                  <select
-                    name="type"
-                    defaultValue={editingCategory?.type || "device"}
-                    className="rounded-xl p-2 dark:bg-gray-800 dark:text-gray-100 border border-gray-300 dark:border-gray-600"
-                  >
-                    <option value="device">Device</option>
-                    <option value="issue">Issue</option>
-                  </select>
-                </div>
-                <Button type="submit" className="w-full bg-indigo-600 text-white hover:bg-indigo-700 transition-all rounded-xl">
-                  {editingCategory ? "Update" : "Create"}
-                </Button>
-              </form>
-            </div>
-          </div>
-        )}
+     {open && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+    <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl w-full max-w-md p-6 relative transform scale-95 animate-fadeIn">
+      <button
+        onClick={() => {
+          setOpen(false);
+          setEditingCategory(null);
+        }}
+        className="absolute top-3 right-3 text-gray-500 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100 text-xl font-bold"
+      >
+        ✖
+      </button>
+      <h2 className="text-2xl font-semibold mb-6 text-gray-900 dark:text-gray-100">
+        {editingCategory ? "Edit type" : "Add type"}
+      </h2>
+      <form className="space-y-4" onSubmit={(e) => handleSave(e, true)}>
+        <Input
+          name="name"
+          placeholder="type Name"
+          defaultValue={editingCategory?.name || ""}
+          required
+          className="rounded-xl dark:bg-gray-800 dark:text-gray-100"
+        />
+     
+
+        <div className="flex gap-4">
+          <Button
+            type="button"
+            onClick={(e) => handleSave(e, false)}
+            className="flex-1 bg-green-600 text-white hover:bg-green-700 transition-all rounded-xl dark:bg-green-500"
+          >
+            Save & Keep Open
+          </Button>
+
+          <Button
+            type="submit"
+            className="flex-1 bg-indigo-600 text-white hover:bg-indigo-700 transition-all rounded-xl dark:bg-indigo-500"
+          >
+            {editingCategory ? "Update & Close" : "Create & Close"}
+          </Button>
+        </div>
+      </form>
+    </div>
+  </div>
+)}
+
       </div>
     </MainLayout>
   );
