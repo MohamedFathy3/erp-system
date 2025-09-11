@@ -1,13 +1,14 @@
 "use client";
 
-import { useState, useEffect, FormEvent,MouseEvent } from "react";
+import { useState, useEffect, FormEvent, MouseEvent } from "react";
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import MainLayout from "@/components/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Filter } from "lucide-react";
+import { Filter, Search, ArrowUpDown } from "lucide-react";
 import toast from 'react-hot-toast';
 
-export interface Category {
+export interface Memory {
   id: number;
   name: string;
   type: string;
@@ -22,7 +23,7 @@ interface PaginationMeta {
 }
 
 interface ApiResponse {
-  data: Category[];
+  data: Memory[];
   meta: PaginationMeta;
 }
 
@@ -33,244 +34,258 @@ interface CheckboxProps {
   className?: string;
 }
 
+interface FilterPayload {
+  filters: {
+    name?: string;
+    type?: string;
+  };
+  orderBy: string;
+  orderByDirection: string;
+  perPage: number;
+  page: number;
+  paginate: boolean;
+  deleted?: boolean;
+}
+
 export default function Page() {
-  const [data, setData] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
-  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [editingMemory, setEditingMemory] = useState<Memory | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [showFilter, setShowFilter] = useState(false);
-  const [perPage, ] = useState(1);
+  const [perPage] = useState(15);
   const [showingDeleted, setShowingDeleted] = useState(false);
-
+  
+  const [filters, setFilters] = useState({
+    name: '',
+    type: ''
+  });
   const [orderBy, setOrderBy] = useState('id');
-
-  const [filterValue, setFilterValue] = useState('');
-
-  const [orderByDirection, setOrderByDirection] = useState('asc');
+  const [orderByDirection, setOrderByDirection] = useState('desc');
+  
   const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set());
 
-  const [pagination, setPagination] = useState<PaginationMeta>({
+  const { data: memoryData, isLoading, error } = useQuery<ApiResponse>({
+    queryKey: ['device', currentPage, showingDeleted, filters, orderBy, orderByDirection],
+    queryFn: async () => {
+      const payload: FilterPayload = {
+        filters: {
+          type:'device'
+        },
+        orderBy,
+        orderByDirection,
+        perPage,
+        page: currentPage,
+        paginate: true,
+        ...(showingDeleted && { deleted: true })
+      };
+
+      if (filters.name) {
+        payload.filters.name = filters.name;
+      }
+      if (filters.type) {
+        payload.filters.type = filters.type;
+      }
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/type/index`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch type');
+      }
+      return response.json();
+    },
+    staleTime: 5 * 60 * 60 * 1000,
+  });
+
+  const data = memoryData?.data || [];
+  const pagination = memoryData?.meta || {
     current_page: 1,
     last_page: 1,
     per_page: 15,
     total: 0,
     links: []
-  });
-
-  useEffect(() => {
-    
-  if (!showFilter) {
-    fetchCategories();
-  }
-    
-  }, [currentPage]);
-
-   const payload = {
-      filters: {
-        type: 'device',
-      },
-      orderBy: 'id',  
-      orderByDirection: 'asc',
-      perPage: 5, 
-      paginate: true,
-      deleted: false,
-    };
-async function fetchCategories(page = 1) {
-  try {
-    setLoading(true);
-
-   
-
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/type/index`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    });
-
-    if (!res.ok) {
-      const errorText = await res.text();
-      console.error('❌ API Error:', errorText);
-      toast.error('Failed to fetch types');
-      throw new Error(`Request failed: ${res.status}`);
-    }
-
-    const json: ApiResponse = await res.json();
-
-    // الآن نقوم بتحديث البيانات والـ pagination
-    setData(json.data || []);
-    setPagination(json.meta || {});  // تأكد من أن الـ meta تحتوي على البيانات المتعلقة بالتصفح مثل current_page
-
-    toast.success('Fetched categories successfully!');  // إشعار النجاح
-
-  } catch (err) {
-    toast.error('Failed to fetch types');
-    setError(err instanceof Error ? err.message : 'An error occurred');
-  } finally {
-    setLoading(false);
-  }
-}
-
-
-  
-
-
-
-
-
- const handleSave = async (
-  e: FormEvent<HTMLFormElement> | MouseEvent<HTMLButtonElement>,
-  closeAfterSave: boolean = true
-) => {
-  e.preventDefault();
-
-  const form = (e.target as HTMLElement).closest("form");
-  if (!form) return;
-
-  const formData = new FormData(form);
-  const categoryData = {
-    name: formData.get("name") as string,
-    type: 'device',
   };
 
-  try {
-    let res;
+  const saveMemoryMutation = useMutation({
+    mutationFn: async (memoryData: Memory) => {
+      let url;
+      let method;
 
-    if (editingCategory) {
-      // Update category
-      res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/type/${editingCategory.id}`, {
-        method: "PATCH",
+      if (memoryData.id) {
+        url = `${process.env.NEXT_PUBLIC_API_URL}/device/${memoryData.id}`;
+        method = "PATCH";
+      } else {
+        url = `${process.env.NEXT_PUBLIC_API_URL}/device`;
+        method = "POST";
+      }
+
+      const response = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(categoryData),
+        body: JSON.stringify(memoryData),
       });
-    } else {
-      // Create new category
-      res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/type`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(categoryData),
-      });
-    }
 
-    if (!res.ok) throw new Error("Failed to save type");
-    toast.success('Saved successfully!');
-    fetchCategories(currentPage);
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || "Failed to save type");
+      }
 
-    if (closeAfterSave) {
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['device'] });
+      toast.success(editingMemory ? 'device updated successfully!' : 'device created successfully!');
       setOpen(false);
-      setEditingCategory(null);
+      setEditingMemory(null);
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
     }
-  } catch (err) {
-    setError(err instanceof Error ? err.message : "An error occurred");
-    toast.error('Something went wrong!');
-  }
-};
+  });
 
-
- const handleDelete = async (id: number) => {
-  if (confirm("Are you sure you want to delete this type?")) {
-    try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/type/delete`, {
+  const deleteMemoryMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/type/delete`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ Items: [id] }),
       });
 
-      if (!res.ok) {
+      if (!response.ok) {
         throw new Error("Failed to delete type");
       }
 
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['device'] });
       toast.success('Deleted successfully!');
-      fetchCategories(currentPage);
-    } catch (err) {
-      toast.error('Failed to delete type');
-      setError(err instanceof Error ? err.message : "An error occurred");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
     }
-  }
-};
+  });
 
+  const bulkDeleteMutation = useMutation({
+    mutationFn: async (ids: number[]) => {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/type/delete`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ Items: ids }),
+      });
 
-async function bodyfilter() {
-  try {
-    setLoading(false);
+      if (!response.ok) {
+        throw new Error("Failed to delete type");
+      }
 
- const payload = {
-  filters: {
-    [orderBy]: filterValue || '',  
-     type: 'device',
-  },
-  orderBy,
-  orderByDirection,
-  perPage,
-  page: currentPage,
-  paginate: true,
-  deleted: false,
-  type: 'device',
-};
-
-
-
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/type/index`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    });
-
-    if (!res.ok) {
-      const errorText = await res.text();
-      console.error('❌ API Error:', errorText);
-    toast.error('Failed to fetch types');
-
-      throw new Error(`Request failed: ${res.status}`);
-
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['device'] });
+      setSelectedItems(new Set());
+      toast.success('Deleted successfully!');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
     }
+  });
 
-    const json: ApiResponse = await res.json();
-    setData(json.data || []);
-    setPagination(json.meta || {}); // تأكد إن meta بيرجع
+  const bulkRestoreMutation = useMutation({
+    mutationFn: async (ids: number[]) => {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/type/restore`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ Items: ids }),
+      });
 
-  } catch (err) {
-    toast.error('Failed to fetch types');
-    setError(err instanceof Error ? err.message : 'An error occurred');
-  } finally {
-    setLoading(false);
-  }
-}
+      if (!response.ok) {
+        throw new Error("Error restoring items");
+      }
 
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['device'] });
+      setSelectedItems(new Set());
+      toast.success('Items restored successfully!');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    }
+  });
 
+  const handleSave = async (
+    e: FormEvent<HTMLFormElement> | MouseEvent<HTMLButtonElement>
+  ) => {
+    e.preventDefault();
+
+    const form = (e.target as HTMLElement).closest("form");
+    if (!form) return;
+
+    const formData = new FormData(form);
+    const memoryData = {
+      ...(editingMemory && { id: editingMemory.id }),
+      name: formData.get("name") as string,
+      type: formData.get("type") as string,
+    };
+
+    saveMemoryMutation.mutate(memoryData as Memory);
+  };
+
+  const handleDelete = async (id: number) => {
+    if (confirm("Are you sure you want to delete this type?")) {
+      deleteMemoryMutation.mutate(id);
+    }
+  };
 
   const handleBulkDelete = async () => {
     if (selectedItems.size === 0) return;
 
-    if (confirm(`Are you sure you want to delete ${selectedItems.size} types?`)) {
-      try {
-        const ids = Array.from(selectedItems);
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/type/delete`, {
-          method: "DELETE",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ Items: ids }),
-        });
-        
-        if (!res.ok) {
-          throw new Error("Failed to delete types");
-        }
-        toast.success('Deleted successfully!');
-        setSelectedItems(new Set());
-        fetchCategories(currentPage);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "An error occurred");
-      }
+    if (confirm(`Are you sure you want to delete ${selectedItems.size} type item(s)?`)) {
+      const ids = Array.from(selectedItems);
+      bulkDeleteMutation.mutate(ids);
     }
   };
 
+  const handleBulkRestore = async () => {
+    if (selectedItems.size === 0) return;
+
+    if (confirm(`Are you sure you want to restore ${selectedItems.size} item(s)?`)) {
+      const ids = Array.from(selectedItems);
+      bulkRestoreMutation.mutate(ids);
+    }
+  };
+
+  const handleFilter = () => {
+    setCurrentPage(1);
+    setShowFilter(false);
+    toast.success('Filter applied successfully!');
+  };
+
+  const handleResetFilters = () => {
+    setFilters({
+      name: '',
+      type: ''
+    });
+    setOrderBy('id');
+    setOrderByDirection('desc');
+    setCurrentPage(1);
+    setShowFilter(false);
+    toast.success('Filters reset successfully!');
+  };
+
+  const handleSearch = () => {
+    setFilters(prev => ({ ...prev, size: search }));
+    setCurrentPage(1);
+  };
+
   const toggleSelectAll = () => {
-    const pageIds = filteredData.map(item => item.id);
+    const pageIds = data.map(item => item.id);
     const allSelected = pageIds.every(id => selectedItems.has(id));
     
     if (allSelected) {
@@ -294,114 +309,6 @@ async function bodyfilter() {
     setSelectedItems(newSet);
   };
 
-
-
-const fetchDeletedItems = async () => {
-  try {
-    setLoading(true);
-    setShowingDeleted(true);
-
-    const payload = {
-       filters: {
-    [orderBy]: filterValue || '',  
-     type: 'device',
-  },
-      deleted: true,
-      paginate: true,
-      type: 'device',
-    
-    };
-
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/type/index`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-    toast.success('Fetched deleted items successfully!');
-
-    if (!res.ok) throw new Error('Failed to fetch deleted items');
-
-    const json = await res.json();
-    setData(json.data || []);
-    setPagination(json.meta || {});
-  } catch (err) {
-    toast.error('Failed to fetch deleted items');
-    setError(err instanceof Error ? err.message : 'An error occurred');
-  } finally {
-    setLoading(false);
-  }
-};
-
-const fetchNormalItems = async () => {
-  try {
-    setLoading(true);
-    setShowingDeleted(false); 
-    fetchCategories(1); 
-
-    const payload = {
-        filters: {
-    [orderBy]: filterValue || '',  
-     type: 'device',
-  },
-      deleted: false,
-      paginate: true,
-    };
-
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/type/index`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-    toast.success('Saved successfully!');
-
-    if (!res.ok) throw new Error('Failed to fetch normal items');
-
-    const json = await res.json();
-    setData(json.data || []);
-    setPagination(json.meta || {});
-  } catch (err) {
-    toast.error('Failed to fetch normal items');
-
-    setError(err instanceof Error ? err.message : 'An error occurred');
-  } finally {
-    setLoading(false);
-  }
-};
-
-
-
-
-const handleBulkRestore = async () => {
-  if (selectedItems.size === 0) return;
-
-  if (confirm(`${selectedItems.size}  you want to restore?`)) {
-    try {
-      const ids = Array.from(selectedItems);
-
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/type/restore`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ Items: ids }),
-      });
-
-      if (!res.ok) {
-        toast.error('Failed to restore items');
-        throw new Error("Error restoring items");
-      }
-    toast.success('Saved successfully!');
-
-      setSelectedItems(new Set());
-      fetchDeletedItems(); 
-    } catch (err) {
-      toast.error('Failed to restore items');
-      setError(err instanceof Error ? err.message : "Error");
-    }
-  }
-};
-
-
-
-  
   const Checkbox = ({ checked, onChange, indeterminate, className }: CheckboxProps) => (
     <input
       type="checkbox"
@@ -416,32 +323,9 @@ const handleBulkRestore = async () => {
     />
   );
 
-  if (loading && data.length === 0) {
-    return (
-      <MainLayout>
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
-        </div>
-      </MainLayout>
-    );
-  }
-
-  if (error) {
-    return (
-      <MainLayout>
-        <div className="flex justify-center items-center h-64">
-          <div className="text-red-500">Error: {error}</div>
-        </div>
-      </MainLayout>
-    );
-  }
-
-  const filteredData = data.filter((item) =>
-    item.name.toLowerCase().includes(search.toLowerCase())
-  );
-
-  const allSelected = filteredData.length > 0 && filteredData.every(item => selectedItems.has(item.id));
-  const someSelected = filteredData.some(item => selectedItems.has(item.id));
+ 
+  const allSelected = data.length > 0 && data.every(item => selectedItems.has(item.id));
+  const someSelected = data.some(item => selectedItems.has(item.id));
 
   return (
     <MainLayout>
@@ -449,54 +333,41 @@ const handleBulkRestore = async () => {
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Type</h1>
-           
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Issue Categories</h1>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             {selectedItems.size > 0 && (
               <Button
                 variant="destructive"
-                onClick={handleBulkDelete}
+                onClick={showingDeleted ? handleBulkRestore : handleBulkDelete}
                 className="bg-red-600 text-white hover:bg-red-700 transition-all"
+                disabled={bulkDeleteMutation.isPending || bulkRestoreMutation.isPending}
               >
-                Delete Selected ({selectedItems.size})
+                {showingDeleted ? `Restore Selected (${selectedItems.size})` : `Delete Selected (${selectedItems.size})`}
               </Button>
             )}
 
-
-               <Button
+            <Button
               className="bg-green-500 text-white hover:bg-green-700 transition-all dark:bg-green-500 dark:hover:bg-green-500 rounded-xl"
-                   onClick={() => setShowFilter((prev) => !prev)}
-
+              onClick={() => setShowFilter((prev) => !prev)}
             >
-                <Filter className="w-4 h-4 mr-2" />
-
-                       {showFilter ? 'Hide Filters' : 'Show Filters'}
-
+              <Filter className="w-4 h-4 mr-2" />
+              {showFilter ? 'Hide Filters' : 'Show Filters'}
             </Button>
 
-  <div className="flex gap-4 mb-4">
-  <Button onClick={fetchDeletedItems} className="bg-red-600 text-white">
-    Show Deleted Items
-  </Button>
-
-  {showingDeleted && (
-    <>
-      <Button onClick={handleBulkRestore} className="bg-green-600 text-white dark:bg-green-500">
-        Restore Selected
-      </Button>
-
-      <Button onClick={fetchNormalItems} className="bg-gray-500 text-white dark:bg-gray-600 ">
-        Back to Active Items
-      </Button>
-    </>
-  )}
-</div>
+            <div className="flex gap-4">
+              <Button 
+                onClick={() => setShowingDeleted(!showingDeleted)} 
+                className={showingDeleted ? "bg-gray-500 text-white dark:bg-gray-600" : "bg-red-600 text-white"}
+              >
+                {showingDeleted ? 'Back to Active Items' : 'Show Deleted Items'}
+              </Button>
+            </div>
 
             <Button
               className="bg-indigo-600 text-white hover:bg-indigo-700 transition-all dark:bg-indigo-500"
               onClick={() => {
-                setEditingCategory(null);
+                setEditingMemory(null);
                 setOpen(true);
               }}
             >
@@ -506,79 +377,106 @@ const handleBulkRestore = async () => {
         </div>
 
         {/* Search */}
-        <Input
-          placeholder="Search categories..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="max-w-md text-black dark:text-gray-100 rounded-xl border border-gray-300 dark:border-gray-600 shadow-sm focus:ring-2 focus:ring-indigo-400 dark:bg-gray-800 dark:placeholder-gray-400"
-        />
-{showFilter && (
-  <div className="w-full bg-gray-100 dark:bg-gray-700 p-6 rounded-md space-y-6">
-  
-    <div className="flex flex-wrap items-center gap-4">
-     
-     <input
-      type="text"
-      name={orderBy} 
-      placeholder={`Enter ${orderBy}...`} 
-      value={filterValue}
-      onChange={(e) => setFilterValue(e.target.value)}
-      className="h-12 px-4 rounded-md border border-gray-300 focus:ring-2 focus:ring-green-500 focus:outline-none text-gray-800 dark:bg-gray-800 dark:text-white dark:border-gray-600 text-lg min-w-[250px] flex-grow"
-    />
-     
-       <select
-      name="sort"
-      id="sort"
-      value={orderBy}
-      onChange={(e) => setOrderBy(e.target.value)}
-      className="h-12 px-3 rounded-md bg-white text-gray-800 border border-gray-300 hover:border-green-400 focus:ring-2 focus:ring-green-400 focus:outline-none dark:bg-gray-800 dark:text-white dark:border-gray-600 text-lg min-w-[200px]"
-    >
-      <option value="id">Sort by ID</option>
-      <option value="name">Sort by Name</option>
-    </select>
+        <div className="flex gap-2 items-center">
+          <Input
+            placeholder="Search by size..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+            className="max-w-md text-black dark:text-gray-100 rounded-xl border border-gray-300 dark:border-gray-600 shadow-sm focus:ring-2 focus:ring-indigo-400 dark:bg-gray-800 dark:placeholder-gray-400"
+          />
+          <Button onClick={handleSearch} className="bg-blue-600 text-white dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 rounded-xl">
+            <Search className="w-4 h-4" />
+          </Button>
+        </div>
+        
+        {showFilter && (
+          <div className="w-full bg-gray-100 dark:bg-gray-700 p-6 rounded-md space-y-6">
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  name
+                </label>
+                <Input
+                  type="text"
+                  value={filters.name}
+                  onChange={(e) => setFilters(prev => ({ ...prev, name: e.target.value }))}
+                  placeholder="Filter by name"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-800 dark:text-white dark:border-gray-600"
+                />
+              </div>
+              
+              
+            </div>
 
-      {/* Order Direction */}
-      <select
-        name="group"
-        id="group"
-        value={orderByDirection}
-        onChange={(e) => setOrderByDirection(e.target.value)}
-        className="h-12 px-3 rounded-md bg-white text-gray-800 border border-gray-300 hover:border-green-400 focus:ring-2 focus:ring-green-400 focus:outline-none dark:bg-gray-800 dark:text-white dark:border-gray-600 text-lg min-w-[200px]"
-      >
-        <option value="asc">A → Z</option>
-        <option value="desc">Z → A</option>
-      </select>
-    </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Order By
+                </label>
+                <select
+                  value={orderBy}
+                  onChange={(e) => setOrderBy(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-800 dark:text-white dark:border-gray-600"
+                >
+                  <option value="id">ID</option>
+                  <option value="name">name</option>
+                  <option value="type">Type</option>
+                </select>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Order Direction
+                </label>
+                <select
+                  value={orderByDirection}
+                  onChange={(e) => setOrderByDirection(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-800 dark:text-white dark:border-gray-600"
+                >
+                  <option value="asc">Ascending (A-Z)</option>
+                  <option value="desc">Descending (Z-A)</option>
+                </select>
+              </div>
+            </div>
 
-    <div className="flex flex-col md:flex-row gap-4">
-      <Button
-        onClick={bodyfilter}
-        className="w-full bg-green-500 text-white hover:bg-green-600 transition-all rounded-md px-5 h-12 text-lg flex items-center justify-center gap-2 dark:bg-green-600 dark:hover:bg-green-500"
-      >
-        <Filter className="w-5 h-5" />
-        Filter
-      </Button>
+            <div className="flex flex-col md:flex-row gap-4 pt-4">
+              <Button
+                onClick={handleFilter}
+                className="w-full bg-green-500 text-white hover:bg-green-600 transition-all rounded-md px-5 h-12 text-lg flex items-center justify-center gap-2 dark:bg-green-600 dark:hover:bg-green-500"
+              >
+                <Filter className="w-5 h-5" />
+                Apply Filters
+              </Button>
 
-     <Button
-  onClick={() => {
-    setFilterValue(''); 
-    setOrderBy('id');  
-    setOrderByDirection('asc'); 
-    setShowFilter(false); 
-    fetchCategories(currentPage); 
-  }}
-  className="w-full bg-gray-500 text-white hover:bg-gray-600 transition-all rounded-md px-5 h-12 text-lg flex items-center justify-center gap-2 dark:bg-gray-600 dark:hover:bg-gray-500"
->
-  <Filter className="w-5 h-5" />
-  Reset
-</Button>
-
-    </div>
-  </div>
-)}
+              <Button
+                onClick={handleResetFilters}
+                className="w-full bg-gray-500 text-white hover:bg-gray-600 transition-all rounded-md px-5 h-12 text-lg flex items-center justify-center gap-2 dark:bg-gray-600 dark:hover:bg-gray-500"
+              >
+                <Filter className="w-5 h-5" />
+                Reset Filters
+              </Button>
+            </div>
+          </div>
+        )}
 
         {/* Table */}
         <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-md border border-gray-100 dark:border-gray-700 overflow-x-auto">
+          <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-600 dark:text-gray-400">
+                Showing {data.length} of {pagination.total} items
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-600 dark:text-gray-400">Sorted by:</span>
+              <span className="text-sm font-medium text-indigo-600 dark:text-indigo-400">
+                {orderBy} ({orderByDirection})
+              </span>
+            </div>
+          </div>
+
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead className="bg-gray-50 dark:bg-gray-800">
               <tr>
@@ -590,16 +488,29 @@ const handleBulkRestore = async () => {
                     className="h-4 w-4"
                   />
                 </th>
-                {["ID", "Name","Type","Actions"].map((header) => (
+                {["ID", "name", "Type", "Actions"].map((header) => (
                   <th key={header} className="px-6 py-3 text-center text-gray-700 dark:text-gray-300 font-medium uppercase tracking-wider">
-                    {header}
+                    <div className="flex items-center justify-center gap-1 cursor-pointer hover:text-indigo-600"
+                      onClick={() => {
+                        const field = header.toLowerCase();
+                        if (orderBy === field) {
+                          setOrderByDirection(orderByDirection === 'asc' ? 'desc' : 'asc');
+                        } else {
+                          setOrderBy(field);
+                          setOrderByDirection('asc');
+                        }
+                      }}
+                    >
+                      {header}
+                      <ArrowUpDown className="w-4 h-4" />
+                    </div>
                   </th>
                 ))}
               </tr>
             </thead>
             <tbody className="bg-white text-center dark:bg-gray-900 divide-y divide-gray-100 dark:divide-gray-700">
-              {filteredData.length ? (
-                filteredData.map((item) => (
+              {data.length ? (
+                data.map((item) => (
                   <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                     <td className="px-6 py-4">
                       <Checkbox
@@ -617,7 +528,7 @@ const handleBulkRestore = async () => {
                         variant="outline"
                         size="sm"
                         onClick={() => {
-                          setEditingCategory(item);
+                          setEditingMemory(item);
                           setOpen(true);
                         }}
                       >
@@ -627,6 +538,7 @@ const handleBulkRestore = async () => {
                         variant="destructive"
                         size="sm"
                         onClick={() => handleDelete(item.id)}
+                        disabled={deleteMemoryMutation.isPending}
                       >
                         Delete
                       </Button>
@@ -635,8 +547,8 @@ const handleBulkRestore = async () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={6} className="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
-                    No type found
+                  <td colSpan={5} className="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+                    No memory items found {Object.values(filters).some(f => f) ? 'matching your filters' : ''}
                   </td>
                 </tr>
               )}
@@ -647,7 +559,7 @@ const handleBulkRestore = async () => {
         {/* Pagination Controls */}
         <div className="flex flex-col md:flex-row justify-between items-center gap-4 mt-6">
           <div className="text-sm text-gray-600 dark:text-gray-400">
-            Page {pagination.current_page} of {pagination.last_page}
+            Page {pagination.current_page} of {pagination.last_page} • Total: {pagination.total} items
           </div>
           
           <div className="flex items-center space-x-2">
@@ -731,52 +643,40 @@ const handleBulkRestore = async () => {
         </div>
 
         {/* Modal */}
-     {open && (
-  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-    <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl w-full max-w-md p-6 relative transform scale-95 animate-fadeIn">
-      <button
-        onClick={() => {
-          setOpen(false);
-          setEditingCategory(null);
-        }}
-        className="absolute top-3 right-3 text-gray-500 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100 text-xl font-bold"
-      >
-        ✖
-      </button>
-      <h2 className="text-2xl font-semibold mb-6 text-gray-900 dark:text-gray-100">
-        {editingCategory ? "Edit type" : "Add type"}
-      </h2>
-      <form className="space-y-4" onSubmit={(e) => handleSave(e, true)}>
-        <Input
-          name="name"
-          placeholder="type Name"
-          defaultValue={editingCategory?.name || ""}
-          required
-          className="rounded-xl dark:bg-gray-800 dark:text-gray-100"
-        />
-     
-
-        <div className="flex gap-4">
-          <Button
-            type="button"
-            onClick={(e) => handleSave(e, false)}
-            className="flex-1 bg-green-600 text-white hover:bg-green-700 transition-all rounded-xl dark:bg-green-500"
-          >
-            Save & Keep Open
-          </Button>
-
-          <Button
-            type="submit"
-            className="flex-1 bg-indigo-600 text-white hover:bg-indigo-700 transition-all rounded-xl dark:bg-indigo-500"
-          >
-            {editingCategory ? "Update & Close" : "Create & Close"}
-          </Button>
-        </div>
-      </form>
-    </div>
-  </div>
-)}
-
+        {open && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+            <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl w-full max-w-md p-6 relative">
+              <button 
+                onClick={() => { setOpen(false); setEditingMemory(null); }} 
+                className="absolute top-3 right-3 text-gray-500 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100 text-xl font-bold"
+              >
+                ✖
+              </button>
+              <h2 className="text-2xl font-semibold mb-6 text-gray-900 dark:text-gray-100">
+                {editingMemory ? "Edit Memory" : "Add Memory"}
+              </h2>
+              <form className="space-y-4" onSubmit={handleSave}>
+                <Input 
+                  name="name" 
+                  placeholder="Memory name " 
+                  defaultValue={editingMemory?.name || ""} 
+                  required 
+                  className="rounded-xl dark:bg-gray-800 dark:text-gray-100" 
+                />
+                
+               
+                
+                <Button 
+                  type="submit" 
+                  className="w-full bg-indigo-600 text-white hover:bg-indigo-700 transition-all rounded-xl"
+                  disabled={saveMemoryMutation.isPending}
+                >
+                  {saveMemoryMutation.isPending ? "Saving..." : (editingMemory ? "Update" : "Create")}
+                </Button>
+              </form>
+            </div>
+          </div>
+        )}
       </div>
     </MainLayout>
   );

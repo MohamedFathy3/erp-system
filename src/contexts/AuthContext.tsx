@@ -4,8 +4,10 @@ import { createContext, useContext, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from '@/lib/api';
 import TokenManager from '@/lib/tokenManager';
+import {Ticket, Device} from '@/types/ticket'
 
 interface AuthUser {
+  id:number;
   name: string;
   email: string;
   phone: string;
@@ -13,6 +15,13 @@ interface AuthUser {
   avatar?: string;
   remember: boolean;
   role: string | string[];
+  phoneExt: string;
+  password: string;
+  cell: string;
+    tickets?: Ticket[];
+      latestDevice?: Device;
+
+
 }
 
 interface AuthContextType {
@@ -20,6 +29,7 @@ interface AuthContextType {
   loading: boolean;
   login: (credentials: { email: string; password: string; remember?: boolean }) => Promise<boolean>;
   logout: () => void;
+  updateUser: (user: AuthUser) => void; // ✅ أضفناها هنا
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -27,6 +37,7 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   login: async () => false,
   logout: () => {},
+  updateUser: () => {}, // ✅ لازم يبقى موجود default
 });
 
 async function fetchUser(): Promise<AuthUser> {
@@ -64,7 +75,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return res;
     },
     onSuccess: async () => {
-await queryClient.invalidateQueries({ queryKey: ['user'] });
+      await queryClient.invalidateQueries({ queryKey: ['user'] });
     },
   });
 
@@ -83,8 +94,13 @@ await queryClient.invalidateQueries({ queryKey: ['user'] });
     window.location.href = '/auth';
   };
 
+  // ✅ function updateUser
+  const updateUser = (newUser: AuthUser) => {
+    queryClient.setQueryData(['user'], newUser);
+  };
+
   return (
-    <AuthContext.Provider value={{ user: user ?? null, loading: isLoading, login, logout }}>
+    <AuthContext.Provider value={{ user: user ?? null, loading: isLoading, login, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

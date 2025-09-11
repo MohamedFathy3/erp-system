@@ -1,17 +1,15 @@
 'use client'
 import dynamic from 'next/dynamic'
 import React, { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { useAuth } from '@/contexts/AuthContext'
+import toast from 'react-hot-toast'
+import '@/styles/globals.css'
 
 const FiMail = dynamic(() => import('react-icons/fi').then(mod => mod.FiMail))
 const FiLock = dynamic(() => import('react-icons/fi').then(mod => mod.FiLock))
 const FiUser = dynamic(() => import('react-icons/fi').then(mod => mod.FiUser))
 const FiArrowRight = dynamic(() => import('react-icons/fi').then(mod => mod.FiArrowRight))
-
-import '@/styles/globals.css'
-
-import { useRouter } from 'next/navigation'
-
-import { useAuth } from '@/contexts/AuthContext'
 
 export default function AuthPage() {
   const [email, setEmail] = useState('')
@@ -21,7 +19,7 @@ export default function AuthPage() {
   const [, setError] = useState<string | null>(null)
 
   const router = useRouter()
-  const { login } = useAuth()  
+  const { login, user } = useAuth()  
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -31,11 +29,10 @@ export default function AuthPage() {
     try {
       const success = await login({ email, password, remember })
 
-      if (success) {
-        router.push('/')
-      } else {
+      if (!success) {
+        toast.error('Login failed. Please check your credentials.')
         setError('Login failed. Please check your credentials.')
-      }
+      } 
     } catch (err: unknown) {
       if (err instanceof Error) {
         setError(err.message)
@@ -46,6 +43,18 @@ export default function AuthPage() {
       setIsLoading(false)
     }
   }
+
+  useEffect(() => {
+    if (user?.role) {
+      if (user.role === 'admin') {
+        router.push('/')
+      } else if (user.role === 'employee') {
+        router.push('/employee')
+      } else {
+        router.push('/')
+      }
+    }
+  }, [user, router])
 
   useEffect(() => {
     const initParticles = () => {

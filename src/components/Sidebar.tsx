@@ -28,10 +28,12 @@ type NavItem = {
 }
 
 const navItems: NavItem[] = [
-  { name: 'Dashboard', icon: Home, href: '/' },
-  { name: 'MasterData', icon: Database, href: '/MasterData', roles: ['admin'] },
-  { name: 'IT Module', icon: ComputerIcon, href: '/It_module' },
-  { name: 'Profile', icon: UserIcon, href: '/Profile' },
+  { name: 'Dashboard', icon: Home, href: '/' ,roles: ['admin','help_desk']  },
+  { name: 'MasterData', icon: Database, href: '/MasterData', roles: ['admin','help_desk'] },
+  { name: 'IT Module', icon: ComputerIcon, href: '/It_module',roles: ['admin','help_desk']  },
+  { name: 'Profile', icon: UserIcon, href: '/Profile', roles: ['admin','help_desk']  },
+  { name: 'MasterData', icon: UserIcon, href: '/Technical_Support', roles: ['employee']  },
+
 ]
 
 export default function Sidebar({

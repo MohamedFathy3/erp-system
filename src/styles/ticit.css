@@ -1,0 +1,22 @@
+@keyframes soft-ping {
+  0% {
+    transform: scale(1);
+    opacity: 0.5;
+  }
+  70% {
+    transform: scale(1.4);
+    opacity: 0;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.soft-ping {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  border-radius: 9999px;
+  background-color: rgba(220, 38, 38, 0.4); /* Tailwind red-600 with opacity */
+  animation: soft-ping 2s ease-out infinite;
+}

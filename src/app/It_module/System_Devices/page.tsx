@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { apiFetch } from "@/lib/api";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useMemo } from "react";
-import { useRouter } from "next/navigation"; 
+import { useRouter } from "next/navigation";
+import AddDeviceModal from "@/components/dashboard/AddDeviceModal";
 
 interface Device {
   id: number;
@@ -20,31 +21,40 @@ interface Device {
   deviceModel?: { name: string };
 }
 
-// API Functions
+// API
 async function getDevices(): Promise<Device[]> {
   const json = await apiFetch("/device");
   return json.data || [];
 }
-
 async function deleteDevice(id: number) {
-  return apiFetch(`/device/${id}`, { method: "DELETE" });
+  return apiFetch(`/device/${id}`, { method: "DELETE",
+    body:JSON.stringify({itmes:[id]})
+   
+  });
 }
-
 async function deleteDevices(ids: number[]) {
   return apiFetch(`/device/delete`, {
     method: "POST",
-    body: JSON.stringify({ ids }),
+    body: JSON.stringify({ times:[ids] }),
+  });
+}
+async function toggleDeviceActive(id: number, active: boolean) {
+  return apiFetch(`/device/${id}/active`, {
+    method: "PUT",
+    body: JSON.stringify({ active }),
   });
 }
 
+
+
 export default function SystemDevicesPage() {
-   const router = useRouter();
+  const router = useRouter();
+  const queryClient = useQueryClient();
+
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<number[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editDevice, setEditDevice] = useState<Device | null>(null);
-
-  const queryClient = useQueryClient();
 
   const {
     data: devices = [],
@@ -60,13 +70,17 @@ export default function SystemDevicesPage() {
     mutationFn: (id: number) => deleteDevice(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["devices"] }),
   });
+const toggleActiveMutation = useMutation({
+  mutationFn: ({ id, active }: { id: number; active: boolean }) =>
+    toggleDeviceActive(id, active),
+  onSuccess: () => queryClient.invalidateQueries({ queryKey: ["devices"] }),
+});
 
   const deleteAllMutation = useMutation({
     mutationFn: (ids: number[]) => deleteDevices(ids),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["devices"] }),
   });
 
-  // Filter
   const filteredDevices = useMemo(() => {
     return devices.filter((d) => {
       const matchesSearch =
@@ -78,7 +92,6 @@ export default function SystemDevicesPage() {
     });
   }, [devices, search]);
 
-  // Toggle Select
   const toggleSelect = (id: number) => {
     setSelected((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
@@ -92,6 +105,11 @@ export default function SystemDevicesPage() {
       deleteAllMutation.mutate(selected);
     }
     setSelected([]);
+  };
+
+  const handleAddSuccess = () => {
+    setShowAddModal(false);
+    queryClient.invalidateQueries({ queryKey: ["devices"] });
   };
 
   return (
@@ -164,10 +182,7 @@ export default function SystemDevicesPage() {
                     "Purchase Date",
                     "Actions",
                   ].map((col) => (
-                    <th
-                      key={col}
-                      className="px-4 py-3 text-left whitespace-nowrap"
-                    >
+                    <th key={col} className="px-4 py-3 text-left whitespace-nowrap">
                       {col}
                     </th>
                   ))}
@@ -196,25 +211,33 @@ export default function SystemDevicesPage() {
                         ? `${device.memory.size} ${device.memory.type}`
                         : "-"}
                     </td>
-                    <td className="px-4 py-2">
-                      <span
-                        className={`px-2 py-1 rounded text-xs ${
-                          device.active
-                            ? "bg-green-100 text-green-700"
-                            : "bg-red-100 text-red-700"
-                        }`}
-                      >
-                        {device.active ? "Active" : "Inactive"}
-                      </span>
-                    </td>
+                   <td className="px-4 py-2">
+  <div
+    onClick={() =>
+      toggleActiveMutation.mutate({
+        id: device.id,
+        active: !device.active,
+      })
+    }
+    className={`relative w-12 h-6 flex items-center rounded-full p-1 cursor-pointer transition-colors duration-300 ${
+      device.active ? "bg-green-500" : "bg-gray-400"
+    }`}
+  >
+    <div
+      className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-300 ${
+        device.active ? "translate-x-6" : "translate-x-0"
+      }`}
+    />
+  </div>
+</td>
+
                     <td className="px-4 py-2">{device.purchaseDateFormatted}</td>
                     <td className="px-4 py-2 flex gap-2">
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => 
-                                            router.push(`/It_module/System_Devices/system/${device.id}`)
-
+                        onClick={() =>
+                          router.push(`/It_module/System_Devices/system/${device.id}`)
                         }
                       >
                         view
@@ -235,27 +258,17 @@ export default function SystemDevicesPage() {
         )}
 
         {/* Add Device Modal */}
-        {showAddModal && (
-          <div className="fixed inset-0 flex items-center justify-center bg-black/50">
-            <div className="bg-white dark:bg-gray-900 rounded-lg p-6 w-[500px] shadow-lg">
-              <h2 className="text-xl font-bold mb-4">Add Device</h2>
-              {/* Form Fields for Add */}
-              <div className="flex justify-end gap-3">
-                <Button variant="outline" onClick={() => setShowAddModal(false)}>
-                  Cancel
-                </Button>
-                <Button>Add</Button>
-              </div>
-            </div>
-          </div>
-        )}
+        <AddDeviceModal
+          isOpen={showAddModal}
+          onClose={() => setShowAddModal(false)}
+          onDeviceAdded={handleAddSuccess}
+        />
 
         {/* Edit Device Modal */}
         {editDevice && (
           <div className="fixed inset-0 flex items-center justify-center bg-black/50">
             <div className="bg-white dark:bg-gray-900 rounded-lg p-6 w-[500px] shadow-lg">
               <h2 className="text-xl font-bold mb-4">Edit Device</h2>
-              {/* Form Fields for Edit */}
               <p className="mb-4 text-gray-600 dark:text-gray-300">
                 Editing device: {editDevice.serialNumber}
               </p>

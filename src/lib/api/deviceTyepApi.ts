@@ -1,4 +1,3 @@
-import { apiFetch } from "../api";
 
 // lib/api/deviceTyepApi.ts
 export interface Category {

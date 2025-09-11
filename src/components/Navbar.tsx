@@ -65,7 +65,7 @@ export default function Navbar({
           <Button 
             variant="ghost" 
             size="icon"
-            onClick={() => window.open('/reports', '_blank')}
+  onClick={() => window.open(window.location.href, "_blank")} 
             className="text-blue-400 hover:text-blue-600 dark:hover:text-blue-400"
             title="Open Reports"
           >

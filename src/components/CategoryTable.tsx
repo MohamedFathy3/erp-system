@@ -49,20 +49,7 @@ export default function CategoryTable({
   loading,
   error,
   search,
-  setSearch,
-  currentPage,
-  setCurrentPage,
-  pagination,
   selectedItems,
-  toggleSelectItem,
-  toggleSelectAll,
-  handleDelete,
-  handleBulkDelete,
-  open,
-  setOpen,
-  editingCategory,
-  setEditingCategory,
-  handleSave,
 }: CategoryTableProps) {
   const Checkbox = ({ checked, onChange, indeterminate, className }: CheckboxProps) => (
     <input

@@ -5,15 +5,18 @@ import MainLayout from "@/components/MainLayout";
 import { apiFetch } from "@/lib/api";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/button";
-import ActionModal from '@/components/dashboard/ActionModal';
 import Image from "next/image";
+import AssignDeviceModal from '@/components/system/addaction';
+import DeviceActionModal from '@/components/system/DeviceActionModal';
 
 import { 
   Cpu, 
   MemoryStick, 
   Calendar, 
   Shield, 
+  FileText,
   User, 
+  Users,
   Clock,
   AlertTriangle,
   CheckCircle,
@@ -22,24 +25,109 @@ import {
   HardDrive,
   Activity,
   BarChart3,
-  SmartphoneCharging,
-  Server
+  UserX,
+ 
+  Server,
+  Laptop,
+  HardDriveIcon,
+
 } from "lucide-react";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Device } from "@/types/deviceAction";
 
 async function getDeviceById(id: string) {
   const json = await apiFetch(`/device/${id}`);
   return json.data;
 }
 
+
+async function downlaodhostry(id:number) {
+  
+const json = await apiFetch(`/device-history-pdf/${id}`,{
+  method:"POST",
+   headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      filters: {},
+      orderBy: "id",
+      orderByDirection: "desc",
+      perPage: 10,
+      paginate: 1
+    })
+})
+  return json.data;
+
+}
+async function getDeviceHistory(id: string) {
+  const json = await apiFetch(`/device/history/${id}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      filters: {},
+      orderBy: "id",
+      orderByDirection: "desc",
+      perPage: 10,
+      paginate: 1
+    })
+  });
+  return json.data;
+}
+
+async function getDeviceSpecs(id: string) {
+  const json = await apiFetch(`/device/specs/${id}`);
+  return json.data;
+}
+
 export default function DeviceDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const [activeTab, setActiveTab] = useState('overview');
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [selectedDeviceId, setSelectedDeviceId] = useState<number>();
+  const router = useRouter();
 
   const { data: device, isLoading, isError } = useQuery({
     queryKey: ["device", id],
     queryFn: () => getDeviceById(id),
   });
+
+  const { data: historyData, isLoading: historyLoading } = useQuery({
+    queryKey: ["device-history", id],
+    queryFn: () => getDeviceHistory(id),
+    enabled: activeTab === 'history',
+  });
+
+  const { data: specsData, isLoading: specsLoading } = useQuery({
+    queryKey: ["device-specs", id],
+    queryFn: () => getDeviceSpecs(id),
+    enabled: activeTab === 'specs',
+  });
+
+  const [showActionModal, setShowActionModal] = useState(false);
+  const [selectedDevice, setSelectedDevice] = useState<{id: number, serialNumber: string}>();
+
+  const handleAddAction = (deviceId: number, deviceSerialNumber: string) => {
+    setSelectedDevice({ id: deviceId, serialNumber: deviceSerialNumber });
+    setShowActionModal(true);
+  };
+
+  const handleAssignDevice = (deviceId: number) => {
+    setSelectedDevice({ id: deviceId, serialNumber: '' });
+    setShowAssignModal(true);
+  };
+
+  const handleActionComplete = () => {
+    setShowActionModal(false);
+    setShowAssignModal(false);
+    setSelectedDevice(undefined);
+  };
+
+  const handleClick = () => {
+    router.push(`It_module/System_Devices/view/${id}`);
+  };
 
   if (isLoading) return (
     <MainLayout>
@@ -67,6 +155,18 @@ export default function DeviceDetailsPage() {
     </MainLayout>
   );
 
+  // Render content based on active tab
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'overview':
+        return <OverviewTab device={device} />;
+      case 'history':
+        return <HistoryTab historyData={historyData} isLoading={historyLoading} />;
+      default:
+        return <OverviewTab device={device} />;
+    }
+  };
+
   return (
     <MainLayout>
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 p-4 md:p-6">
@@ -75,7 +175,7 @@ export default function DeviceDetailsPage() {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
             <div className="flex items-start gap-4">
               <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-xl">
-                <SmartphoneCharging className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+                <Laptop className="h-8 w-8 text-blue-600 dark:text-blue-400" />
               </div>
               <div>
                 <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
@@ -112,161 +212,185 @@ export default function DeviceDetailsPage() {
                 </div>
               </div>
             </div>
-
-          <Button
-  className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 px-4 py-2.5 rounded-lg shadow-md text-white"
-  onClick={() => {
-    const event = new CustomEvent("open-action-modal", { detail: device });
-    window.dispatchEvent(event);
-  }}
->
-  <Plus className="h-5 w-5" />
-  Add Action
-</Button>
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => handleAddAction(device.id, device.serialNumber)}
+                className="flex items-center gap-1"
+              >
+                <Plus className="h-4 w-4" />
+                Add Action
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => handleAssignDevice(device.id)}
+                className="flex items-center gap-1 bg-blue-600 text-white hover:bg-blue-700"
+              >
+                <User className="h-4 w-4" />
+                Assign
+              </Button>
+            </div>
           </div>
         </div>
-<ActionModal />
 
         {/* Tabs Navigation */}
-        <div className="flex border-b border-gray-200 dark:border-gray-700 mb-6">
-          <button
-            className={`px-4 py-3 font-medium text-sm md:text-base flex items-center gap-2 ${activeTab === 'overview' ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'}`}
-            onClick={() => setActiveTab('overview')}
-          >
-            <Activity className="h-4 w-4" />
-            Overview
-          </button>
-          <button
-            className={`px-4 py-3 font-medium text-sm md:text-base flex items-center gap-2 ${activeTab === 'specs' ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'}`}
-            onClick={() => setActiveTab('specs')}
-          >
-            <BarChart3 className="h-4 w-4" />
-            Specifications
-          </button>
-          <button
-            className={`px-4 py-3 font-medium text-sm md:text-base flex items-center gap-2 ${activeTab === 'history' ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'}`}
-            onClick={() => setActiveTab('history')}
-          >
-            <Clock className="h-4 w-4" />
-            History
-          </button>
+        <div className="flex border-b border-gray-200 dark:border-gray-700 mb-6 overflow-x-auto">
+          <TabButton 
+            icon={<Activity className="h-4 w-4" />} 
+            label="Overview" 
+            isActive={activeTab === 'overview'} 
+            onClick={() => setActiveTab('overview')} 
+          />
+          <TabButton 
+            icon={<BarChart3 className="h-4 w-4" />} 
+            label="Specifications" 
+            isActive={activeTab === 'specs'} 
+            onClick={() => setActiveTab('specs')} 
+          />
+          <TabButton 
+            icon={<Clock className="h-4 w-4" />} 
+            label="History" 
+            isActive={activeTab === 'history'} 
+            onClick={() => setActiveTab('history')} 
+          />
+          {/* <TabButton 
+            icon={<Cctv className="h-4 w-4" />} 
+            label="Monitoring" 
+            isActive={activeTab === 'monitoring'} 
+            onClick={() => setActiveTab('monitoring')} 
+          /> */}
         </div>
 
-        {/* Main Content */}
+        {/* Main Content - Tab Specific */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column - Device Details */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Specifications Card */}
-            <Card className="rounded-2xl shadow-lg border-0 overflow-hidden">
-              <div className="bg-gradient-to-r from-blue-600 to-blue-500 p-4 text-white">
-                <h2 className="text-lg font-semibold flex items-center gap-2">
-                  <Server className="h-5 w-5" />
-                  Device Specifications
-                </h2>
-              </div>
-              <CardContent className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-                <DetailItem 
-                  label="Condition" 
-                  value={device.condition} 
-                  icon={<Activity className="h-4 w-4 text-blue-500" />}
-                />
-                <DetailItem 
-                  label="Status" 
-                  value={device.deviceStatus?.name} 
-                  icon={<CheckCircle className="h-4 w-4 text-green-500" />}
-                />
-                <DetailItem 
-                  label="Purchase Date" 
-                  value={device.purchaseDateFormatted} 
-                  icon={<Calendar className="h-4 w-4 text-purple-500" />}
-                />
-                <DetailItem 
-                  label="Warranty Expire" 
-                  value={device.warrantyExpireDateFormatted}
-                  status={new Date(device.warrantyExpireDate) < new Date() ? "expired" : "valid"}
-                  icon={<Shield className="h-4 w-4 text-amber-500" />}
-                />
-                {device.gpu && (
-                  <DetailItem 
-                    label="GPU" 
-                    value={`${device.gpu.model} (${device.gpu.vram})`} 
-                    icon={<HardDrive className="h-4 w-4 text-indigo-500" />}
-                  />
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Performance Metrics Card */}
-            <Card className="rounded-2xl shadow-lg border-0">
-              <div className="bg-gradient-to-r from-purple-600 to-purple-500 p-4 text-white">
-                <h2 className="text-lg font-semibold flex items-center gap-2">
-                  <BarChart3 className="h-5 w-5" />
-                  Performance Metrics
-                </h2>
-              </div>
-              <CardContent className="p-6">
-                <div className="grid grid-cols-2 gap-6">
-                  <div className="text-center">
-                    <div className="bg-blue-100 dark:bg-blue-900/30 h-20 w-20 rounded-full flex items-center justify-center mx-auto mb-3">
-                      <Cpu className="h-8 w-8 text-blue-600 dark:text-blue-400" />
-                    </div>
-                    <h3 className="font-medium text-gray-900 dark:text-white">CPU Usage</h3>
-                    <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">24%</p>
-                  </div>
-                  <div className="text-center">
-                    <div className="bg-purple-100 dark:bg-purple-900/30 h-20 w-20 rounded-full flex items-center justify-center mx-auto mb-3">
-                      <MemoryStick className="h-8 w-8 text-purple-600 dark:text-purple-400" />
-                    </div>
-                    <h3 className="font-medium text-gray-900 dark:text-white">Memory Usage</h3>
-                    <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">62%</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+          {/* Left Column - Tab Content */}
+          <div className="lg:col-span-2">
+            {renderTabContent()}
           </div>
 
           {/* Right Column - Actions and User Info */}
           <div className="space-y-6">
-            {/* Latest Actions Card */}
+            {/* Quick Actions Card */}
             <Card className="rounded-2xl shadow-lg border-0 overflow-hidden">
-              <div className="bg-gradient-to-r from-amber-600 to-amber-500 p-4 text-white">
+              <div className="bg-gradient-to-r from-blue-600 to-blue-500 p-4 text-white">
                 <h2 className="text-lg font-semibold flex items-center gap-2">
-                  <Clock className="h-5 w-5" />
-                  Recent Actions
+                  <Activity className="h-5 w-5" />
+                  Quick Actions
+                </h2>
+              </div>
+              <CardContent className="p-6 space-y-3">
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start gap-2"
+                  onClick={() => handleAddAction(device.id, device.serialNumber)}
+                >
+                  <Plus className="h-4 w-4" />
+                  Add Action
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start gap-2"
+                  onClick={() => handleAssignDevice(device.id)}
+                >
+                  <User className="h-4 w-4" />
+                  Assign Device
+                </Button>
+                {/* <Button 
+                  variant="outline" 
+                  className="w-full justify-start gap-2"
+                  onClick={handleClick}
+                >
+                  <FileText className="h-4 w-4" />
+                  View Full Details
+                </Button> */}
+              </CardContent>
+            </Card>
+
+            {/* Device Status Card */}
+            <Card className="rounded-2xl shadow-lg border-0 overflow-hidden">
+              <div className="bg-gradient-to-r from-blue-600 to-blue-500 p-4 text-white">
+                <h2 className="text-lg font-semibold flex items-center gap-2">
+                  <CheckCircle className="h-5 w-5" />
+                  Assigned Employee
                 </h2>
               </div>
               <CardContent className="p-6">
-                {device.history && device.history.length > 0 ? (
-                  <div className="space-y-4">
-                    {device.history.slice(0, 3).map((action: { title: string; createdAt: string; createdBy?: { name: string } }, idx: number) => (
-                      <div
-                        key={idx}
-                        className="p-4 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50/50 dark:bg-gray-700/30 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors"
-                      >
-                        <p className="font-medium text-gray-900 dark:text-white">{action.title}</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 flex items-center gap-1">
-                          <Calendar className="h-3 w-3" />
-                          {action.createdAt}
-                        </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-center gap-1">
-                          <User className="h-3 w-3" />
-                          By {action.createdBy?.name}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-6">
-                    <Clock className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                    <p className="text-gray-500 dark:text-gray-400">No actions recorded yet.</p>
-                  </div>
-                )}
-                <Button variant="outline" className="w-full mt-6 rounded-lg flex items-center gap-2">
-                  View All Actions
-                  <Clock className="h-4 w-4" />
-                </Button>
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-gray-700 dark:text-gray-300">name</span>
+                 <span>
+                    {device.employee?.name}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-gray-700 dark:text-gray-300">Position</span>
+                  <span className="font-medium text-gray-900 dark:text-white">{device.employee?.position || "N/A"}</span>
+                </div>
+
+                  <div className="flex items-center justify-between mb-4">
+                  <span className="text-gray-700 dark:text-gray-300">Department</span>
+                  <span className="font-medium text-gray-900 dark:text-white">{device.employee?.department || "N/A"}</span>
+                </div>
+                
+                 <div className="flex items-center justify-between mb-4">
+                  <span className="text-gray-700 dark:text-gray-300">Company</span>
+                  <span className="font-medium text-gray-900 dark:text-white">{device.employee?.company || "N/A"}</span>
+                </div>
+
+                   <div className="flex items-center justify-between mb-4">
+                  <span className="text-gray-700 dark:text-gray-300">createdAt</span>
+                  <span className="font-medium text-gray-900 dark:text-white">{device.employee?.createdAt || "N/A"}</span>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-700 dark:text-gray-300">givenBy</span>
+                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                    device.employee?.givenBy  && new Date(device.employee?.givenBy ) < new Date() 
+                      ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"
+                      : "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300"
+                  }`}>
+                    {device.employee?.givenBy || "N/A"}
+                  </span>
+                </div>
               </CardContent>
             </Card>
+
+ <Card className="rounded-2xl shadow-lg border-0 overflow-hidden">
+              <div className="bg-gradient-to-r from-blue-600 to-blue-500 p-4 text-white">
+                <h2 className="text-lg font-semibold flex items-center gap-2">
+                  <CheckCircle className="h-5 w-5" />
+                  Device Status
+                </h2>
+              </div>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-gray-700 dark:text-gray-300">Status</span>
+                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                    device.active
+                      ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300"
+                      : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"
+                  }`}>
+                    {device.active ? "Active" : "Inactive"}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-gray-700 dark:text-gray-300">Condition</span>
+                  <span className="font-medium text-gray-900 dark:text-white">{device.condition || "N/A"}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-700 dark:text-gray-300">Warranty</span>
+                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                    device.warrantyExpireDate && new Date(device.warrantyExpireDate) < new Date() 
+                      ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"
+                      : "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300"
+                  }`}>
+                    {device.warrantyExpireDateFormatted || "N/A"}
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+
 
             {/* Registered By Card */}
             <Card className="rounded-2xl shadow-lg border-0 overflow-hidden">
@@ -303,13 +427,323 @@ export default function DeviceDetailsPage() {
             </Card>
           </div>
         </div>
+
+        {/* Modals */}
+        {selectedDevice && (
+          <DeviceActionModal
+            isOpen={showActionModal}
+            onClose={() => setShowActionModal(false)}
+            onActionComplete={handleActionComplete}
+            deviceId={selectedDevice.id}
+            deviceSerialNumber={selectedDevice.serialNumber}
+          />
+        )}
+
+        {selectedDevice && (
+          <AssignDeviceModal
+            isOpen={showAssignModal}
+            onClose={() => setShowAssignModal(false)}
+            onAssignmentComplete={handleActionComplete}
+            selectedDeviceId={selectedDevice.id}
+          />
+        )}
       </div>
     </MainLayout>
   );
 }
 
-// Component for consistent detail items
+// Tab Button Component
+function TabButton({ icon, label, isActive, onClick }: { 
+  icon: React.ReactNode; 
+  label: string; 
+  isActive: boolean; 
+  onClick: () => void;
+}) {
+  return (
+    <button
+      className={`px-4 py-3 font-medium text-sm md:text-base flex items-center gap-2 whitespace-nowrap ${
+        isActive 
+          ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400' 
+          : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+      }`}
+      onClick={onClick}
+    >
+      {icon}
+      {label}
+    </button>
+  );
+}
 
+// Overview Tab Component
+function OverviewTab({ device }: { device: Device }) {
+  return (
+    <div className="space-y-6">
+      {/* Specifications Card */}
+      <Card className="rounded-2xl shadow-lg border-0 overflow-hidden">
+        <div className="bg-gradient-to-r from-blue-600 to-blue-500 p-4 text-white">
+          <h2 className="text-lg font-semibold flex items-center gap-2">
+            <Server className="h-5 w-5" />
+            Device Specifications
+          </h2>
+        </div>
+        <CardContent className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+          <DetailItem 
+            label="Condition" 
+  value={device.condition ?? "N/A"} 
+            icon={<Activity className="h-4 w-4 text-blue-500" />}
+          />
+          <DetailItem 
+            label="Status" 
+  value={device.deviceStatus?.name ?? "N/A"} 
+            icon={<CheckCircle className="h-4 w-4 text-green-500" />}
+          />
+          <DetailItem 
+            label="Purchase Date" 
+  value={device.purchaseDateFormatted ?? "N/A"} 
+            icon={<Calendar className="h-4 w-4 text-purple-500" />}
+          />
+          <DetailItem 
+            label="Warranty Expire" 
+            value={device.warrantyExpireDateFormatted ?? "N?A"}
+            status={device.warrantyExpireDate && new Date(device.warrantyExpireDate) < new Date() ? "expired" : "valid"}
+            icon={<Shield className="h-4 w-4 text-amber-500" />}
+          />
+          {device.cpu && (
+            <DetailItem 
+              label="CPU" 
+              value={device.cpu.name} 
+              icon={<Cpu className="h-4 w-4 text-indigo-500" />}
+            />
+          )}
+          {device.memory && (
+            <DetailItem 
+              label="Memory" 
+              value={`${device.memory.size} GB ${device.memory.type}`} 
+              icon={<MemoryStick className="h-4 w-4 text-pink-500" />}
+            />
+          )}
+          {device.gpu && (
+            <DetailItem 
+              label="GPU" 
+              value={`${device.gpu.model} (${device.gpu.vram})`} 
+              icon={<HardDrive className="h-4 w-4 text-indigo-500" />}
+            />
+          )}
+          {device.storage && (
+            <DetailItem 
+              label="Storage" 
+              value={`${device.storage.size} GB ${device.storage.type}`} 
+              icon={<HardDriveIcon className="h-4 w-4 text-teal-500" />}
+            />
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Performance Metrics Card */}
+      <Card className="rounded-2xl shadow-lg border-0">
+        <div className="bg-gradient-to-r from-purple-600 to-purple-500 p-4 text-white">
+          <h2 className="text-lg font-semibold flex items-center gap-2">
+            <BarChart3 className="h-5 w-5" />
+            Performance Metrics
+          </h2>
+        </div>
+        <CardContent className="p-6">
+          <div className="grid grid-cols-2 gap-6">
+            <div className="text-center">
+              <div className="bg-blue-100 dark:bg-blue-900/30 h-20 w-20 rounded-full flex items-center justify-center mx-auto mb-3">
+                <Cpu className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+              </div>
+              <h3 className="font-medium text-gray-900 dark:text-white">CPU Usage</h3>
+              <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">24%</p>
+            </div>
+            <div className="text-center">
+              <div className="bg-purple-100 dark:bg-purple-900/30 h-20 w-20 rounded-full flex items-center justify-center mx-auto mb-3">
+                <MemoryStick className="h-8 w-8 text-purple-600 dark:text-purple-400" />
+              </div>
+              <h3 className="font-medium text-gray-900 dark:text-white">Memory Usage</h3>
+              <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">62%</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// Specifications Tab Component
+
+// History Tab Component
+function HistoryTab({ historyData, isLoading }: { historyData: any, isLoading: boolean }) {
+  if (isLoading) {
+    return (
+      <Card className="rounded-2xl shadow-lg border-0 overflow-hidden">
+        <div className="bg-gradient-to-r from-blue-600 to-blue-500 p-4 text-white">
+          <h2 className="text-lg font-semibold flex items-center gap-2">
+            <Clock className="h-5 w-5" />
+            Device History
+          </h2>
+        </div>
+        <CardContent className="p-6">
+          <div className="animate-pulse space-y-4">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="h-16 bg-gray-300 dark:bg-gray-700 rounded"></div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="rounded-2xl shadow-lg border-0 overflow-hidden">
+      <div className="bg-gradient-to-r from-blue-600 to-blue-500 p-6 text-white">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <h2 className="text-xl font-semibold flex items-center gap-2">
+            <Clock className="h-6 w-6" />
+            Device History
+          </h2>
+          <div className="flex items-center gap-2 text-sm bg-blue-500/20 px-3 py-1.5 rounded-full">
+            <span className="bg-white/20 p-1 rounded-full">
+              <FileText className="h-4 w-4" />
+            </span>
+            <span>{historyData?.length || 0} records found</span>
+          </div>
+        </div>
+      </div>
+      <CardContent className="p-0">
+        {historyData && historyData.length > 0 ? (
+          <div className="overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 text-left border-b border-gray-200 dark:border-gray-600">
+                    <th className="px-6 py-4 text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                      <div className="flex items-center">
+                        <Activity className="h-4 w-4 mr-2" />
+                        Action Type
+                      </div>
+                    </th>
+                    <th className="px-6 py-4 text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                      <div className="flex items-center">
+                        <FileText className="h-4 w-4 mr-2" />
+                        Note
+                      </div>
+                    </th>
+                    <th className="px-6 py-4 text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                      <div className="flex items-center">
+                        <Users className="h-4 w-4 mr-2" />
+                        Involved Parties
+                      </div>
+                    </th>
+                    <th className="px-6 py-4 text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                      <div className="flex items-center">
+                        <Calendar className="h-4 w-4 mr-2" />
+                        Date & Time
+                      </div>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                  {historyData.map((item: any, index: number) => (
+                    <tr 
+                      key={item.id} 
+                      className="transition-all duration-200 hover:bg-blue-50/30 dark:hover:bg-gray-800/30"
+                    >
+                      <td className="px-6 py-4">
+                        <div className="flex items-center">
+                          <div className={`p-2 rounded-lg flex items-center ${
+                            item.action_type === "Hardware Issues" ? 
+                              "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300" :
+                            item.action_type === "Email & Communication" ? 
+                              "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300" :
+                            item.action_type === "Software Installation" ? 
+                              "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300" :
+                              "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300"
+                          }`}>
+                            <span className="text-xs font-medium">{item.action_type}</span>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 max-w-xs">
+                        <div className="group relative">
+                          <p className="text-sm text-gray-800 dark:text-gray-200 line-clamp-2 font-medium">
+                            {item.note}
+                          </p>
+                          {item.note && item.note.length > 60 && (
+                            <div className="absolute invisible group-hover:visible z-10 bottom-full left-0 mb-2 w-64 p-3 bg-gray-900 dark:bg-gray-700 text-white text-sm rounded-lg shadow-xl">
+                              <div className="font-semibold mb-1">Full Note:</div>
+                              {item.note}
+                              <div className="absolute top-full left-4 border-4 border-transparent border-t-gray-900 dark:border-t-gray-700"></div>
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex flex-col space-y-2">
+                          {item.help_desk_name && (
+                            <div className="flex items-center text-sm">
+                              <div className="bg-blue-100 dark:bg-blue-900/20 p-1.5 rounded-full mr-2">
+                                <User className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                              </div>
+                              <div>
+                                <div className="text-gray-500 dark:text-gray-400 text-xs">Help Desk</div>
+                                <div className="text-gray-900 dark:text-white font-medium">{item.help_desk_name}</div>
+                              </div>
+                            </div>
+                          )}
+                          {item.employee_name && (
+                            <div className="flex items-center text-sm">
+                              <div className="bg-green-100 dark:bg-green-900/20 p-1.5 rounded-full mr-2">
+                                <User className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
+                              </div>
+                              <div>
+                                <div className="text-gray-500 dark:text-gray-400 text-xs">Employee</div>
+                                <div className="text-gray-900 dark:text-white font-medium">{item.employee_name}</div>
+                              </div>
+                            </div>
+                          )}
+                          {!item.help_desk_name && !item.employee_name && (
+                            <div className="text-sm text-gray-500 dark:text-gray-400 italic flex items-center">
+                              <UserX className="h-4 w-4 mr-1" />
+                              No parties involved
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex flex-col bg-gray-50 dark:bg-gray-800/50 p-2.5 rounded-lg">
+                          <div className="flex items-center text-sm text-gray-500 dark:text-gray-400 mb-1">
+                            <Calendar className="h-3.5 w-3.5 mr-1" />
+                            {item.createdAt}
+                           
+                          </div>
+                        
+
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        ) : (
+          <div className="text-center py-12">
+            <div className="bg-gray-100 dark:bg-gray-800 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Clock className="h-8 w-8 text-gray-400" />
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No history recorded</h3>
+            <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto">
+              There are no history records for this device yet. Actions will appear here once they are logged.
+            </p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// Detail Item Component
 function DetailItem({ label, value, icon, status }: { label: string; value: string; icon?: React.ReactNode; status?: string }) {
   return (
     <div className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">

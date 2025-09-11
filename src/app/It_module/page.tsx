@@ -30,7 +30,7 @@ const SMALL_CARDS = [
     description: "Manage ticketing settings",
     icon: Bell,
     buttonText: "View",
-    href:'It_module/Ticketing',
+    href:'It_module/ticket',
 
     color: {
       iconBg: "bg-green-100",
