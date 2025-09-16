@@ -148,7 +148,7 @@ const toggleActiveMutation = useMutation({
         </div>
 
         {/* Loading / Error */}
-        {isLoading && <p>Loading devices...</p>}
+      
         {isError && <p className="text-red-500">Failed to fetch devices.</p>}
 
         {/* Table */}
