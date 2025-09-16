@@ -290,40 +290,7 @@ export default function DeviceDetailsPage() {
           {/* Right Column - Actions and User Info */}
           <div className="space-y-6">
             {/* Quick Actions Card */}
-            <Card className="rounded-2xl shadow-lg border-0 overflow-hidden">
-              <div className="bg-gradient-to-r from-blue-600 to-blue-500 p-4 text-white">
-                <h2 className="text-lg font-semibold flex items-center gap-2">
-                  <Activity className="h-5 w-5" />
-                  Quick Actions
-                </h2>
-              </div>
-              <CardContent className="p-6 space-y-3">
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start gap-2"
-                  onClick={() => handleAddAction(device.id, device.serialNumber)}
-                >
-                  <Plus className="h-4 w-4" />
-                  Add Action
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start gap-2"
-                  onClick={() => handleAssignDevice(device.id)}
-                >
-                  <User className="h-4 w-4" />
-                  Assign Device
-                </Button>
-                {/* <Button 
-                  variant="outline" 
-                  className="w-full justify-start gap-2"
-                  onClick={handleClick}
-                >
-                  <FileText className="h-4 w-4" />
-                  View Full Details
-                </Button> */}
-              </CardContent>
-            </Card>
+           
 
             {/* Device Status Card */}
             <Card className="rounded-2xl shadow-lg border-0 overflow-hidden">

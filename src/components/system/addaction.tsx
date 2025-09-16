@@ -143,7 +143,7 @@ const AssignDeviceModal: React.FC<AssignDeviceModalProps> = ({
               <option value="">Select Employee</option>
               {employees.map(employee => (
                 <option key={employee.id} value={employee.id}>
-                  {employee.name} {employee.department && `- ${employee.department}`}
+                  {employee.name} 
                 </option>
               ))}
             </select>
