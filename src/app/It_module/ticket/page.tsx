@@ -226,25 +226,7 @@ const handleChangeStatusAndNavigate = async (id: number, status: string) => {
     }
   };
 
-  if (loading && data.length === 0) {
-    return (
-      <MainLayout>
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
-        </div>
-      </MainLayout>
-    );
-  }
-
-  if (error) {
-    return (
-      <MainLayout>
-        <div className="flex justify-center items-center h-64">
-          <div className="text-red-500">Error: {error}</div>
-        </div>
-      </MainLayout>
-    );
-  }
+ 
 
   const filteredData = data.filter((item) =>
     item.title.toLowerCase().includes(search.toLowerCase()) ||
