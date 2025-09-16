@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useCallback } from 'react'
+import { useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -52,7 +52,7 @@ export default function SupportTicketsPage() {
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState('')
 
-  // Fetch tickets with improved caching
+  // استخدام React Query لجلب البيانات
   const { data: tickets, isLoading: ticketsLoading, error: ticketsError } = useQuery({
     queryKey: ['tickets'],
     queryFn: async () => {
@@ -67,10 +67,9 @@ export default function SupportTicketsPage() {
       const data = await response.json();
       return data.data || [];
     },
-    staleTime: 5 * 60 * 1000,
+    staleTime: 5 * 60 * 1000, // البيانات تصبح قديمة بعد 5 دقائق
   })
 
-  // Fetch categories only when needed (when modal is opened)
   const { data: categories, isLoading: categoriesLoading } = useQuery({
     queryKey: ['categories'],
     queryFn: async () => {
@@ -85,45 +84,41 @@ export default function SupportTicketsPage() {
       const data = await response.json();
       return data.data || [];
     },
-    staleTime: 10 * 60 * 1000, // Longer cache time for categories
-    enabled: isModalOpen, // Only fetch when modal is open
+    staleTime: 5 * 60 * 1000,
   })
 
-  // Priorities with improved error handling and caching
-  const { data: priorities, isLoading: prioritiesLoading } = useQuery({
-    queryKey: ['priorities'],
-    queryFn: async () => {
-      try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/priorities`, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          return data.data || [];
+const { data: priorities, isLoading: prioritiesLoading } = useQuery({
+  queryKey: ['priorities'],
+  queryFn: async () => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/priorities`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
-        
-        throw new Error('API not available, using fallback data');
-      } catch (error) {
-        console.warn('Failed to fetch priorities, using fallback data:', error);
-        
-        const fallbackPriorities = [
-          { id: 'low', name: 'Low' },
-          { id: 'medium', name: 'Medium' },
-          { id: 'high', name: 'High' },
-          { id: 'urgent', name: 'Urgent' }
-        ];
-        
-        return fallbackPriorities;
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        return data.data || [];
       }
-    },
-    staleTime: 10 * 60 * 1000, // Longer cache time
-    enabled: isModalOpen, // Only fetch when modal is open
-  })
+      
+      throw new Error('API not available, using fallback data');
+    } catch (error) {
+      console.warn('Failed to fetch priorities, using fallback data:', error);
+      
+      const fallbackPriorities = [
+        { id: 'low', name: 'Low' },
+        { id: 'medium', name: 'Medium' },
+        { id: 'high', name: 'High' },
+        { id: 'urgent', name: 'Urgent' }
+      ];
+      
+      return fallbackPriorities;
+    }
+  },
+  staleTime: 5 * 60 * 1000,
+});
 
-  // Types with conditional fetching
   const { data: types, isLoading: typesLoading } = useQuery({
     queryKey: ['types'],
     queryFn: async () => {
@@ -149,40 +144,39 @@ export default function SupportTicketsPage() {
       const data = await response.json();
       return data.data || [];
     },
-    staleTime: 10 * 60 * 1000,
-    enabled: isModalOpen, // Only fetch when modal is open
+    staleTime: 5 * 60 * 1000,
   })
 
-  // Apply filter with useCallback to prevent unnecessary recreations
-  const applyFilter = useCallback((filter: string, ticketsData: Ticket[] = []) => {
-    if (!ticketsData.length) return;
-    
-    if (filter === 'all') {
-      setFilteredTickets(ticketsData);
-    } else {
-      setFilteredTickets(ticketsData.filter((t: Ticket) => t.status === filter));
-    }
-  }, []);
+  // Apply filter when tickets or activeFilter changes
 
-  // Apply filters when tickets or activeFilter changes
-  useEffect(() => {
-    if (tickets && tickets.length) {
-      applyFilter(activeFilter, tickets);
+  const applyFilter = (filter: string) => {
+  if (!tickets) return;
+  
+  if (filter === 'all') {
+    setFilteredTickets(tickets);
+  } else {
+    setFilteredTickets(tickets.filter((t: Ticket) => t.status === filter));
+  }
+}
+
+    useState(() => {
+    if (tickets) {
+      applyFilter(activeFilter);
     }
-  }, [tickets, activeFilter, applyFilter]);
+  })
 
   const handleFilterClick = (filter: string) => {
     setActiveFilter(filter);
+    applyFilter(filter);
   }
 
-  // Memoized input change handler
-  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setNewTicket(prev => ({
       ...prev,
       [name]: value
     }));
-  }, []);
+  }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -193,7 +187,7 @@ export default function SupportTicketsPage() {
     }
   }
 
-  // Create ticket mutation
+  // استخدام React Query للتحولات (Mutations)
   const createTicketMutation = useMutation({
     mutationFn: async (formData: FormData) => {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/create-by-employee`, {
@@ -208,7 +202,7 @@ export default function SupportTicketsPage() {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Failed to create ticket');
       }
-      toast.success('Ticket created successfully!')
+      toast.success('success add ticket')
       return response.json();
     },
 
@@ -225,7 +219,8 @@ export default function SupportTicketsPage() {
         device_id: '1',
         status: 'pending'
       });
-      setError('');
+      setError('Ticket created successfully!');
+      setTimeout(() => setError(''), 3000);
     },
     onError: (error: Error) => {
       setError(error.message || 'An error occurred while creating the ticket');
@@ -262,8 +257,7 @@ export default function SupportTicketsPage() {
     }
   }
 
-  // Memoized utility functions
-  const getStatusColor = useCallback((status: string) => {
+  const getStatusColor = (status: string) => {
     switch (status) {
       case 'open': return 'bg-blue-100 text-blue-800 border border-blue-200';
       case 'closed': return 'bg-green-100 text-green-800 border border-green-200';
@@ -271,9 +265,9 @@ export default function SupportTicketsPage() {
       case 'progress': return 'bg-purple-100 text-purple-800 border border-purple-200';
       default: return 'bg-gray-100 text-gray-800 border border-gray-200';
     }
-  }, []);
+  }
 
-  const getPriorityColor = useCallback((priority: string) => {
+  const getPriorityColor = (priority: string) => {
     switch (priority) {
       case 'high': return 'bg-red-100 text-red-800 border border-red-200';
       case 'medium': return 'bg-orange-100 text-orange-800 border border-orange-200';
@@ -281,9 +275,9 @@ export default function SupportTicketsPage() {
       case 'urgent': return 'bg-purple-100 text-purple-800 border border-purple-200';
       default: return 'bg-gray-100 text-gray-800 border border-gray-200';
     }
-  }, []);
+  }
 
-  const formatDate = useCallback((dateString: string) => {
+  const formatDate = (dateString: string) => {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
@@ -293,9 +287,9 @@ export default function SupportTicketsPage() {
       hour: '2-digit',
       minute: '2-digit'
     });
-  }, []);
+  }
 
-  const closeModal = useCallback(() => {
+  const closeModal = () => {
     setIsModalOpen(false);
     setError('');
     setNewTicket({
@@ -308,26 +302,30 @@ export default function SupportTicketsPage() {
       device_id: '1',
       status: 'pending'
     });
-  }, []);
+  }
 
-  const refreshData = useCallback(async () => {
+  const refreshData = async () => {
+    // إعادة جلب جميع البيانات
     queryClient.invalidateQueries({ queryKey: ['tickets'] });
+    queryClient.invalidateQueries({ queryKey: ['categories'] });
+    queryClient.invalidateQueries({ queryKey: ['priorities'] });
+    queryClient.invalidateQueries({ queryKey: ['types'] });
+    
     setError('Data refreshed successfully!');
     setTimeout(() => setError(''), 3000);
-  }, [queryClient]);
+  }
 
-  const loading = ticketsLoading;
+  const loading = ticketsLoading || categoriesLoading || prioritiesLoading || typesLoading;
 
   return (
-    <div className="min-h-screen p-4 md:p-6">
+    <div className="min-h-screen  p-4 md:p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <button
-          onClick={() => router.back()}
-          className="px-4 py-2 m-5 p-5 rounded-lg"
-        >
-          &#8592; Back
-        </button>
+        <div className="flex justify-between items-center mb-4">
+  
+
+</div>
+        
 
         <div className="mb-8 text-center">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Support Tickets</h1>
@@ -344,7 +342,12 @@ export default function SupportTicketsPage() {
             Refresh Data
           </button>
         </div>
-
+<button
+    onClick={() => router.back()}  // العودة للصفحة السابقة
+    className="px-4 py-2  m-5 p-5 rounded-lg "
+  >
+    &#8592; Back
+  </button>
         {/* Error/Success Message */}
         {error && (
           <div className={`px-4 py-3 rounded-lg mb-6 ${
@@ -480,13 +483,9 @@ export default function SupportTicketsPage() {
                       required
                     >
                       <option value="">Select Type</option>
-                      {typesLoading ? (
-                        <option disabled>Loading types...</option>
-                      ) : (
-                        types?.map((type: Type) => (
-                          <option key={type.id} value={type.id}>{type.name}</option>
-                        ))
-                      )}
+                      {types?.map((type: Type) => (
+                        <option key={type.id} value={type.id}>{type.name}</option>
+                      ))}
                     </select>
                   </div>
                   
@@ -497,44 +496,89 @@ export default function SupportTicketsPage() {
                       name="category_id"
                       value={newTicket.category_id}
                       onChange={handleInputChange}
-                      className="w-full px-3 py-2 bg-white text-black border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                      className="w-full px-3 py-2  bg-white text-black border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
                       required
                     >
-                      <option value="">Select Category</option>
-                      {categoriesLoading ? (
-                        <option disabled>Loading categories...</option>
-                      ) : (
-                        categories?.map((category: Category) => (
-                          <option key={category.id} value={category.id}>{category.name}</option>
-                        ))
-                      )}
+                      <option className='' value="">Select Category</option>
+                      {categories?.map((category: Category) => (
+                        <option  key={category.id} value={category.id}>{category.name}</option>
+                      ))}
                     </select>
                   </div>
                 </div>
 
                 <div>
-                  <label htmlFor="priority" className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
+                  <label htmlFor="priority" className="block  bg-white text-black text-sm font-medium text-gray-700 mb-1">Priority</label>
                   <select
                     id="priority"
                     name="priority"
                     value={newTicket.priority}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 bg-white text-black rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                    className="w-full px-3 py-2 border border-gray-300  bg-white text-black rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
                     required
                   >
                     <option value="">Select Priority</option>
-                    {prioritiesLoading ? (
-                      <option disabled>Loading priorities...</option>
-                    ) : (
-                      priorities?.map((priority: Priority) => (
-                        <option key={priority.id} value={priority.id}>{priority.name}</option>
-                      ))
-                    )}
+                    {priorities?.map((priority: Priority) => (
+                      <option key={priority.id} value={priority.id}>{priority.name}</option>
+                    ))}
                   </select>
                 </div>
                 
-                {/* Rest of the form remains the same */}
-                {/* ... */}
+                <div>
+                  <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">Ticket Title</label>
+                  <input
+                    type="text"
+                    id="title"
+                    name="title"
+                    value={newTicket.title}
+                    onChange={handleInputChange}
+                    placeholder="Enter a descriptive title for your ticket"
+                    className="w-full px-3 py-2 border border-gray-300 bg-white text-black rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                  <textarea
+                    id="content"
+                    name="content"
+                    value={newTicket.content}
+                    onChange={handleInputChange}
+                    rows={4}
+                    placeholder="Provide detailed information about your issue or request"
+                    className="w-full px-3 py-2 border border-gray-300 bg-white text-black rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                    required
+                  ></textarea>
+                </div>
+                
+                <div>
+                  <label htmlFor="avatar" className="block text-sm font-medium text-gray-700 mb-1">Attachment (Optional)</label>
+                  <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg">
+                    <div className="space-y-1 text-center">
+                      <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
+                        <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                      <div className="flex text-sm text-gray-600 justify-center">
+                        <label htmlFor="avatar" className="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-indigo-500 focus-within:ring-offset-2">
+                          <span>Upload a file</span>
+                          <input 
+                            id="avatar" 
+                            name="avatar" 
+                            type="file" 
+                            className="sr-only" 
+                            onChange={handleFileChange}
+                          />
+                        </label>
+                        <p className="pl-1">or drag and drop</p>
+                      </div>
+                      <p className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
+                    </div>
+                  </div>
+                  {newTicket.avatar && (
+                    <p className="mt-2 text-sm text-gray-600">Selected file: {newTicket.avatar.name}</p>
+                  )}
+                </div>
                 
                 <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
                   <button
