@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery,useQueryClient } from '@tanstack/react-query';
 import { X } from 'lucide-react';
 import { fetchEmployees, fetchDevices, addDeviceAction } from '@/lib/api/deviceActionApi';
 import { DeviceAction } from '@/types/deviceAction';
@@ -38,24 +38,29 @@ const AssignDeviceModal: React.FC<AssignDeviceModalProps> = ({
     queryFn: fetchDevices,
     enabled: !selectedDeviceId, // Only fetch devices if no device is pre-selected
   });
+const queryClient = useQueryClient();
 
-  // Add device action mutation
-  const addActionMutation = useMutation({
-    mutationFn: addDeviceAction,
-    onSuccess: () => {
-      toast.success('Device assigned successfully!');
-      onAssignmentComplete();
-      setFormData({
-        device_id: selectedDeviceId || undefined,
-        employee_id: undefined,
-        action_type: 'assign',
-        note: ''
-      });
-    },
-    onError: (error: Error) => {
-      toast.error(`Failed to assign device: ${error.message}`);
-    },
-  });
+const addActionMutation = useMutation({
+  mutationFn: addDeviceAction,
+  onSuccess: () => {
+    toast.success('Device assigned successfully!');
+
+    queryClient.invalidateQueries({ queryKey: ['device', formData.device_id] });
+    queryClient.invalidateQueries({ queryKey: ['device-history', formData.device_id] });
+    queryClient.invalidateQueries({ queryKey: ['device-specs', formData.device_id] });
+
+    onAssignmentComplete();
+    setFormData({
+      device_id: selectedDeviceId || undefined,
+      employee_id: undefined,
+      action_type: 'assign',
+      note: ''
+    });
+  },
+  onError: (error: Error) => {
+    toast.error(`Failed to assign device: ${error.message}`);
+  },
+});
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
