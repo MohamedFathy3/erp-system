@@ -44,48 +44,63 @@ const AddDeviceModal: React.FC<AddDeviceModalProps> = ({ isOpen, onClose, onDevi
   // Fetch all data
   const { data: brands = [] } = useQuery({ 
     queryKey: ['brands'], 
-    queryFn: fetchBrands 
+    queryFn: fetchBrands ,
+     enabled: isOpen,
     
   });
 
  const { data: devices = [] } = useQuery({
   queryKey: ['device'],
   queryFn: fetchDeviceTypes,
+  enabled: isOpen,
 });
   
   const { data: allDeviceModels = [] } = useQuery({ 
     queryKey: ['deviceModels'], 
-    queryFn: () => fetchDeviceModels()
+    queryFn: () => fetchDeviceModels(),
+    enabled: isOpen,
   });
   
   const { data: processors = [] } = useQuery({ 
     queryKey: ['processors'], 
-    queryFn: fetchProcessors 
+    queryFn: fetchProcessors ,
+        enabled: isOpen,
+
   });
   
   const { data: graphicCards = [] } = useQuery({ 
     queryKey: ['graphicCards'], 
-    queryFn: fetchGraphicCards 
+    queryFn: fetchGraphicCards ,
+        enabled: isOpen,
+
   });
   
   const { data: memories = [] } = useQuery({ 
     queryKey: ['memories'], 
-    queryFn: fetchMemories 
+    queryFn: fetchMemories ,
+        enabled: isOpen,
+
   });
   
   const { data: storages = [] } = useQuery({ 
     queryKey: ['storages'], 
-    queryFn: fetchStorages 
+    queryFn: fetchStorages ,
+        enabled: isOpen,
+
   });
   
   const { data: deviceStatuses = [] } = useQuery({ 
     queryKey: ['deviceStatuses'], 
-    queryFn: fetchDeviceStatuses 
+    queryFn: fetchDeviceStatuses ,
+        enabled: isOpen,
+
   });
   
   const { data: employees = [] } = useQuery({ 
     queryKey: ['employees'], 
-    queryFn: fetchEmployees 
+    queryFn: fetchEmployees ,
+        enabled: isOpen,
+
   });
 
  // Filter device models based on selected brand

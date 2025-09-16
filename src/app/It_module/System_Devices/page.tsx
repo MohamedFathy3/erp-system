@@ -28,17 +28,18 @@ async function getDevices(): Promise<Device[]> {
   return json.data || [];
 }
 async function deleteDevice(id: number) {
-  return apiFetch(`/device/${id}`, { method: "DELETE",
-    body:JSON.stringify({itmes:[id]})
-   
+  return apiFetch(`/device/${id}`, { 
+    method: "DELETE",
+    body: JSON.stringify({ itmes:[id] }) // هنا كتبها itmes بالغلط
   });
 }
 async function deleteDevices(ids: number[]) {
   return apiFetch(`/device/delete`, {
     method: "POST",
-    body: JSON.stringify({ times:[ids] }),
+    body: JSON.stringify({ times:[ids] }), // هنا كتبت times
   });
 }
+
 async function toggleDeviceActive(id: number, active: boolean) {
   return apiFetch(`/device/${id}/active`, {
     method: "PUT",
