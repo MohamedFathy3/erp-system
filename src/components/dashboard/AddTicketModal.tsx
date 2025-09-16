@@ -9,7 +9,6 @@ import { Ticket, DeviceFilter } from '@/types/ticket';
 import toast from 'react-hot-toast';
 import { Employee } from '@/types/deviceAction';
 import { Category } from '../CategoryTable';
-type ItemData = Record<string, string | number | boolean  >; 
 
 interface AddTicketModalProps {
   isOpen: boolean;

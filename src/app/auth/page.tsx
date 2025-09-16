@@ -30,6 +30,7 @@ export default function AuthPage() {
       const success = await login({ email, password, remember })
 
       if (!success) {
+        console.log(success)
         toast.error('Login failed. Please check your credentials.')
         setError('Login failed. Please check your credentials.')
       } 

@@ -32,7 +32,9 @@ const navItems: NavItem[] = [
   { name: 'MasterData', icon: Database, href: '/MasterData', roles: ['admin','help_desk'] },
   { name: 'IT Module', icon: ComputerIcon, href: '/It_module',roles: ['admin','help_desk']  },
   { name: 'Profile', icon: UserIcon, href: '/Profile', roles: ['admin','help_desk']  },
-  { name: 'MasterData', icon: UserIcon, href: '/Technical_Support', roles: ['employee']  },
+  { name: 'employee', icon: UserIcon, href: '/employee', roles: ['employee']  },
+  { name: 'tickets', icon: ComputerIcon, href: '/employee/tickets', roles: ['employee']  },
+  { name: 'Profile', icon: UserIcon, href: '/Profile', roles: ['employee']  },
 
 ]
 

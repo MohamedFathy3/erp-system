@@ -5,7 +5,6 @@ import Card from './card'
 export default function EmployeePage() {
   return (
     <div>
-      <Header />
     
       <Card />
     </div>

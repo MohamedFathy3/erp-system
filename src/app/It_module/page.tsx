@@ -16,7 +16,7 @@ const SMALL_CARDS = [
     title: "System Devices",
     description: "Manage IT settings",
     icon: Settings,
-    buttonText: "Configure",
+    buttonText: "view",
     href:'It_module/System_Devices',
     color: {
       iconBg: "bg-blue-100",

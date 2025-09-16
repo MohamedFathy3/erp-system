@@ -22,7 +22,9 @@ interface AddItemModalProps<T> {
   addFunction: (data: Record<string, string>) => Promise<T>; // Specify the return type of addFunction
   queryKey: string[];
 }
+type AnyObject = { [key: string]: string | number | boolean | undefined };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const AddItemModal = <T extends { [key: string]: any }>({
   isOpen,
   onClose,

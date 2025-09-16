@@ -261,3 +261,11 @@ export const addStorage = async (size: number, type: string): Promise<StorageIte
   });
   return data.data;
 };
+
+
+export const updateDevice = async (id: number, device: Device) => {
+  return fetchWithAuth(`${API_URL}/device/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(device),
+  });
+};

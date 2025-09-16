@@ -339,7 +339,8 @@ staleTime: 5 * 60 * 60 * 1000,
             )}
 
             <Button
-              className="bg-green-500 text-white hover:bg-green-700 transition-all dark:bg-green-500 dark:hover:bg-green-500 rounded-xl"
+             variant="default"
+              className=" text-white  transition-all dark:bg-blue-500 dark:hover:bg-blue-500 rounded-xl"
               onClick={() => setShowFilter((prev) => !prev)}
             >
               <Filter className="w-4 h-4 mr-2" />
@@ -432,7 +433,8 @@ staleTime: 5 * 60 * 60 * 1000,
             <div className="flex flex-col md:flex-row gap-4 pt-4">
               <Button
                 onClick={handleFilter}
-                className="w-full bg-green-500 text-white hover:bg-green-600 transition-all rounded-md px-5 h-12 text-lg flex items-center justify-center gap-2 dark:bg-green-600 dark:hover:bg-green-500"
+                 variant="default"
+                className="w-full  text-white transition-all rounded-md px-5 h-12 text-lg flex items-center justify-center gap-2 dark:bg-blue-600 dark:hover:bg-blue-500"
               >
                 <Filter className="w-5 h-5" />
                 Apply Filters
@@ -451,6 +453,9 @@ staleTime: 5 * 60 * 60 * 1000,
 
         {/* Table */}
         <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-md border border-gray-100 dark:border-gray-700 overflow-x-auto">
+           <div className="bg-blue-100 dark:bg-blue-800 text-blue-400 dark:text-blue-100 font-semibold text-lg px-6 py-4 rounded-t-2xl  dark:border-blue-900">
+   
+  </div>
           <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="text-sm text-gray-600 dark:text-gray-400">

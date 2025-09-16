@@ -29,7 +29,7 @@ interface AuthContextType {
   loading: boolean;
   login: (credentials: { email: string; password: string; remember?: boolean }) => Promise<boolean>;
   logout: () => void;
-  updateUser: (user: AuthUser) => void; // ✅ أضفناها هنا
+  updateUser: (user: AuthUser) => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -37,7 +37,7 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   login: async () => false,
   logout: () => {},
-  updateUser: () => {}, // ✅ لازم يبقى موجود default
+  updateUser: () => {}, 
 });
 
 async function fetchUser(): Promise<AuthUser> {
@@ -46,6 +46,7 @@ async function fetchUser(): Promise<AuthUser> {
 
   const res = await apiFetch('/fetch-auth');
   return res.data;
+  
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -72,6 +73,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         body: JSON.stringify(credentials),
       });
       TokenManager.setToken(res.token);
+      console.log(res)
+
       return res;
     },
     onSuccess: async () => {

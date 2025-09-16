@@ -11,7 +11,7 @@ export default function EmployeePage() {
 
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-indigo-900 to-black flex flex-col items-center justify-center px-4 py-8">
+    <div className="min-h-screen  flex flex-col items-center justify-center px-4 py-8">
       {/* Header Section */}
       <div className="text-center mb-10">
         <h1 className="text-4xl font-extrabold text-white drop-shadow-lg mb-2">

@@ -333,7 +333,7 @@ export default function Page() {
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Issue Categories</h1>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Device Type </h1>
           </div>
           <div className="flex gap-2 flex-wrap">
             {selectedItems.size > 0 && (
@@ -348,7 +348,8 @@ export default function Page() {
             )}
 
             <Button
-              className="bg-green-500 text-white hover:bg-green-700 transition-all dark:bg-green-500 dark:hover:bg-green-500 rounded-xl"
+            variant="default"
+              className=" text-white  transition-all dark:bg-blue-500 dark:hover:bg-blue-500 rounded-xl"
               onClick={() => setShowFilter((prev) => !prev)}
             >
               <Filter className="w-4 h-4 mr-2" />
@@ -379,7 +380,7 @@ export default function Page() {
         {/* Search */}
         <div className="flex gap-2 items-center">
           <Input
-            placeholder="Search by size..."
+            placeholder="Search by type..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
@@ -402,7 +403,7 @@ export default function Page() {
                   type="text"
                   value={filters.name}
                   onChange={(e) => setFilters(prev => ({ ...prev, name: e.target.value }))}
-                  placeholder="Filter by name"
+                  placeholder="Filter by type"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-800 dark:text-white dark:border-gray-600"
                 />
               </div>
@@ -443,8 +444,9 @@ export default function Page() {
 
             <div className="flex flex-col md:flex-row gap-4 pt-4">
               <Button
+              variant="default"
                 onClick={handleFilter}
-                className="w-full bg-green-500 text-white hover:bg-green-600 transition-all rounded-md px-5 h-12 text-lg flex items-center justify-center gap-2 dark:bg-green-600 dark:hover:bg-green-500"
+                className="w-full  text-white transition-all rounded-md px-5 h-12 text-lg flex items-center justify-center gap-2 dark:bg-blue-600 dark:hover:bg-blue-500"
               >
                 <Filter className="w-5 h-5" />
                 Apply Filters
@@ -463,6 +465,9 @@ export default function Page() {
 
         {/* Table */}
         <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-md border border-gray-100 dark:border-gray-700 overflow-x-auto">
+           <div className="bg-blue-100 dark:bg-blue-800 text-blue-400 dark:text-blue-100 font-semibold text-lg px-6 py-4 rounded-t-2xl  dark:border-blue-900">
+   
+  </div>
           <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="text-sm text-gray-600 dark:text-gray-400">

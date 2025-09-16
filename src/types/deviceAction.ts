@@ -4,6 +4,7 @@ export interface DeviceAction {
   employee_id?: number;   
   action_type: string;
   note: string;
+  type:string
 }
 
 export interface Employee {
@@ -35,7 +36,7 @@ export interface Device {
     model: string;
     vram: string;
   };
-  storage?: {
+  hdDriver?: {
     size: number;
     type: string;
   };

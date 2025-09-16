@@ -306,7 +306,7 @@ export default function TicketDetailsPage({ params }: { params: Promise<{ id: st
           <div key={status.id} className="flex items-start">
             <div className="flex flex-col items-center mr-4">
               <div className={`w-3 h-3 rounded-full ${index === ticket.statuses.length - 1 ? 'bg-indigo-500' : 'bg-gray-300'}`}></div>
-              {index < ticket.statuses.length - 1 && <div className="w-0.5 h-12 bg-gray-300"></div>}
+              {index < ticket.statuses.length - 1 && <div className="w-0.5 h-12 "></div>}
             </div>
             <div className="flex-1 mb-4">
               <div className="flex justify-between items-center">

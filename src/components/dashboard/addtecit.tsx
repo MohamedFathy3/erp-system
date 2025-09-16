@@ -9,18 +9,7 @@ interface ticket{
     company?: string,
     dailyStatus:boolean
 }
-interface FilterPayload {
-  filters: {
-    name?: string;
-    type?: string;
-  };
-  orderBy: string;
-  orderByDirection: string;
-  perPage: number;
-  page: number;
-  paginate: boolean;
-  deleted?: boolean;
-}
+
 
 const categoray = async()=>{
     const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/category`);

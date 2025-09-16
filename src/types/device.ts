@@ -28,7 +28,36 @@ export interface Device {
   warrantyExpireDateFormatted: string;
   purchaseDateFormatted: string;
 }
-
+export interface DeviceTable {
+  id: number;
+  serialNumber: string;
+  type: string;
+  memory?: { size: number; type: string };
+  cpu?: { name: string };
+  brand?: { name: string };
+  deviceModel?: { name: string };
+    condition: string;  // ensure this is defined correctly
+  note: string;
+  purchaseDate: string;
+  warrantyExpireDate: string;
+  memoryId?: number;
+  graphicCardId?: number;
+  processorId?: number;
+  brandId?: number;
+  device_status_id: number;
+  employee?: number;
+  deviceModelId?: number;
+  storages: Storage[];
+  active: number;
+  userId?: number;
+  companyId?: number;
+  deviceStatus?: number;
+  processor?: Processor;
+  graphicCard?: GraphicCard;
+  memoryType?: string;
+  warrantyExpireDateFormatted: string;
+  purchaseDateFormatted: string;
+}
 
 export interface Storage {
   type: string;

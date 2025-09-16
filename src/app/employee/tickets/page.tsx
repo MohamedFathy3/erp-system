@@ -318,7 +318,7 @@ const { data: priorities, isLoading: prioritiesLoading } = useQuery({
   const loading = ticketsLoading || categoriesLoading || prioritiesLoading || typesLoading;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-indigo-50 p-4 md:p-6">
+    <div className="min-h-screen  p-4 md:p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex justify-between items-center mb-4">
@@ -328,8 +328,8 @@ const { data: priorities, isLoading: prioritiesLoading } = useQuery({
         
 
         <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold text-gray-900">Support Tickets</h1>
-          <p className="text-gray-600 mt-2">Manage and track your support tickets</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Support Tickets</h1>
+          <p className="text-gray-600 mt-2 dark:text-white">Manage and track your support tickets</p>
           
           {/* Refresh Button */}
           <button
@@ -344,7 +344,7 @@ const { data: priorities, isLoading: prioritiesLoading } = useQuery({
         </div>
 <button
     onClick={() => router.back()}  // العودة للصفحة السابقة
-    className="px-4 py-2 bg-transparent border-gray-100  m-5 p-5 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors"
+    className="px-4 py-2  m-5 p-5 rounded-lg "
   >
     &#8592; Back
   </button>

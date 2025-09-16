@@ -194,7 +194,7 @@ const filters = [
 ]
 
 export default function MasterDataPage() {
-  const [activeFilter, setActiveFilter] = useState('All')
+const [activeFilter, setActiveFilter] = useState('Settings')
 
   const filteredManagementCards = activeFilter === 'All'
     ? managementCards

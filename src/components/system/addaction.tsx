@@ -121,7 +121,7 @@ const AssignDeviceModal: React.FC<AssignDeviceModalProps> = ({
               <option value="">Select Device</option>
               {devices.map(device => (
                 <option key={device.id} value={device.id}>
-                  {device.serialNumber} - {device.type} {device.brand && `(${device.brand})`}
+                  {device.serialNumber} - {device.brand && `(${device.brand})`}
                 </option>
               ))}
             </select>

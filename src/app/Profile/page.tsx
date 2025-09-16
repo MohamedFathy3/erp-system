@@ -162,13 +162,13 @@ const handleSubmit = async (e: React.FormEvent) => {
   
 const deviceInfo: DeviceInfo | null = user.latestDevice || null
 
-const overdueTickets: Ticket[] = userTickets.filter(ticket => 
-  ticket.status === 'postponed' || ticket.dailyStatus === false || ticket.dailyStatus === undefined
-)
+// const overdueTickets: Ticket[] = userTickets.filter(ticket => 
+//   ticket.status === 'postponed' || ticket.dailyStatus === false || ticket.dailyStatus === undefined
+// )
 
-const assignedTickets: Ticket[] = userTickets.filter(ticket => 
-  ticket.status === 'open' || ticket.status === 'pending'
-)
+// const assignedTickets: Ticket[] = userTickets.filter(ticket => 
+//   ticket.status === 'open' || ticket.status === 'pending'
+// )
 
 
 
@@ -472,7 +472,7 @@ const assignedTickets: Ticket[] = userTickets.filter(ticket =>
             {activeTab === 'tickets' && (
               <div className="space-y-6">
                 {/* التذاكر المتأخرة */}
-                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
+                {/* <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
                   <div className="flex justify-between items-center mb-4">
                     <h2 className="text-xl font-bold">المهام المتأخرة</h2>
                     <button className="text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300">
@@ -505,18 +505,18 @@ const assignedTickets: Ticket[] = userTickets.filter(ticket =>
                       <p className="text-gray-500">لا توجد مهام متأخرة</p>
                     </div>
                   )}
-                </div>
+                </div> */}
 
                 {/* التذاكر المعينة */}
-                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
+                {/* <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
                   <div className="flex justify-between items-center mb-4">
                     <h2 className="text-xl font-bold">المهام المعينة</h2>
                     <button className="text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300">
                       عرض الكل
                     </button>
-                  </div>
+                  </div> */}
                   
-                  {assignedTickets.length > 0 ? (
+                  {/* {assignedTickets.length > 0 ? (
                     <div className="space-y-4">
                       {assignedTickets.map(ticket => (
                         <div key={ticket.id} className="border rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
@@ -539,9 +539,9 @@ const assignedTickets: Ticket[] = userTickets.filter(ticket =>
                     <div className="text-center py-8 bg-gray-50 dark:bg-gray-700 rounded-lg">
                       <i className="fas fa-check-circle text-4xl text-green-500 mb-3"></i>
                       <p className="text-gray-500">لا توجد مهام معينة</p>
-                    </div>
-                  )}
-                </div>
+                    </div> */}
+                  {/* )} */}
+                {/* </div> */}
               </div>
             )}
           </div>
