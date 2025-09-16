@@ -200,7 +200,7 @@ export default function TicketDetailsPage({ params }: { params: Promise<{ id: st
           return;
         }
 
-        const response = await fetch(`https://api.pyramidsfreight.com/api/ticket/${ticketId}`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/ticket/${ticketId}`, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
           }
@@ -238,7 +238,7 @@ export default function TicketDetailsPage({ params }: { params: Promise<{ id: st
         localStorage.removeItem(cacheKey);
       }
       
-      const response = await fetch(`https://api.pyramidsfreight.com/api/ticket/${ticketId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/ticket/${ticketId}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
