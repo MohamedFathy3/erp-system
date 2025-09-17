@@ -115,14 +115,14 @@ const managementCards = [
     title: 'Training and Development',
     description: 'Manage training and development settings.',
     icon: BookText,
-    category: 'Settings',
+    category: 'HR',
   },
   {
     id: 'performance-appraisals',
     title: 'Performance Appraisals',
     description: 'Manage performance appraisals settings.',
     icon: LineChart,
-    category: 'Settings',
+    category: 'HR',
   },
   {
     id: 'ram',
@@ -190,6 +190,7 @@ const filters = [
     icon: Warehouse,
     count: managementCards.filter(item => item.category === 'Warehouse').length,
     color: 'text-orange-500',
+    border_olor:'orange-500'
   },
 ]
 
@@ -203,7 +204,7 @@ const [activeFilter, setActiveFilter] = useState('Settings')
   return (
     <div className="mt-8">
       <div className="mt-10 flex flex-wrap justify-center items-center gap-6">
-        {filters.map(({ label, icon: Icon, color }) => {
+        {filters.map(({ label, icon: Icon, color, border_olor }) => {
           const isActive = activeFilter === label
           return (
                 <button
@@ -211,10 +212,10 @@ const [activeFilter, setActiveFilter] = useState('Settings')
                   onClick={() => setActiveFilter(label)}
                   className={`
                     group relative flex flex-col items-center justify-center w-16 h-16 rounded-full
-                    transition-all duration-300 border-2
+                    transition-all duration-300 border-2 border-
                     ${isActive
                       ? 'bg-blue-100 dark:bg-blue-900 border-blue-500 shadow-md'
-                      : 'bg-white dark:bg-gray-800 border-gray-300 hover:border-blue-400 hover:shadow'
+                      : `bg-white dark:bg-gray-800 border-${border_olor} hover:border-blue-400 hover:shadow`
                     }
                   `}
                 >

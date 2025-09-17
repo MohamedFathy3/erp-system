@@ -240,15 +240,19 @@ const filteredDeviceModels = useMemo(() => {
     required
     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
   >
-    {devices.length > 0 ? (
-      devices.map((devices) => (
-        <option key={devices} value={devices}>
-          {devices.charAt(0).toUpperCase() + devices.slice(1)}
-        </option>
-      ))
-    ) : (
-      <option disabled>Loading...</option>
-    )}
+   {devices.length > 0 ? (
+  <>
+    <option value="">select</option>
+    {devices.map((device, index) => (
+      <option key={index} value={device}>
+        {device.charAt(0).toUpperCase() + device.slice(1)}
+      </option>
+    ))}
+  </>
+) : (
+  <option disabled></option>
+)}
+
   </select>
               </div>
 
@@ -280,9 +284,10 @@ const filteredDeviceModels = useMemo(() => {
                   required
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
                 >
+                  <option value="">select</option>
                   <option value="new">New</option>
                   <option value="used">Used</option>
-                  <option value="refurbished">Refurbished</option>
+           
                 </select>
               </div>
 
@@ -318,6 +323,7 @@ const filteredDeviceModels = useMemo(() => {
                     onChange={handleChange}
                     className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
                   >
+                    
                     <option value="">Select Brand</option>
                     {brands.map(brand => (
                       <option key={brand.id} value={brand.id}>{brand.name}</option>

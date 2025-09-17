@@ -68,7 +68,7 @@ export default function Page() {
   const [pagination, setPagination] = useState<PaginationMeta>({
     current_page: 1,
     last_page: 1,
-    per_page: 15,
+    per_page: 7,
     total: 0,
     links: []
   });
@@ -79,33 +79,43 @@ export default function Page() {
     }
   }, [currentPage]);
 
-  async function fetchTickets(page = 1) {
-    try {
-      setLoading(true);
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/ticket?page=${page}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('API Error:', errorText);
-        throw new Error("Failed to fetch data");
-      }
-      
-      const json: ApiResponse = await response.json();
-      setData(json.data || []);
-      setPagination(json.meta);
-    } catch (err) {
-      toast.error('Failed to fetch tickets');
-      setError(err instanceof Error ? err.message : "An error occurred");
-    } finally {
-      setLoading(false);
+async function fetchTickets(page = 1) {
+  try {
+    setLoading(true);
+    const token = localStorage.getItem("token");
+
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/ticket/index`, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        filters: {},                
+        orderBy: orderBy,           
+        orderByDirection: orderByDirection,
+        perPage: perPage,
+        paginate: true,           
+        page: page,                 
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("API Error:", errorText);
+      throw new Error("Failed to fetch data");
     }
+
+    const json: ApiResponse = await response.json();
+    setData(json.data || []);
+    setPagination(json.meta); // ممكن السيرفر مش يرجع meta لو paginate=false
+  } catch (err) {
+    toast.error("Failed to fetch tickets");
+    setError(err instanceof Error ? err.message : "An error occurred");
+  } finally {
+    setLoading(false);
   }
+}
 
 
 
