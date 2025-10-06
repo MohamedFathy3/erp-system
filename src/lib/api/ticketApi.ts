@@ -1,14 +1,13 @@
 // api/ticketApi.ts
+import {apiFetch} from '@/lib/api';
+
 import { Ticket, Category, Device, Employee,DeviceFilter } from '@/types/ticket';
 
 export const addTicketAdmin = async (ticket: Ticket) => {
-  const token = localStorage.getItem('token');
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/ticket`, {
+ 
+  const res = await apiFetch(`/ticket`, {
     method: "POST",
-    headers: { 
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${token}`
-    },
+ 
     body: JSON.stringify(ticket),
   });
   
@@ -20,11 +19,9 @@ export const addTicketAdmin = async (ticket: Ticket) => {
 };
 
 export const fetchCategories = async (): Promise<Category[]> => {
-  const token = localStorage.getItem('token');
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/category`, {
-    headers: {
-      "Authorization": `Bearer ${token}`
-    }
+
+  const res = await apiFetch(`/category`, {
+ 
   });
   
   if (!res.ok) {
@@ -36,18 +33,15 @@ export const fetchCategories = async (): Promise<Category[]> => {
 };
 
 export const fetchDevices = async (filters?: DeviceFilter): Promise<Device[]> => {
-  const token = localStorage.getItem('token');
+
   
   const payload = {
     filters: filters || {},
   };
 
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/type/index`, {
+  const res = await apiFetch(`/type/index`, {
     method: "POST",
-    headers: { 
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${token}`
-    },
+ 
     body: JSON.stringify(payload),
   });
   
@@ -60,11 +54,9 @@ export const fetchDevices = async (filters?: DeviceFilter): Promise<Device[]> =>
 };
 
 export const fetchEmployees = async (): Promise<Employee[]> => {
-  const token = localStorage.getItem('token');
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/user`, {
-    headers: {
-      "Authorization": `Bearer ${token}`
-    }
+
+  const res = await apiFetch(`/user`, {
+    
   });
   
   if (!res.ok) {

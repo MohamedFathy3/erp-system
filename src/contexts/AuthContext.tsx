@@ -3,11 +3,10 @@
 import { createContext, useContext, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from '@/lib/api';
-import TokenManager from '@/lib/tokenManager';
-import {Ticket, Device} from '@/types/ticket'
+import { Ticket, Device } from '@/types/ticket';
 
 interface AuthUser {
-  id:number;
+  id: number;
   name: string;
   email: string;
   phone: string;
@@ -18,10 +17,8 @@ interface AuthUser {
   phoneExt: string;
   password: string;
   cell: string;
-    tickets?: Ticket[];
-      latestDevice?: Device;
-
-
+  tickets?: Ticket[];
+  latestDevice?: Device;
 }
 
 interface AuthContextType {
@@ -37,33 +34,31 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   login: async () => false,
   logout: () => {},
-  updateUser: () => {}, 
+  updateUser: () => {},
 });
 
-async function fetchUser(): Promise<AuthUser> {
-  const token = TokenManager.getToken();
-  if (!token) throw new Error('No token');
-
-  const res = await apiFetch('/fetch-auth');
-  return res.data;
-  
+async function fetchUser(): Promise<AuthUser | null> {
+  try {
+    const res = await apiFetch('/fetch-auth'); 
+    return res.data;
+  } catch (error) {
+    return null;
+  }
 }
-
+  
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const queryClient = useQueryClient();
 
-  const { data: user, isLoading, error } = useQuery<AuthUser, Error>({
+  // تسجيل الاستعلام الذي يتم تحميله
+  const { data: user, isLoading } = useQuery<AuthUser | null, Error>({
     queryKey: ['user'],
-    queryFn: fetchUser,
-    staleTime: 5 * 60 * 1000,
+    queryFn: async () => {
+      const fetchedUser = await fetchUser();
+      return fetchedUser;
+    },
+    staleTime: 60 * 1000,
     retry: false,
   });
-
-  useEffect(() => {
-    if (error) {
-      TokenManager.clearToken();
-    }
-  }, [error]);
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: { email: string; password: string; remember?: boolean }) => {
@@ -72,9 +67,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(credentials),
       });
-      TokenManager.setToken(res.token);
-      console.log(res)
-
       return res;
     },
     onSuccess: async () => {
@@ -86,28 +78,47 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       await loginMutation.mutateAsync(credentials);
       return true;
-    } catch {
+    } catch (error) {
       return false;
     }
   };
 
-  const logout = () => {
-    TokenManager.clearToken();
-    queryClient.removeQueries({ queryKey: ['user'] });
-    window.location.href = '/auth';
-  };
+  const logout = async () => {
+  try {
+    await apiFetch('/logout', {
+      method: 'POST',
+      credentials: 'include' ,
+        body: JSON.stringify({}) 
 
-  // ✅ function updateUser
+    });
+  } catch (error) {
+    // optional error handling
+  }
+
+  queryClient.removeQueries({ queryKey: ['user'] });
+  window.location.href = '/auth';
+};
+
+
   const updateUser = (newUser: AuthUser) => {
     queryClient.setQueryData(['user'], newUser);
   };
 
   return (
-    <AuthContext.Provider value={{ user: user ?? null, loading: isLoading, login, logout, updateUser }}>
+    <AuthContext.Provider
+      value={{
+        user: user ?? null,
+        loading: isLoading,
+        login,
+        logout,
+        updateUser,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
 }
+
 
 export function useAuth() {
   return useContext(AuthContext);

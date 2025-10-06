@@ -154,36 +154,42 @@ const filters = [
     icon: Settings,
     count: managementCards.filter(item => item.category === 'Settings').length,
     color: 'text-blue-500',
+    border_olor:'blue-500'
   },
   {
     label: 'Geography',
     icon: Globe,
     count: managementCards.filter(item => item.category === 'Geography').length,
     color: 'text-green-500',
+    border_olor:'green-500'
   },
   {
     label: 'Finance',
     icon: DollarSign,
     count: managementCards.filter(item => item.category === 'Finance').length,
     color: 'text-yellow-500',
+    border_olor:'yellow-500'
   },
   {
     label: 'HR',
     icon: Users,
     count: managementCards.filter(item => item.category === 'HR').length,
     color: 'text-red-500',
+    border_olor:'red-500'
   },
   {
     label: 'Third Party',
     icon: Archive,
     count: managementCards.filter(item => item.category === 'Third Party').length,
     color: 'text-purple-500',
+    border_color:'purple-500'
   },
   {
     label: 'HR Partners',
     icon: Users,
     count: managementCards.filter(item => item.category === 'HR Partners').length,
     color: 'text-pink-500',
+    border_color:'pink-500'
   },
   {
     label: 'Warehouse',
@@ -203,44 +209,63 @@ const [activeFilter, setActiveFilter] = useState('Settings')
 
   return (
     <div className="mt-8">
-      <div className="mt-10 flex flex-wrap justify-center items-center gap-6">
-        {filters.map(({ label, icon: Icon, color, border_olor }) => {
-          const isActive = activeFilter === label
-          return (
-                <button
-                  key={label}
-                  onClick={() => setActiveFilter(label)}
-                  className={`
-                    group relative flex flex-col items-center justify-center w-16 h-16 rounded-full
-                    transition-all duration-300 border-2 border-
-                    ${isActive
-                      ? 'bg-blue-100 dark:bg-blue-900 border-blue-500 shadow-md'
-                      : `bg-white dark:bg-gray-800 border-${border_olor} hover:border-blue-400 hover:shadow`
-                    }
-                  `}
-                >
-                  <Icon
-                    className={`
-                      w-6 h-6 transition-transform duration-1000 ease-in-out
-                      group-hover:rotate-[360deg]
-                      ${isActive ? color : 'text-gray-500 dark:text-gray-300'}
-                    `}
-                  />
-                  <span
-                    className={`
-                      absolute bottom-[-1.5rem] text-xs opacity-0 group-hover:opacity-100 transition-opacity
-                      ${isActive ? 'text-black dark:text-white' : 'text-gray-400'}
-                    `}
-                  >
-                    {label}
-                  </span>
-                </button>
-              )
-            })}
-          </div>
+<div className="mt-10 flex flex-wrap justify-center items-center gap-6">
+  {filters.map(({ label, icon: Icon, color, border_olor }) => {
+    const isActive = activeFilter === label;
+    
+    // دالة لتحديد لون البوردر والآيكون بناءً على border_olor
+    const getColorClasses = (type: 'border' | 'icon') => {
+      const baseClass = type === 'border' ? 'border-' : 'text-';
+      switch(border_olor) {
+        case 'blue-500': return `${baseClass}blue-500`;
+        case 'green-500': return `${baseClass}green-500`;
+        case 'yellow-500': return `${baseClass}yellow-500`;
+        case 'red-500': return `${baseClass}red-500`;
+        case 'purple-500': return `${baseClass}purple-500`;
+        case 'pink-500': return `${baseClass}pink-500`;
+        case 'orange-500': return `${baseClass}orange-500`;
+        default: return `${baseClass}gray-500`;
+      }
+    };
+
+    const borderClass = getColorClasses('border');
+    const iconClass = getColorClasses('icon');
+
+    return (
+      <button
+        key={label}
+        onClick={() => setActiveFilter(label)}
+        className={`
+          group relative flex flex-col items-center justify-center w-16 h-16 rounded-full
+          transition-all duration-300 border-2
+          ${isActive
+            ? 'bg-blue-100 dark:bg-blue-900 border-blue-500 shadow-md'
+            : `bg-white dark:bg-gray-800 ${borderClass} hover:border-blue-400 hover:shadow`
+          }
+        `}
+      >
+        <Icon
+          className={`
+            w-6 h-6 transition-transform duration-1000 ease-in-out
+            group-hover:rotate-[360deg]
+            ${isActive ? color : iconClass}
+          `}
+        />
+        <span
+          className={`
+            absolute bottom-[-1.5rem] text-xs opacity-0 group-hover:opacity-100 transition-opacity
+            ${isActive ? 'text-black dark:text-white' : 'text-gray-400'}
+          `}
+        >
+          {label}
+        </span>
+      </button>
+    );
+  })}
+</div>
 
           <div className="mt-8"></div>
-            <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="mt-8 mb-40 grid grid-cols-1 md:grid-cols-2 gap-6">
               {filteredManagementCards.map((card, index) => {
                 const Icon = card.icon
                 return (
@@ -270,17 +295,17 @@ const [activeFilter, setActiveFilter] = useState('Settings')
     card.id === 'campaign' ? '/companies' :
     card.id === 'employee' ? '/employees' :
     card.id === 'payroll' ? '/payroll' :
-    `/manage/${card.id}`
+    `/MasterData/${card.id}`
   }
   className="
     flex items-center justify-center gap-1
     w-28 h-10 rounded-lg
     bg-blue-100 dark:bg-blue-900
-    text-blue-600 dark:text-blue-300
+    text-blue-600 dark:from-orange-50 to-orange-100
     text-xs font-medium
-    hover:bg-blue-200 dark:hover:bg-blue-800 
+    hover:bg-blue-200 dark:hover:bg-blue-800
     hover:shadow-md transition-all duration-200
-  "
+  dark:text-white"
 >
   <Icon className="w-4 h-4" />
   Manage

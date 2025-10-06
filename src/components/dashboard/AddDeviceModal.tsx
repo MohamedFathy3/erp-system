@@ -1,4 +1,4 @@
-// components/AddDeviceModal.tsx
+// components/dashboard/AddDeviceModal.tsx
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -8,7 +8,7 @@ import {
   addDevice, fetchBrands, fetchDeviceModels, fetchProcessors, 
   fetchGraphicCards, fetchMemories, fetchStorages, fetchDeviceStatuses, 
   fetchEmployees, addBrand, addDeviceModel, addProcessor, addGraphicCard, 
-  addMemory, addStorage ,fetchDeviceTypes
+  addMemory, addStorage, fetchDeviceTypes
 } from '@/lib/api/deviceApi';
 import { Device, Storage } from '@/types/device';
 import toast from 'react-hot-toast';
@@ -22,7 +22,7 @@ interface AddDeviceModalProps {
 
 const AddDeviceModal: React.FC<AddDeviceModalProps> = ({ isOpen, onClose, onDeviceAdded }) => {
   const [formData, setFormData] = useState<Partial<Device>>({
-    type: undefined,
+    type: '',
     serialNumber: '',
     condition: 'used',
     note: '',
@@ -44,16 +44,15 @@ const AddDeviceModal: React.FC<AddDeviceModalProps> = ({ isOpen, onClose, onDevi
   // Fetch all data
   const { data: brands = [] } = useQuery({ 
     queryKey: ['brands'], 
-    queryFn: fetchBrands ,
-     enabled: isOpen,
-    
+    queryFn: fetchBrands,
+    enabled: isOpen,
   });
 
- const { data: devices = [] } = useQuery({
-  queryKey: ['device'],
-  queryFn: fetchDeviceTypes,
-  enabled: isOpen,
-});
+  const { data: deviceTypes = [] } = useQuery({
+    queryKey: ['deviceTypes'],
+    queryFn: fetchDeviceTypes,
+    enabled: isOpen,
+  });
   
   const { data: allDeviceModels = [] } = useQuery({ 
     queryKey: ['deviceModels'], 
@@ -63,61 +62,56 @@ const AddDeviceModal: React.FC<AddDeviceModalProps> = ({ isOpen, onClose, onDevi
   
   const { data: processors = [] } = useQuery({ 
     queryKey: ['processors'], 
-    queryFn: fetchProcessors ,
-        enabled: isOpen,
-
+    queryFn: fetchProcessors,
+    enabled: isOpen,
   });
   
   const { data: graphicCards = [] } = useQuery({ 
     queryKey: ['graphicCards'], 
-    queryFn: fetchGraphicCards ,
-        enabled: isOpen,
-
+    queryFn: fetchGraphicCards,
+    enabled: isOpen,
   });
   
   const { data: memories = [] } = useQuery({ 
     queryKey: ['memories'], 
-    queryFn: fetchMemories ,
-        enabled: isOpen,
-
+    queryFn: fetchMemories,
+    enabled: isOpen,
   });
   
   const { data: storages = [] } = useQuery({ 
     queryKey: ['storages'], 
-    queryFn: fetchStorages ,
-        enabled: isOpen,
-
+    queryFn: fetchStorages,
+    enabled: isOpen,
   });
   
   const { data: deviceStatuses = [] } = useQuery({ 
     queryKey: ['deviceStatuses'], 
-    queryFn: fetchDeviceStatuses ,
-        enabled: isOpen,
-
+    queryFn: fetchDeviceStatuses,
+    enabled: isOpen,
   });
   
   const { data: employees = [] } = useQuery({ 
     queryKey: ['employees'], 
-    queryFn: fetchEmployees ,
-        enabled: isOpen,
-
+    queryFn: fetchEmployees,
+    enabled: isOpen,
   });
 
- // Filter device models based on selected brand
-const filteredDeviceModels = useMemo(() => {
-  if (!formData.brandId) return allDeviceModels;
-  
-  return allDeviceModels.filter(model => {
-    if (!model.brandId) return false;
+  // Filter device models based on selected brand
+  const filteredDeviceModels = useMemo(() => {
+    if (!formData.brandId) return allDeviceModels;
     
-    const modelBrandId = model.brandId.toString();
-    const formBrandId = formData.brandId?.toString();
-    
-    return modelBrandId && formBrandId && modelBrandId === formBrandId;
-  });
-}, [allDeviceModels, formData.brandId]);
-  const showComputerFields = formData.type === 'Laptop' || formData.type === 'desktop';
-  const showLaptopOnlyFields = formData.type === 'Laptop';
+    return allDeviceModels.filter(model => {
+      if (!model.brandId) return false;
+      
+      const modelBrandId = model.brandId.toString();
+      const formBrandId = formData.brandId?.toString();
+      
+      return modelBrandId && formBrandId && modelBrandId === formBrandId;
+    });
+  }, [allDeviceModels, formData.brandId]);
+
+  const showComputerFields = formData.type === 'laptop' || formData.type === 'desktop';
+  const showLaptopOnlyFields = formData.type === 'laptop';
 
   // Add device mutation
   const addDeviceMutation = useMutation({
@@ -125,9 +119,9 @@ const filteredDeviceModels = useMemo(() => {
     onSuccess: () => {
       toast.success('Device added successfully!');
       onDeviceAdded();
-      // Reset form but keep the modal open
+      // Reset form
       setFormData({
-        type: undefined,
+        type: '',
         serialNumber: '',
         condition: 'used',
         note: '',
@@ -209,10 +203,6 @@ const filteredDeviceModels = useMemo(() => {
     }
   };
 
-  const handleSaveAndClose = () => {
-    onClose();
-  };
-
   if (!isOpen) return null;
 
   return (
@@ -233,27 +223,20 @@ const filteredDeviceModels = useMemo(() => {
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Type *
                 </label>
-                 <select
-    name="type"
-    value={formData.type}
-    onChange={handleChange}
-    required
-    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
-  >
-   {devices.length > 0 ? (
-  <>
-    <option value="">select</option>
-    {devices.map((device, index) => (
-      <option key={index} value={device}>
-        {device.charAt(0).toUpperCase() + device.slice(1)}
-      </option>
-    ))}
-  </>
-) : (
-  <option disabled></option>
-)}
-
-  </select>
+                <select
+                  name="type"
+                  value={formData.type}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+                >
+                  <option value="">Select Type</option>
+                  {deviceTypes.map((type, index) => (
+                    <option key={index} value={type}>
+                      {type.charAt(0).toUpperCase() + type.slice(1)}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div>
@@ -284,10 +267,10 @@ const filteredDeviceModels = useMemo(() => {
                   required
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
                 >
-                  <option value="">select</option>
+                  <option value="">Select Condition</option>
                   <option value="new">New</option>
                   <option value="used">Used</option>
-           
+                  <option value="refurbished">Refurbished</option>
                 </select>
               </div>
 
@@ -323,7 +306,6 @@ const filteredDeviceModels = useMemo(() => {
                     onChange={handleChange}
                     className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
                   >
-                    
                     <option value="">Select Brand</option>
                     {brands.map(brand => (
                       <option key={brand.id} value={brand.id}>{brand.name}</option>
@@ -465,7 +447,6 @@ const filteredDeviceModels = useMemo(() => {
                     </label>
                     {formData.storages?.map((storage, index) => (
                       <div key={index} className="flex gap-2 mb-2">
-                        
                         <select
                           value={storage.storageId || 0}
                           onChange={(e) => handleStorageChange(index, 'storageId', parseInt(e.target.value))}
@@ -540,34 +521,28 @@ const filteredDeviceModels = useMemo(() => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            
-
-            <div>
-              
-  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-    Active
-  </label>
-
-  <div
-    onClick={() =>
-      setFormData((prev) => ({ ...prev, active: prev.active ? 0 : 1 }))
-    }
-    className={`relative w-14 h-7 flex items-center rounded-full p-1 cursor-pointer transition-colors duration-300 ${
-      formData.active ? "bg-green-500" : "bg-gray-400"
-    }`}
-  >
-    <div
-      className={`bg-white w-5 h-5 rounded-full shadow-md transform transition-transform duration-300 ${
-        formData.active ? "translate-x-7" : "translate-x-0"
-      }`}
-    />
-  </div>
-
-  <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-    {formData.active ? "Active" : "Inactive"}
-  </p>
-</div>
-
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Active
+                </label>
+                <div
+                  onClick={() =>
+                    setFormData((prev) => ({ ...prev, active: prev.active ? 0 : 1 }))
+                  }
+                  className={`relative w-14 h-7 flex items-center rounded-full p-1 cursor-pointer transition-colors duration-300 ${
+                    formData.active ? "bg-green-500" : "bg-gray-400"
+                  }`}
+                >
+                  <div
+                    className={`bg-white w-5 h-5 rounded-full shadow-md transform transition-transform duration-300 ${
+                      formData.active ? "translate-x-7" : "translate-x-0"
+                    }`}
+                  />
+                </div>
+                <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                  {formData.active ? "Active" : "Inactive"}
+                </p>
+              </div>
             </div>
 
             <div>
@@ -601,33 +576,26 @@ const filteredDeviceModels = useMemo(() => {
                 Cancel
               </button>
               <button
-                type="button"
-                onClick={handleSaveAndClose}
-                className="px-4 py-2 text-sm font-medium text-blue-700 bg-blue-100 hover:bg-blue-200 rounded-md dark:bg-blue-600 dark:text-white dark:hover:bg-blue-500"
-              >
-                Save & Close
-              </button>
-              <button
                 type="submit"
                 disabled={addDeviceMutation.isPending}
                 className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md disabled:opacity-50"
               >
-                {addDeviceMutation.isPending ? 'Saving...' : 'Save & Continue'}
+                {addDeviceMutation.isPending ? 'Saving...' : 'Save Device'}
               </button>
             </div>
           </form>
         </div>
       </div>
 
-      {/* Add Item Modals */}
+      {/* Add Item Modals - مصحح */}
       {showAddModal === 'brand' && (
         <AddItemModal
           isOpen={true}
           onClose={() => setShowAddModal(null)}
           onAdd={(newBrand) => {
-              if (newBrand && newBrand.id) {
-            setFormData(prev => ({ ...prev, brandId: newBrand.id }));
-  }
+            if (newBrand && newBrand.id) {
+              setFormData(prev => ({ ...prev, brandId: newBrand.id }));
+            }
           }}
           title="Brand"
           fields={[{ name: 'name', label: 'Brand Name', type: 'text' }]}
@@ -640,18 +608,22 @@ const filteredDeviceModels = useMemo(() => {
         <AddItemModal
           isOpen={true}
           onClose={() => setShowAddModal(null)}
-         onAdd={(newModel) => {
-  if (newModel && newModel.id) {
-    setFormData(prev => ({ ...prev, deviceModelId: newModel.id }));
-  }
-}}
-
+          onAdd={(newModel) => {
+            if (newModel && newModel.id) {
+              setFormData(prev => ({ ...prev, deviceModelId: newModel.id }));
+            }
+          }}
           title="Device Model"
           fields={[
             { name: 'name', label: 'Model Name', type: 'text' },
-            { name: 'brandId', label: 'Brand ID', type: 'hidden' }
+            { 
+              name: 'brandId', 
+              label: 'Brand ID', 
+              type: 'hidden',
+              value: formData.brandId?.toString() || ''
+            }
           ]}
-          addFunction={(data) => addDeviceModel(data.name, )}
+          addFunction={(data) => addDeviceModel(data.name, parseInt(data.brandId))}
           queryKey={['deviceModels']}
         />
       )}
@@ -682,7 +654,10 @@ const filteredDeviceModels = useMemo(() => {
             }
           }}
           title="Graphic Card"
-          fields={[{ name: 'model', label: 'Graphic Card Name', type: 'text' }, { name: 'vram', label: 'VRAM', type: 'text' }]}
+          fields={[
+            { name: 'model', label: 'Graphic Card Name', type: 'text' }, 
+            { name: 'vram', label: 'VRAM', type: 'text' }
+          ]}
           addFunction={(data) => addGraphicCard(data.model, data.vram)}
           queryKey={['graphicCards']}
         />
@@ -718,10 +693,7 @@ const filteredDeviceModels = useMemo(() => {
               ...newStorages[newStorages.length - 1], 
               storageId: newStorage.id 
             };
-
-            if (newStorage && newStorage.id) {
-              setFormData(prev => ({ ...prev, storages: newStorages }));
-            }
+            setFormData(prev => ({ ...prev, storages: newStorages }));
           }}
           title="Storage"
           fields={[

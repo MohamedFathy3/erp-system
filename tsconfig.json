@@ -22,6 +22,6 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "src/app/manage/storage-drivers/page.jsx", "src/components/system/FilterModal.jsx"],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "src/app/MasterData/storage-drivers/page.jsx", "src/components/system/FilterModal.jsx"],
   "exclude": ["node_modules"]
 }

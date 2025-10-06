@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 
 export default function EmployeePage() {
   const { user } = useAuth()
-  const [activeCard, setActiveCard] = useState(null)
+  const [activeCard,] = useState(null)
   const router = useRouter()
 
 

@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { useQueryClient } from '@tanstack/react-query';
+import { apiFetch } from "@/lib/api";
 
 import MainLayout from "@/components/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Filter, Eye,Plus } from "lucide-react";
+import {  Eye } from "lucide-react";
 import toast from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
 import '@/styles/ticit.css';
@@ -51,16 +52,14 @@ interface CheckboxProps {
 export default function Page() {
   const router = useRouter();
   const [data, setData] = useState<Ticket[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [, setLoading] = useState(true);
+  const [, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [showFilter, setShowFilter] = useState(false);
+  const [showFilter,] = useState(false);
   const [perPage] = useState(15);
-  const [showingDeleted, setShowingDeleted] = useState(false);
-  const [orderBy, setOrderBy] = useState('id');
-  const [filterValue, setFilterValue] = useState('');
-  const [orderByDirection, setOrderByDirection] = useState('asc');
+  const [orderBy,] = useState('id');
+  const [orderByDirection,] = useState('asc');
   const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set());
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const queryClient = useQueryClient();
@@ -82,14 +81,9 @@ export default function Page() {
 async function fetchTickets(page = 1) {
   try {
     setLoading(true);
-    const token = localStorage.getItem("token");
-
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/ticket/index`, {
+    
+    const response = await apiFetch(`/ticket/index`, {
       method: "POST",
-      headers: {
-        "Authorization": `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
       body: JSON.stringify({
         filters: {},                
         orderBy: orderBy,           
@@ -108,7 +102,7 @@ async function fetchTickets(page = 1) {
 
     const json: ApiResponse = await response.json();
     setData(json.data || []);
-    setPagination(json.meta); // ممكن السيرفر مش يرجع meta لو paginate=false
+    setPagination(json.meta); 
   } catch (err) {
     toast.error("Failed to fetch tickets");
     setError(err instanceof Error ? err.message : "An error occurred");
@@ -129,20 +123,16 @@ async function fetchTickets(page = 1) {
 
 
 const handleChangeStatusAndNavigate = async (id: number, status: string) => {
-  if (status === 'open' || status === 'close' || status === 'transfered' || status === 'postponed') {
+  if (status === 'open' || status === 'closed' || status === 'transfered' || status === 'postponed') {
     router.push(`/It_module/ticket/${id}`);
     return;
   }
 
   try {
-    const token = localStorage.getItem('token');
+   
 
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/ticket/${id}/status`, {
+    const res = await apiFetch(`/ticket/${id}/status`, {
       method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        'Authorization': `Bearer ${token}`
-      },
       body: JSON.stringify({ status: 'open' }),
     });
 

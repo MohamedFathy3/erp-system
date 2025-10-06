@@ -158,7 +158,7 @@ const handleSubmit = async (e: React.FormEvent) => {
     )
   }
 
-  const userTickets = user.tickets || []
+  // const userTickets = user.tickets || []
   
 const deviceInfo: DeviceInfo | null = user.latestDevice || null
 

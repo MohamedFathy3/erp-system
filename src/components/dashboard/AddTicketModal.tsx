@@ -9,6 +9,7 @@ import { Ticket, DeviceFilter } from '@/types/ticket';
 import toast from 'react-hot-toast';
 import { Employee } from '@/types/deviceAction';
 import { Category } from '../CategoryTable';
+import {apiFetch} from '@/lib/api';
 
 interface AddTicketModalProps {
   isOpen: boolean;

@@ -1,6 +1,5 @@
 
-import toast from 'react-hot-toast';
-
+import { apiFetch } from '@/lib/api';
 interface FetchOptions extends RequestInit {
   showToast?: boolean;
   customErrorMessage?: string;
@@ -8,14 +7,8 @@ interface FetchOptions extends RequestInit {
 import { Device, Brand, DeviceModel, Processor, GraphicCard, Memory, StorageItem, DeviceStatus, } from '@/types/device';
 import { Employee } from '@/types/deviceAction';
 
-interface FetchDeviceModelsParams {
-  brandId?: number;
-}
-interface errors{
-  name:string;
-  message:string
-  
-}
+
+
 interface DeviceModelFilters {
   brand_id?: number;
 }
@@ -30,7 +23,6 @@ interface DeviceModelPayload {
 }
 
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 interface ApiPayload {
   filters?: DeviceModelFilters;
@@ -45,67 +37,11 @@ interface ApiPayload {
 
 
 
-const fetchWithAuth = async (url: string, options: FetchOptions = {}) => {
-  const {
-    showToast = true,
-    customErrorMessage,
-    ...fetchOptions
-  } = options;
 
-  const token = localStorage.getItem('token');
-  
-  if (!token && showToast) {
-    toast.error( 'Please log in new');
-    throw new Error('No authentication token found');
-  }
-
-  try {
-    const response = await fetch(url, {
-      ...fetchOptions,
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-        ...fetchOptions.headers,
-      },
-    });
-
-    if (!response.ok) {
-      let errorMessage = customErrorMessage || `HTTP error! status: ${response.status}`;
-      
-      try {
-        const errorData = await response.json();
-        if (errorData.message) {
-          errorMessage = errorData.message;
-        }
-      } catch (e) {
-      
-      }
-      
-      if (showToast) {
-        toast.error(errorMessage);
-      }
-      
-      throw new Error(errorMessage);
-    }
-
-    return response.json();
-  } catch (error: unknown) {
-  if (showToast) {
-    if (error instanceof TypeError || (error instanceof Error && error.message.includes('Network'))) {
-      toast.error('Server connection error. Please check your internet connection.');
-    } else if (error instanceof Error && error.message) {
-      toast.error(error.message);
-    } else {
-      toast.error('An unexpected error occurred.');
-    }
-  }
-  throw error;
-}
-};
 const createStandardPayload = (filters?: DeviceModelFilters): ApiPayload => ({
   filters: filters || {},
   orderBy: "id",
-  orderByDirection: "asc",
+  orderByDirection: "desc",
   perPage: 300,
   paginate: true,
   deleted: false,
@@ -114,7 +50,7 @@ const createStandardPayload = (filters?: DeviceModelFilters): ApiPayload => ({
 
 
 export const addDevice = async (device: Device) => {
-  return fetchWithAuth(`${API_URL}/device`, {
+  return apiFetch(`/device`, {
     method: 'POST',
     body: JSON.stringify(device),
   });
@@ -130,7 +66,7 @@ export const fetchDeviceTypes = async (): Promise<string[]> => {
     deleted: false
   };
 
-  const data = await fetchWithAuth(`${API_URL}/type/index`, {
+  const data = await apiFetch(`/type/index`, {
     method: 'POST',
     body: JSON.stringify(payload),
   });
@@ -140,7 +76,7 @@ export const fetchDeviceTypes = async (): Promise<string[]> => {
 
 export const fetchBrands = async (): Promise<Brand[]> => {
   const payload = createStandardPayload();
-  const data = await fetchWithAuth(`${API_URL}/brand/index`, {
+  const data = await apiFetch(`/brand/index`, {
     method: 'POST',
     body: JSON.stringify(payload),
   });
@@ -150,8 +86,8 @@ export const fetchBrands = async (): Promise<Brand[]> => {
 export const fetchDeviceModels = async (brandId?: number): Promise<DeviceModel[]> => {
   const filters = brandId ? { brand_id: brandId } : {};
   const payload = createStandardPayload(filters);
-  
-  const data = await fetchWithAuth(`${API_URL}/device-model/index`, {
+
+  const data = await apiFetch(`/device-model/index`, {
     method: 'POST',
     body: JSON.stringify(payload),
   });
@@ -162,7 +98,7 @@ export const fetchDeviceModels = async (brandId?: number): Promise<DeviceModel[]
 
 export const fetchProcessors = async (): Promise<Processor[]> => {
   const payload = createStandardPayload();
-  const data = await fetchWithAuth(`${API_URL}/processor/index`, {
+  const data = await apiFetch(`/processor/index`, {
     method: 'POST',
     body: JSON.stringify(payload),
   });
@@ -171,7 +107,7 @@ export const fetchProcessors = async (): Promise<Processor[]> => {
 
 export const fetchGraphicCards = async (): Promise<GraphicCard[]> => {
   const payload = createStandardPayload();
-  const data = await fetchWithAuth(`${API_URL}/graphic-card/index`, {
+  const data = await apiFetch(`/graphic-card/index`, {
     method: 'POST',
     body: JSON.stringify(payload),
   });
@@ -180,7 +116,7 @@ export const fetchGraphicCards = async (): Promise<GraphicCard[]> => {
 
 export const fetchMemories = async (): Promise<Memory[]> => {
   const payload = createStandardPayload();
-  const data = await fetchWithAuth(`${API_URL}/memory/index`, {
+  const data = await apiFetch(`/memory/index`, {
     method: 'POST',
     body: JSON.stringify(payload),
   });
@@ -189,7 +125,7 @@ export const fetchMemories = async (): Promise<Memory[]> => {
 
 export const fetchStorages = async (): Promise<StorageItem[]> => {
   const payload = createStandardPayload();
-  const data = await fetchWithAuth(`${API_URL}/storage/index`, {
+  const data = await apiFetch(`/storage/index`, {
     method: 'POST',
     body: JSON.stringify(payload),
   });
@@ -198,7 +134,7 @@ export const fetchStorages = async (): Promise<StorageItem[]> => {
 
 export const fetchDeviceStatuses = async (): Promise<DeviceStatus[]> => {
   const payload = createStandardPayload();
-  const data = await fetchWithAuth(`${API_URL}/device-status/index`, {
+  const data = await apiFetch(`/device-status/index`, {
     method: 'POST',
     body: JSON.stringify(payload),
   });
@@ -207,7 +143,7 @@ export const fetchDeviceStatuses = async (): Promise<DeviceStatus[]> => {
 
 export const fetchEmployees = async (): Promise<Employee[]> => {
   const payload = createStandardPayload();
-  const data = await fetchWithAuth(`${API_URL}/user/index`, {
+  const data = await apiFetch(`/user/index`, {
     method: 'POST',
     body: JSON.stringify(payload),
   });
@@ -215,23 +151,23 @@ export const fetchEmployees = async (): Promise<Employee[]> => {
 };
 
 export const addBrand = async (name: string): Promise<Brand> => {
-  const data = await fetchWithAuth(`${API_URL}/brand`, {
+  const data = await apiFetch(`/brand`, {
     method: 'POST',
     body: JSON.stringify({ name }),
   });
   return data.data;
 };
 
-export const addDeviceModel = async (name: string, ): Promise<DeviceModel> => {
-  const data = await fetchWithAuth(`${API_URL}/device-model`, {
+export const addDeviceModel = async (name: string, brandId: number): Promise<DeviceModel> => {
+  const data = await apiFetch(`/device-model`, {
     method: 'POST',
-    body: JSON.stringify({ name, }),
+    body: JSON.stringify({ name, brandId }),
   });
   return data.data;
 };
 
 export const addProcessor = async (name: string): Promise<Processor> => {
-  const data = await fetchWithAuth(`${API_URL}/processor`, {
+  const data = await apiFetch(`/processor`, {
     method: 'POST',
     body: JSON.stringify({ name }),
   });
@@ -239,7 +175,7 @@ export const addProcessor = async (name: string): Promise<Processor> => {
 };
 
 export const addGraphicCard = async (model: string, vram: string): Promise<GraphicCard> => {
-  const data = await fetchWithAuth(`${API_URL}/graphic-card`, {
+  const data = await apiFetch(`/graphic-card`, {
     method: 'POST',
     body: JSON.stringify({ model, vram }),
   });
@@ -247,7 +183,7 @@ export const addGraphicCard = async (model: string, vram: string): Promise<Graph
 };
 
 export const addMemory = async (size: string, type: string): Promise<Memory> => {
-  const data = await fetchWithAuth(`${API_URL}/memory`, {
+  const data = await apiFetch(`/memory`, {
     method: 'POST',
     body: JSON.stringify({ size, type }),
   });
@@ -255,7 +191,7 @@ export const addMemory = async (size: string, type: string): Promise<Memory> => 
 };
 
 export const addStorage = async (size: number, type: string): Promise<StorageItem> => {
-  const data = await fetchWithAuth(`${API_URL}/storage`, {
+  const data = await apiFetch(`/storage`, {
     method: 'POST',
     body: JSON.stringify({ size, type }),
   });
@@ -264,7 +200,7 @@ export const addStorage = async (size: number, type: string): Promise<StorageIte
 
 
 export const updateDevice = async (id: number, device: Device) => {
-  return fetchWithAuth(`${API_URL}/device/${id}`, {
+  return apiFetch(`/device/${id}`, {
     method: 'PUT',
     body: JSON.stringify(device),
   });

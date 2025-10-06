@@ -1,19 +1,28 @@
+// lib/tokenManager.ts
+'use client';
+import Cookies from 'js-cookie';
+
 class TokenManager {
   private static tokenKey = 'token';
 
+  // Get token from cookies
   static getToken(): string | null {
-    if (typeof window === 'undefined') return null;
-    return localStorage.getItem(this.tokenKey);
+    return Cookies.get(this.tokenKey) || null;
   }
 
+  // Set token in cookies
   static setToken(token: string) {
-    if (typeof window === 'undefined') return;
-    localStorage.setItem(this.tokenKey, token);
+    Cookies.set(this.tokenKey, token, {
+      expires: 7, // أيام
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'Lax',
+      path: '/',
+    });
   }
 
+  // Remove token from cookies
   static clearToken() {
-    if (typeof window === 'undefined') return;
-    localStorage.removeItem(this.tokenKey);
+    Cookies.remove(this.tokenKey, { path: '/' });
   }
 
   static getAuthHeaders(): Headers {

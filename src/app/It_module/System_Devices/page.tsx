@@ -1,3 +1,4 @@
+// app/It_module/System_Devices/page.tsx
 "use client";
 
 import MainLayout from "@/components/MainLayout";
@@ -6,9 +7,9 @@ import { Input } from "@/components/ui/input";
 import { apiFetch } from "@/lib/api";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useMemo } from "react";
-
 import { useRouter } from "next/navigation";
 import AddDeviceModal from "@/components/dashboard/AddDeviceModal";
+import EditDeviceModal from "@/components/dashboard/EditDeviceModal";
 
 interface Device {
   id: number;
@@ -16,27 +17,31 @@ interface Device {
   type: string;
   active: boolean;
   purchaseDateFormatted: string;
-  memory?: { size: number; type: string };
-  cpu?: { name: string };
-  brand?: { name: string };
-  deviceModel?: { name: string };
+  memory?: { id: number; size: number; type: string };
+  cpu?: { id: number; name: string };
+  brand?: { id: number; name: string };
+  deviceModel?: { id: number; name: string };
+  device_status?: { id: number; name: string };
+  graphicCard?: { id: number; model: string };
 }
 
-// API
+// API - مصحح
 async function getDevices(): Promise<Device[]> {
   const json = await apiFetch("/device");
   return json.data || [];
 }
+
 async function deleteDevice(id: number) {
-  return apiFetch(`/device/${id}`, { 
+  return apiFetch(`/device/delete`, { 
     method: "DELETE",
-    body: JSON.stringify({ itmes:[id] }) // هنا كتبها itmes بالغلط
+    body: JSON.stringify({ items: [id] }) // صححت itmes لـ items
   });
 }
+
 async function deleteDevices(ids: number[]) {
   return apiFetch(`/device/delete`, {
-    method: "POST",
-    body: JSON.stringify({ times:[ids] }), // هنا كتبت times
+    method: "DELETE",
+    body: JSON.stringify({ items: ids }), // صححت times لـ items
   });
 }
 
@@ -46,8 +51,6 @@ async function toggleDeviceActive(id: number, active: boolean) {
     body: JSON.stringify({ active }),
   });
 }
-
-
 
 export default function SystemDevicesPage() {
   const router = useRouter();
@@ -72,15 +75,19 @@ export default function SystemDevicesPage() {
     mutationFn: (id: number) => deleteDevice(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["devices"] }),
   });
-const toggleActiveMutation = useMutation({
-  mutationFn: ({ id, active }: { id: number; active: boolean }) =>
-    toggleDeviceActive(id, active),
-  onSuccess: () => queryClient.invalidateQueries({ queryKey: ["devices"] }),
-});
+
+  const toggleActiveMutation = useMutation({
+    mutationFn: ({ id, active }: { id: number; active: boolean }) =>
+      toggleDeviceActive(id, active),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["devices"] }),
+  });
 
   const deleteAllMutation = useMutation({
     mutationFn: (ids: number[]) => deleteDevices(ids),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["devices"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["devices"] });
+      setSelected([]);
+    },
   });
 
   const filteredDevices = useMemo(() => {
@@ -101,16 +108,28 @@ const toggleActiveMutation = useMutation({
   };
 
   const handleDelete = () => {
-    if (selected.length === 1) {
-      deleteOneMutation.mutate(selected[0]);
-    } else if (selected.length > 1) {
-      deleteAllMutation.mutate(selected);
+    if (selected.length === 0) return;
+    
+    const confirmMessage = selected.length === 1 
+      ? "Are you sure you want to delete this device?"
+      : `Are you sure you want to delete ${selected.length} devices?`;
+
+    if (confirm(confirmMessage)) {
+      if (selected.length === 1) {
+        deleteOneMutation.mutate(selected[0]);
+      } else {
+        deleteAllMutation.mutate(selected);
+      }
     }
-    setSelected([]);
   };
 
   const handleAddSuccess = () => {
     setShowAddModal(false);
+    queryClient.invalidateQueries({ queryKey: ["devices"] });
+  };
+
+  const handleEditSuccess = () => {
+    setEditDevice(null);
     queryClient.invalidateQueries({ queryKey: ["devices"] });
   };
 
@@ -130,7 +149,7 @@ const toggleActiveMutation = useMutation({
           <div className="flex gap-3">
             {selected.length > 0 && (
               <Button variant="destructive" onClick={handleDelete}>
-                {selected.length === 1 ? "Delete" : "Delete All"}
+                {selected.length === 1 ? "Delete" : `Delete (${selected.length})`}
               </Button>
             )}
             <Button onClick={() => setShowAddModal(true)}>+ Add Device</Button>
@@ -148,7 +167,7 @@ const toggleActiveMutation = useMutation({
         </div>
 
         {/* Loading / Error */}
-      
+        {isLoading && <p className="text-gray-600 dark:text-gray-400">Loading devices...</p>}
         {isError && <p className="text-red-500">Failed to fetch devices.</p>}
 
         {/* Table */}
@@ -213,43 +232,54 @@ const toggleActiveMutation = useMutation({
                         ? `${device.memory.size} ${device.memory.type}`
                         : "-"}
                     </td>
-                   <td className="px-4 py-2">
-  <div
-    onClick={() =>
-      toggleActiveMutation.mutate({
-        id: device.id,
-        active: !device.active,
-      })
-    }
-    className={`relative w-12 h-6 flex items-center rounded-full p-1 cursor-pointer transition-colors duration-300 ${
-      device.active ? "bg-green-500" : "bg-gray-400"
-    }`}
-  >
-    <div
-      className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-300 ${
-        device.active ? "translate-x-6" : "translate-x-0"
-      }`}
-    />
-  </div>
-</td>
-
+                    <td className="px-4 py-2">
+                      <div
+                        onClick={() =>
+                          toggleActiveMutation.mutate({
+                            id: device.id,
+                            active: !device.active,
+                          })
+                        }
+                        className={`relative w-12 h-6 flex items-center rounded-full p-1 cursor-pointer transition-colors duration-300 ${
+                          device.active ? "bg-green-500" : "bg-gray-400"
+                        }`}
+                      >
+                        <div
+                          className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-300 ${
+                            device.active ? "translate-x-6" : "translate-x-0"
+                          }`}
+                        />
+                      </div>
+                    </td>
                     <td className="px-4 py-2">{device.purchaseDateFormatted}</td>
                     <td className="px-4 py-2 flex gap-2">
                       <Button
                         size="sm"
                         variant="outline"
+                        onClick={() => setEditDevice(device)}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
                         onClick={() =>
-                          router.push(`/It_module/System_Devices/system/${device.id}`)
+                          router.push(`/It_module/System_Devices/${device.id}`)
                         }
                       >
-                        view
+                        View
                       </Button>
                       <Button
                         size="sm"
                         variant="destructive"
-                        onClick={() => deleteOneMutation.mutate(device.id)}
+                        onClick={() => {
+                          if (confirm("Are you sure you want to delete this device?")) {
+                            deleteOneMutation.mutate(device.id);
+                          }
+                        }}
+                        disabled={deleteOneMutation.isPending}
                       >
-                        Delete
+                        {deleteOneMutation.isPending ? 'Deleting...' : 'Delete'}
                       </Button>
                     </td>
                   </tr>
@@ -268,20 +298,12 @@ const toggleActiveMutation = useMutation({
 
         {/* Edit Device Modal */}
         {editDevice && (
-          <div className="fixed inset-0 flex items-center justify-center bg-black/50">
-            <div className="bg-white dark:bg-gray-900 rounded-lg p-6 w-[500px] shadow-lg">
-              <h2 className="text-xl font-bold mb-4">Edit Device</h2>
-              <p className="mb-4 text-gray-600 dark:text-gray-300">
-                Editing device: {editDevice.serialNumber}
-              </p>
-              <div className="flex justify-end gap-3">
-                <Button variant="outline" onClick={() => setEditDevice(null)}>
-                  Cancel
-                </Button>
-                <Button>Save</Button>
-              </div>
-            </div>
-          </div>
+          <EditDeviceModal
+            isOpen={true}
+            onClose={() => setEditDevice(null)}
+            onDeviceUpdated={handleEditSuccess}
+            device={editDevice}
+          />
         )}
       </div>
     </MainLayout>

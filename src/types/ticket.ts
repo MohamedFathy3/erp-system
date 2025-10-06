@@ -51,3 +51,6 @@ export interface storage{
   type:string;
   size:string;
 }
+
+
+

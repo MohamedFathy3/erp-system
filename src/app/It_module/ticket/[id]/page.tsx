@@ -2,87 +2,19 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams, useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import MainLayout from '@/components/MainLayout';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, User,  Send, Edit } from 'lucide-react';
+import { ArrowLeft, User, Send, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 import TicketTimer from '@/components/dashboard/TicketTimer';
 import StatusUpdate from '@/components/dashboard/transform';
 import CommentComponent from '@/components/dashboard/itcomminettect';
+import { apiFetch } from '@/lib/api';
+import {TicketDetails } from '@/types/pagetecite';
 
+import { getStatusColor, getPriorityColor, getDailyStatus, getDailyStatusColor } from '@/components/skeletons/tecitstuts';
 
-interface Status {
-  id: number;
-  status: string;
-  updatedById: number;
-  updatedBy: string;
-  transferToId: number | null;
-  transferTo: string | null;
-  note: string | null;
-  createdAt: string;
-  updatedAt: string;
-  duration: string | null;
-}
-
-interface Reply {
-  id: number;
-  user_id: number;
-  name: string;
-  role: string;
-  ticket_id: number;
-  message: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface Employee {
-  id: number;
-  name: string;
-  email: string;
-  job_title: string | null;
-  role :string
-}
-
-interface TicketDetails {
-  id: number;
-  ticketNumber: string;
-  title: string;
-  content: string;
-  status: string;
-  des: string | null;
-  avatar: string;
-  category: {
-    id: number;
-    name: string;
-    time: string;
-  };
-  openAt: string;
-  closeAt: string;
-  openAtformated: string;
-  closeAtformatted: string;
-  postponeNote: string | null;
-  priority: string;
-  rating: string;
-  etaTime: number;
-  dailyTime: number;
-  dailyStatus: boolean;
-  deviceId: number | null;
-  device: {name:string, type:string} | null;
-  employeeId: number;
-  employee: Employee;
-  responsibleId: number;
-  responsibleName: string;
-  responsibleJobTitle: string | null;
-  responsibleEmail: string;
-  createdById: number;
-  createdByName: string;
-  statuses: Status[];
-  replies: Reply[];
-  createdAt: string;
-  updatedAt: string;
-  deletedAt: string | null;
-}
 
 export default function TicketDetailPage() {
   const params = useParams();
@@ -91,55 +23,62 @@ export default function TicketDetailPage() {
   const ticketId = params.id as string;
   
   const [newReply, setNewReply] = useState('');
-  const [statusUpdate, setStatusUpdate] = useState('');
+  const [isRefetching, setIsRefetching] = useState(false);
 
-  const { data: ticket, isLoading, error } = useQuery({
-    queryKey: ['ticket', ticketId],
-    queryFn: async () => {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/ticket/${ticketId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
+const { data: ticket, isLoading, error, refetch } = useQuery({
+  queryKey: ['ticket', ticketId],
+  queryFn: async () => {
+    try {
+      console.log(`Fetching ticket with ID: ${ticketId}`);
+      const response = await apiFetch(`/ticket/${ticketId}`);
+      const responseData = await response.json();  // تأكد من تحويل الاستجابة
+      console.log('API Response:', responseData);  // تحقق من محتوى الرد
 
-      if (!response.ok) {
+      if (!response.ok || !responseData) {
         throw new Error('Failed to fetch ticket details');
       }
 
-      const result = await response.json();
-      return result.data as TicketDetails;
-    },
-    staleTime: 5 * 60 * 1000,
-    retry: 2,
-  });
+      return responseData.data as TicketDetails;
+    } catch (err) {
+      console.error('Error fetching ticket:', err);
+      throw new Error('Failed to load ticket details. Please try again.');
+    }
+  },
+  staleTime: 5 * 60 * 1000,
+  retry: 2,
+  retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
+});
 
-    const fetchTicketDetails = () => {
-      console.log('Fetching ticket details...', ticketId);
-      queryClient.invalidateQueries({ queryKey: ['ticket', ticketId] });
-  };
+
+  // دالة لإعادة جلب البيانات
+  const fetchTicketDetails = useCallback(async () => {
+    setIsRefetching(true);
+    try {
+      await refetch();
+      toast.success('Data refreshed successfully');
+    } catch (error) {
+      console.error('Error refetching:', error);
+    } finally {
+      setIsRefetching(false);
+    }
+  }, [refetch]);
+
   // Mutation for adding a reply
   const addReplyMutation = useMutation({
     mutationFn: async (message: string) => {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/replies`, {
+      const response = await apiFetch(`/replies`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
         body: JSON.stringify({
-          ticket_id: ticketId,
+          ticket_id: parseInt(ticketId),
           message: message
         })
       });
 
       if (!response.ok) {
-        throw new Error('Failed to add reply');
+        throw new Error(response.error || 'Failed to add reply');
       }
 
-      return response.json();
+      return response.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ticket', ticketId] });
@@ -151,108 +90,57 @@ export default function TicketDetailPage() {
     }
   });
 
-  // Mutation for updating status
-  const updateStatusMutation = useMutation({
-    mutationFn: async (status: string) => {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/ticket/${ticketId}/status`, {
-        method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          ticket_id: ticketId,
-          status: status,
-          updatedAt: new Date()
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update status');
-      }
-
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['ticket', ticketId] });
-      setStatusUpdate('');
-      toast.success('Status updated successfully');
-    },
-    onError: (error) => {
-      toast.error(error.message);
-    }
-  });
-
-
-
-
-
   const handleAddReply = () => {
     if (newReply.trim()) {
       addReplyMutation.mutate(newReply);
     }
   };
 
-  const handleStatusUpdate = () => {
-    if (statusUpdate) {
-      updateStatusMutation.mutate(statusUpdate);
-    }
-  };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'closed': return 'bg-green-100 text-green-800 border-green-200';
-      case 'open': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'postponed': return 'bg-purple-100 text-purple-800 border-purple-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
-  };
-
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'high': return 'bg-red-100 text-red-800 border-red-200';
-      case 'medium': return 'bg-orange-100 text-orange-800 border-orange-200';
-      case 'low': return 'bg-green-100 text-green-800 border-green-200';
-      case 'urgent': return 'bg-purple-100 text-purple-800 border-purple-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
-  };
-
-  const getDailyStatus = (dailyTime: number) => {
-    return dailyTime > 0 ? 'On time' : 'Overdue';
-  };
-
-  const getDailyStatusColor = (dailyTime: number) => {
-    return dailyTime > 0 ? 'text-green-600' : 'text-red-600';
-  };
-
+  // حالة التحميل
   if (isLoading) {
     return (
       <MainLayout>
-        <div className="flex justify-center items-center h-64">
+        <div className="flex flex-col justify-center items-center h-64 space-y-4">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
+          <p className="text-gray-600">Loading ticket details...</p>
         </div>
       </MainLayout>
     );
   }
 
+  // حالة الخطأ
   if (error) {
     return (
       <MainLayout>
-        <div className="flex justify-center items-center h-64">
-          <div className="text-red-500">Error: {error.message}</div>
+        <div className="flex flex-col justify-center items-center h-64 space-y-4 p-4">
+          <div className="text-red-500 text-center">
+            <p className="text-lg font-semibold">Error loading ticket</p>
+            <p className="mt-2">{error.message}</p>
+          </div>
+          <div className="flex space-x-4">
+            <Button onClick={() => refetch()} className="flex items-center">
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Try Again
+            </Button>
+            <Button variant="outline" onClick={() => router.back()}>
+              Go Back
+            </Button>
+          </div>
         </div>
       </MainLayout>
     );
   }
 
+  // إذا لم يتم العثور على التذكرة
   if (!ticket) {
     return (
       <MainLayout>
-        <div className="flex justify-center items-center h-64">
-          <div className="text-gray-500">Ticket not found</div>
+        <div className="flex flex-col justify-center items-center h-64 space-y-4">
+          <p className="text-gray-500 text-lg">Ticket not found</p>
+          <Button variant="outline" onClick={() => router.back()}>
+            Go Back
+          </Button>
         </div>
       </MainLayout>
     );
@@ -260,55 +148,63 @@ export default function TicketDetailPage() {
 
   return (
     <MainLayout>
-      <div className="max-w-6xl mx-auto p-6 space-y-6">
+      <div className="max-w-6xl mx-auto p-4 md:p-6 space-y-6">
         {/* Header */}
-        <div className="flex items-center gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+          <div className="flex items-center gap-4">
+            <Button
+              variant="outline"
+              onClick={() => router.back()}
+              className="flex items-center gap-2"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back
+            </Button>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100">Ticket Details</h1>
+          </div>
           <Button
+            onClick={fetchTicketDetails}
+            disabled={isRefetching}
             variant="outline"
-            onClick={() => router.back()}
             className="flex items-center gap-2"
           >
-            <ArrowLeft className="w-4 h-4" />
-            Back
+            <RefreshCw className={`w-4 h-4 ${isRefetching ? 'animate-spin' : ''}`} />
+            Refresh
           </Button>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Ticket Details</h1>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column - Ticket Info */}
           <div className="lg:col-span-2 space-y-6">
             {/* Ticket Header */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 md:p-6">
+              <div className="flex flex-col justify-between items-start gap-4">
                 <div className="space-y-2">
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100">
                       #{ticket.ticketNumber}
                     </span>
-                    <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(ticket.status)}`}>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(ticket.status)}`}>
                       {ticket.status.toUpperCase()}
                     </span>
-                    <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getPriorityColor(ticket.priority)}`}>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getPriorityColor(ticket.priority)}`}>
                       {ticket.priority.toUpperCase()}
                     </span>
                   </div>
-                  <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">{ticket.title}</h2>
+                  <h2 className="text-lg md:text-xl font-semibold text-gray-900 dark:text-gray-100">{ticket.title}</h2>
                 </div>
                 
-                <div className="block items-center gap-2">
-                  <div className="text-sm text-gray-600 dark:text-gray-400">
-                    Created: {new Date(ticket.openAt).toLocaleDateString()}
-                  </div>
-                  
-                  <div className="text-sm text-gray-600 dark:text-gray-400">
-<TicketTimer status={ticket.status} ticketId={ticketId} />
+                <div className="flex flex-col gap-1 text-sm text-gray-600 dark:text-gray-400">
+                  <div>Created: {new Date(ticket.openAt).toLocaleDateString()}</div>
+                  <div>
+                    <TicketTimer status={ticket.status} ticketId={ticketId} />
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Ticket Issue */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 md:p-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Ticket Issue</h3>
               <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
                 <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{ticket.content}</p>
@@ -317,9 +213,6 @@ export default function TicketDetailPage() {
                 </div>
               </div>
               
-
-
-              
               {ticket.avatar && (
                 <div className="mt-4">
                   <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">Attachment</h4>
@@ -327,37 +220,32 @@ export default function TicketDetailPage() {
                     src={ticket.avatar} 
                     alt="Ticket attachment" 
                     className="rounded-lg max-w-full h-auto max-h-64 object-cover"
+                    loading="lazy"
                   />
                 </div>
               )}
             </div>
 
-
- {/* Ticket commit */}
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4"> commit solve</h3>
-              <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
-                <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{ticket.des}</p>
-                <div className="text-sm text-gray-500 mt-2">
+            {/* Ticket commit */}
+            {ticket.des && (
+              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 md:p-6">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Commit Solve</h3>
+                <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                  <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{ticket.des}</p>
                 </div>
               </div>
-              
-
-
-             
-            </div>
-
+            )}
 
             {/* Replies Section */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 md:p-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
                 Replies ({ticket.replies.length})
               </h3>
               
-              <div className="space-y-4 mb-4">
+              <div className="space-y-4 mb-4 max-h-96 overflow-y-auto">
                 {ticket.replies.map((reply) => (
                   <div key={reply.id} className="border-l-4 border-indigo-500 pl-4 py-2">
-                    <div className="flex items-center justify-between mb-2">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
                       <div className="flex items-center gap-2">
                         <User className="w-4 h-4 text-gray-500" />
                         <span className="font-medium text-gray-900 dark:text-gray-100">{reply.name}</span>
@@ -379,35 +267,35 @@ export default function TicketDetailPage() {
               {/* Add Reply Form */}
               <div className="border-t pt-4">
                 <h4 className="text-md font-medium text-gray-900 dark:text-gray-100 mb-2">Add a reply</h4>
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-2">
                   <textarea
                     value={newReply}
                     onChange={(e) => setNewReply(e.target.value)}
                     placeholder="Type your reply here..."
-                    className="flex-1 border border-gray-300 rounded-md p-2 dark:bg-gray-700 dark:text-white"
+                    className="flex-1 border border-gray-300 rounded-md p-2 dark:bg-gray-700 dark:text-white min-h-[80px]"
+                    rows={3}
                   />
                   <Button 
                     onClick={handleAddReply}
-                    disabled={addReplyMutation.isPending}
-                    className="self-end"
+                    disabled={addReplyMutation.isPending || !newReply.trim()}
+                    className="self-end sm:self-auto"
                   >
                     <Send className="w-4 h-4 mr-1" />
                     Send
                   </Button>
                 </div>
               </div>
-              
             </div>
-              <CommentComponent 
+            
+            <CommentComponent 
               ticketId={parseInt(ticketId)} 
               onCommentAdded={fetchTicketDetails} 
             />
           </div>
 
-
-             
+          {/* Right Column - Sidebar */}
           <div className="space-y-6">
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 md:p-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Ticket Details</h3>
               
               <div className="space-y-3">
@@ -463,15 +351,14 @@ export default function TicketDetailPage() {
               </div>
             </div>
 
-<StatusUpdate 
-  ticketId={ticketId} 
-  currentStatus={ticket.status} 
-  currentResponsibleId={ticket.responsibleId}
-/>
-
+            <StatusUpdate 
+              ticketId={ticketId} 
+              currentStatus={ticket.status} 
+              currentResponsibleId={ticket.responsibleId}
+                  />
 
             {/* Assigned HelpDesk */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 md:p-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Assigned HelpDesk</h3>
               
               <div className="space-y-3">
@@ -499,7 +386,7 @@ export default function TicketDetailPage() {
             </div>
 
             {/* Employee Details */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 md:p-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Employee Details</h3>
               
               <div className="space-y-3">
@@ -523,10 +410,10 @@ export default function TicketDetailPage() {
             </div>
 
             {/* Ticket History */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 md:p-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Ticket History</h3>
               
-              <div className="space-y-3">
+              <div className="space-y-3 max-h-80 overflow-y-auto">
                 {ticket.statuses.map((status, index) => (
                   <div key={status.id} className="flex items-start gap-3">
                     <div className="flex flex-col items-center">
