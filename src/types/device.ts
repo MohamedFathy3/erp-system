@@ -3,7 +3,7 @@ export interface Device {
   name: string;
   type: string;
   serialNumber: string;
-  condition: string;  // ensure this is defined correctly
+  condition: string;
   note: string;
   purchaseDate: string;
   warrantyExpireDate: string;
@@ -25,8 +25,12 @@ export interface Device {
   graphicCard?: GraphicCard;
   memory?: Memory;
   memoryType?: string;
-  warrantyExpireDateFormatted: string;
-  purchaseDateFormatted: string;
+  warrantyExpireDateFormatted?: string;  // جعلها optional
+  purchaseDateFormatted?: string;
+          // جعلها optional
+          
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          [key: string]: any;                    // جعلها optional
 }
 export interface DeviceTable {
   id: number;

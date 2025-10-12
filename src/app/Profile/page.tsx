@@ -137,16 +137,7 @@ const handleSubmit = async (e: React.FormEvent) => {
 
 
 
-  if (loading) {
-    return (
-      <MainLayout>
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full border-b-2 border-indigo-500 w-8 h-8"></div>
-          <p className="text-gray-500 mr-2">جاري تحميل الملف الشخصي...</p>
-        </div>
-      </MainLayout>
-    )
-  }
+
 
   if (!user) {
     return (

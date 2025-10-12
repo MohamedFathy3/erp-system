@@ -110,8 +110,8 @@ const AddDeviceModal: React.FC<AddDeviceModalProps> = ({ isOpen, onClose, onDevi
     });
   }, [allDeviceModels, formData.brandId]);
 
-  const showComputerFields = formData.type === 'laptop' || formData.type === 'desktop';
-  const showLaptopOnlyFields = formData.type === 'laptop';
+  const showComputerFields = formData.type === 'Laptop' || formData.type === 'desktop';
+  const showLaptopOnlyFields = formData.type === 'Laptop';
 
   // Add device mutation
   const addDeviceMutation = useMutation({

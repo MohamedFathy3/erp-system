@@ -45,6 +45,21 @@ async function proxyRequest(
   return { response, data };
 }
 
+
+
+// PATCH
+export async function PATCH(request: NextRequest) {
+  const url = new URL(request.url);
+  const path = url.pathname.split('/api/proxy/')[1].split('/');
+  
+  const endpoint = path.join('/');
+  const body = await request.json();
+  const cookies = request.headers.get('cookie') || '';
+
+  const { response, data } = await proxyRequest('PATCH', endpoint, body, cookies);
+  return NextResponse.json(data, { status: response.status });
+}
+
 // GET
 export async function GET(request: NextRequest) {
   const url = new URL(request.url);

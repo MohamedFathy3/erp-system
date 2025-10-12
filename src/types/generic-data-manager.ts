@@ -5,6 +5,13 @@ export interface Entity {
   id: number;
   name: string;
   title?: string;
+  image?: string | ImageData;
+  email?: string;
+  country?: string;
+  active?: boolean;
+  phone?: string;
+  address?: string;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any; 
 }
 
@@ -39,12 +46,12 @@ export interface FilterPayload {
   search?: string;
 }
 
-
 export interface Device extends Entity {
   id: number;
   serialNumber: string;
   type: string;
   active: boolean;
+  image?: string | ImageData;
   purchaseDateFormatted: string;
   memory?: { size: number; type: string };
   cpu?: { name: string };
@@ -63,8 +70,10 @@ export interface GenericDataManagerProps {
   additionalData?: AdditionalData[];
   formFields?: FormField[];
   availableFilters?: FilterField[];
-  initialData?: Record<string, any>; // ← أضف هذا
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  initialData?: Record<string, any>;
   defaultFilters?: Record<string, string>;
+  onToggleActive?: (id: number, itemName: string, currentActive: boolean) => void;
 }
 
 export interface ColumnDefinition {
@@ -79,14 +88,41 @@ export interface AdditionalData {
   endpoint: string;
 }
 
+export interface ImageUploadProps {
+  onImageChange: (file: File | null) => void;
+  currentImage?: string;
+  className?: string;
+  multiple?: boolean;
+  accept?: string;
+}
+
+export interface SwitchProps {
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  className?: string;
+  disabled?: boolean;
+}
+
+export interface ImageData {
+  id: number;
+  url: string;
+  thumbnail?: string;
+  alt?: string;
+}
+
 export interface FormField {
   name: string;
   label: string;
-  type: 'text' | 'number' | 'select' | 'email' | 'password' | 'date';
+  type: 'text' | 'number' | 'select' | 'email' | 'password' | 'date' | 'image' | 'switch' | 'textarea' | 'file' | 'tel' | 'url';
   required?: boolean;
   options?: { value: string | number; label: string }[];
   optionsKey?: string;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
   defaultValue?: string | ((formData: Record<string, any>) => string);
+  multiple?: boolean;
+  accept?: string;
+  placeholder?: string;
+  rows?: number;
 }
 
 export interface MutationResult {
@@ -95,7 +131,6 @@ export interface MutationResult {
   isSuccess: boolean;
 }
 
-// أنواع للـ State
 export interface GenericDataManagerState {
   search: string;
   open: boolean;
@@ -107,9 +142,9 @@ export interface GenericDataManagerState {
   orderBy: string;
   orderByDirection: 'asc' | 'desc';
   selectedItems: Set<number>;
-  formData: Record<string, string | number>;
-    defaultFilters?: Record<string, string>;
-  // Setters
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  formData: Record<string, any>;
+  defaultFilters?: Record<string, string>;
   setSearch: React.Dispatch<React.SetStateAction<string>>;
   setOpen: React.Dispatch<React.SetStateAction<boolean>>;
   setEditingItem: React.Dispatch<React.SetStateAction<Entity | null>>;
@@ -120,10 +155,10 @@ export interface GenericDataManagerState {
   setOrderBy: React.Dispatch<React.SetStateAction<string>>;
   setOrderByDirection: React.Dispatch<React.SetStateAction<'asc' | 'desc'>>;
   setSelectedItems: React.Dispatch<React.SetStateAction<Set<number>>>;
-  setFormData: React.Dispatch<React.SetStateAction<Record<string, string | number>>>;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  setFormData: React.Dispatch<React.SetStateAction<Record<string, any>>>;
 }
 
-// أنواع للـ Handlers
 export interface GenericDataManagerHandlers {
   handleSave: (e: React.FormEvent<HTMLFormElement>) => void;
   handleDelete: (id: number, title: string) => void;
@@ -140,30 +175,34 @@ export interface GenericDataManagerHandlers {
   handleToggleActive?: (id: number, itemName: string, currentActive: boolean) => void;
 }
 
-
 export interface FormFieldProps {
   field: FormField;
-  value: string | number;
-  onChange: (value: string) => void;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  value: any;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  onChange: (value: any) => void;
   additionalQueries: Record<string, unknown>;
   onAddNewItem?: (fieldName: string) => void;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
   formData?: Record<string, any>;
+  compact?: boolean;
 }
 
 export interface FormModalProps {
   title: string;
   editingItem: Entity | null;
   formFields: FormField[];
-  formData: Record<string, string | number>;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  formData: Record<string, any>;
   additionalQueries: Record<string, unknown>;
-  onFormDataChange: (formData: Record<string, string | number>) => void;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  onFormDataChange: (formData: Record<string, any>) => void;
   onSave: (e: React.FormEvent<HTMLFormElement>) => void;
   onClose: () => void;
   saveLoading: boolean;
   onAddNewItem?: (fieldName: string) => void;
+  compactLayout?: boolean;
 }
-
-
 
 export interface FilterSearchProps {
   search: string;
@@ -190,7 +229,6 @@ export interface FilterField {
   placeholder?: string;
 }
 
-// أنواع للـ Sub Components
 export interface HeaderProps {
   title: string;
   currentPage: number;
@@ -203,6 +241,7 @@ export interface HeaderProps {
   onAddItem: () => void;
   bulkLoading: boolean;
   showFilter: boolean;
+  searchTerm?: string;
 }
 
 export interface SearchBarProps {
@@ -243,25 +282,7 @@ export interface DataTableProps {
   showingDeleted?: boolean;
   onRestore?: (id: number, itemName: string) => void; 
   onForceDelete?: (id: number, itemName: string) => void;
-}
-
-export interface FormModalProps {
-  title: string;
-  editingItem: Entity | null;
-  formFields: FormField[];
-  formData: Record<string, string | number>;
-  additionalQueries: Record<string, unknown>;
-  onFormDataChange: (formData: Record<string, string | number>) => void;
-  onSave: (e: React.FormEvent<HTMLFormElement>) => void;
-  onClose: () => void;
-  saveLoading: boolean;
-}
-
-export interface FormFieldProps {
-  field: FormField;
-  value: string | number;
-  onChange: (value: string) => void;
-  additionalQueries: Record<string, unknown>;
+  compactView?: boolean;
 }
 
 export interface SelectOption {

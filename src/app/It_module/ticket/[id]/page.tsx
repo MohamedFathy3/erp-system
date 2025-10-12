@@ -11,10 +11,8 @@ import TicketTimer from '@/components/dashboard/TicketTimer';
 import StatusUpdate from '@/components/dashboard/transform';
 import CommentComponent from '@/components/dashboard/itcomminettect';
 import { apiFetch } from '@/lib/api';
-import {TicketDetails } from '@/types/pagetecite';
-
+import { TicketDetails } from '@/types/pagetecite';
 import { getStatusColor, getPriorityColor, getDailyStatus, getDailyStatusColor } from '@/components/skeletons/tecitstuts';
-
 
 export default function TicketDetailPage() {
   const params = useParams();
@@ -25,30 +23,31 @@ export default function TicketDetailPage() {
   const [newReply, setNewReply] = useState('');
   const [isRefetching, setIsRefetching] = useState(false);
 
-const { data: ticket, isLoading, error, refetch } = useQuery({
-  queryKey: ['ticket', ticketId],
-  queryFn: async () => {
-    try {
-      console.log(`Fetching ticket with ID: ${ticketId}`);
-      const response = await apiFetch(`/ticket/${ticketId}`);
-      const responseData = await response.json();  // تأكد من تحويل الاستجابة
-      console.log('API Response:', responseData);  // تحقق من محتوى الرد
+  // تصحيح دالة fetch التذكرة
+  const { data: ticket, isLoading, error, refetch } = useQuery({
+    queryKey: ['ticket', ticketId],
+    queryFn: async (): Promise<TicketDetails> => {
+      try {
+        console.log(`🔄 Fetching ticket with ID: ${ticketId}`);
+        
+        // apiFetch يرجع البيانات مباشرة، ليس Response object
+        const responseData = await apiFetch(`/ticket/${ticketId}`);
+        console.log('✅ API Response data:', responseData);
 
-      if (!response.ok || !responseData) {
-        throw new Error('Failed to fetch ticket details');
+        if (!responseData || !responseData.data) {
+          throw new Error('No data received from server');
+        }
+
+        return responseData.data as TicketDetails;
+      } catch (err) {
+        console.error('❌ Error fetching ticket:', err);
+        throw new Error('Failed to load ticket details. Please try again.');
       }
-
-      return responseData.data as TicketDetails;
-    } catch (err) {
-      console.error('Error fetching ticket:', err);
-      throw new Error('Failed to load ticket details. Please try again.');
-    }
-  },
-  staleTime: 5 * 60 * 1000,
-  retry: 2,
-  retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
-});
-
+    },
+    staleTime: 5 * 60 * 1000,
+    retry: 2,
+    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
+  });
 
   // دالة لإعادة جلب البيانات
   const fetchTicketDetails = useCallback(async () => {
@@ -58,34 +57,40 @@ const { data: ticket, isLoading, error, refetch } = useQuery({
       toast.success('Data refreshed successfully');
     } catch (error) {
       console.error('Error refetching:', error);
+      toast.error('Failed to refresh data');
     } finally {
       setIsRefetching(false);
     }
   }, [refetch]);
 
-  // Mutation for adding a reply
+  // تصحيح Mutation for adding a reply
   const addReplyMutation = useMutation({
     mutationFn: async (message: string) => {
-      const response = await apiFetch(`/replies`, {
+      const responseData = await apiFetch(`/replies`, {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
           ticket_id: parseInt(ticketId),
           message: message
         })
       });
 
-      if (!response.ok) {
-        throw new Error(response.error || 'Failed to add reply');
+      console.log('✅ Reply response:', responseData);
+
+      if (!responseData) {
+        throw new Error('Failed to add reply');
       }
 
-      return response.data;
+      return responseData;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ticket', ticketId] });
       setNewReply('');
       toast.success('Reply added successfully');
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast.error(error.message);
     }
   });
@@ -95,7 +100,6 @@ const { data: ticket, isLoading, error, refetch } = useQuery({
       addReplyMutation.mutate(newReply);
     }
   };
-
 
   // حالة التحميل
   if (isLoading) {
@@ -117,6 +121,7 @@ const { data: ticket, isLoading, error, refetch } = useQuery({
           <div className="text-red-500 text-center">
             <p className="text-lg font-semibold">Error loading ticket</p>
             <p className="mt-2">{error.message}</p>
+            <p className="text-sm mt-2">Ticket ID: {ticketId}</p>
           </div>
           <div className="flex space-x-4">
             <Button onClick={() => refetch()} className="flex items-center">
@@ -239,11 +244,11 @@ const { data: ticket, isLoading, error, refetch } = useQuery({
             {/* Replies Section */}
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 md:p-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
-                Replies ({ticket.replies.length})
+                Replies ({ticket.replies?.length || 0})
               </h3>
               
               <div className="space-y-4 mb-4 max-h-96 overflow-y-auto">
-                {ticket.replies.map((reply) => (
+                {ticket.replies?.map((reply) => (
                   <div key={reply.id} className="border-l-4 border-indigo-500 pl-4 py-2">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
                       <div className="flex items-center gap-2">
@@ -259,7 +264,7 @@ const { data: ticket, isLoading, error, refetch } = useQuery({
                   </div>
                 ))}
                 
-                {ticket.replies.length === 0 && (
+                {(!ticket.replies || ticket.replies.length === 0) && (
                   <p className="text-gray-500 text-center py-4">No replies yet</p>
                 )}
               </div>
@@ -315,12 +320,12 @@ const { data: ticket, isLoading, error, refetch } = useQuery({
                 
                 <div className="flex justify-between">
                   <span className="text-gray-600 dark:text-gray-400">Category:</span>
-                  <span className="font-medium text-gray-900 dark:text-gray-100">{ticket.category.name}</span>
+                  <span className="font-medium text-gray-900 dark:text-gray-100">{ticket.category?.name || 'N/A'}</span>
                 </div>
                 
                 <div className="flex justify-between">
                   <span className="text-gray-600 dark:text-gray-400">Time:</span>
-                  <span className="font-medium text-gray-900 dark:text-gray-100">{ticket.category.time}</span>
+                  <span className="font-medium text-gray-900 dark:text-gray-100">{ticket.category?.time || 'N/A'}</span>
                 </div>
                 
                 <div className="flex justify-between">
@@ -339,7 +344,7 @@ const { data: ticket, isLoading, error, refetch } = useQuery({
                 
                 <div className="flex justify-between">
                   <span className="text-gray-600 dark:text-gray-400">Created By:</span>
-                  <span className="font-medium text-gray-900 dark:text-gray-100">{ticket.createdByName}</span>
+                  <span className="font-medium text-gray-900 dark:text-gray-100">{ticket.createdByName || 'N/A'}</span>
                 </div>
                 
                 <div className="flex justify-between">
@@ -355,7 +360,7 @@ const { data: ticket, isLoading, error, refetch } = useQuery({
               ticketId={ticketId} 
               currentStatus={ticket.status} 
               currentResponsibleId={ticket.responsibleId}
-                  />
+            />
 
             {/* Assigned HelpDesk */}
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 md:p-6">
@@ -392,19 +397,19 @@ const { data: ticket, isLoading, error, refetch } = useQuery({
               <div className="space-y-3">
                 <div className="flex justify-between">
                   <span className="text-gray-600 dark:text-gray-400">Name:</span>
-                  <span className="font-medium text-gray-900 dark:text-gray-100">{ticket.employee.name}</span>
+                  <span className="font-medium text-gray-900 dark:text-gray-100">{ticket.employee?.name || 'N/A'}</span>
                 </div>
                 
                 <div className="flex justify-between">
                   <span className="text-gray-600 dark:text-gray-400">Job Title:</span>
                   <span className="font-medium text-gray-900 dark:text-gray-100">
-                    {ticket.employee.job_title || 'N/A'}
+                    {ticket.employee?.job_title || 'N/A'}
                   </span>
                 </div>
                 
                 <div className="flex justify-between">
                   <span className="text-gray-600 dark:text-gray-400">Email:</span>
-                  <span className="font-medium text-gray-900 dark:text-gray-100">{ticket.employee.email}</span>
+                  <span className="font-medium text-gray-900 dark:text-gray-100">{ticket.employee?.email || 'N/A'}</span>
                 </div>
               </div>
             </div>
@@ -414,7 +419,7 @@ const { data: ticket, isLoading, error, refetch } = useQuery({
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Ticket History</h3>
               
               <div className="space-y-3 max-h-80 overflow-y-auto">
-                {ticket.statuses.map((status, index) => (
+                {ticket.statuses?.map((status, index) => (
                   <div key={status.id} className="flex items-start gap-3">
                     <div className="flex flex-col items-center">
                       <div className={`w-3 h-3 rounded-full ${
@@ -437,7 +442,9 @@ const { data: ticket, isLoading, error, refetch } = useQuery({
                       )}
                     </div>
                   </div>
-                ))}
+                )) || (
+                  <p className="text-gray-500 text-center py-4">No status history available</p>
+                )}
               </div>
             </div>
           </div>

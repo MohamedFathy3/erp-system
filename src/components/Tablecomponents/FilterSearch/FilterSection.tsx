@@ -30,16 +30,8 @@ const FilterSection: React.FC<FilterSectionProps> = ({
   availableFilters = [],
   className = ""
 }) => {
-  const defaultFilters: FilterField[] = [
-    {
-      key: 'name',
-      label: 'Name',
-      type: 'text',
-      placeholder: 'Filter by name'
-    }
-  ];
-
-  const filterFields = availableFilters.length > 0 ? availableFilters : defaultFilters;
+  // إذا availableFilters فاضي، ما نعرضش أي فلترز
+  const filterFields = availableFilters.length > 0 ? availableFilters : [];
 
   const handleFilterChange = (key: string, value: string): void => {
     onFiltersChange({ ...filters, [key]: value });
@@ -115,17 +107,19 @@ const FilterSection: React.FC<FilterSectionProps> = ({
 
   return (
     <div className={`w-full bg-gray-100 dark:bg-gray-700 p-6 rounded-md space-y-6 ${className}`}>
-      {/* حقول الفلترة الديناميكية */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filterFields.map((field) => (
-          <div key={field.key} className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              {field.label}
-            </label>
-            {renderFilterField(field)}
-          </div>
-        ))}
-      </div>
+      {/* حقول الفلترة الديناميكية - تظهر فقط إذا كان في فلترز */}
+      {filterFields.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filterFields.map((field) => (
+            <div key={field.key} className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                {field.label}
+              </label>
+              {renderFilterField(field)}
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* خيارات الترتيب */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

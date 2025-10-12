@@ -100,27 +100,34 @@ const EditDeviceModal: React.FC<EditDeviceModalProps> = ({
   });
 
   // Set form data when device changes or modal opens
-  useEffect(() => {
-    if (isOpen && device) {
-      setFormData({
-        type: device.type || '',
-        serialNumber: device.serialNumber || '',
-        condition: 'used',
-        note: '',
-        purchaseDate: new Date().toISOString().split('T')[0],
-        warrantyExpireDate: '',
-        memoryId: device.memory?.id,
-        graphicCardId: device.graphicCard?.id,
-        processorId: device.cpu?.id,
-        brandId: device.brand?.id,
-        device_status_id: device.device_status?.id || 1,
-        employee: undefined,
-        deviceModelId: device.deviceModel?.id,
-        storages: [{ type: 'primary', storageId: 0 }],
-        active: device.active ? 1 : 0,
-      });
-    }
-  }, [isOpen, device]);
+// Set form data when device changes or modal opens
+useEffect(() => {
+  if (isOpen && device) {
+    setFormData({
+      type: device.type || '',
+      serialNumber: device.serialNumber || '',
+      condition: device.condition || 'used',
+      note: device.note || '',
+      purchaseDate: device.purchaseDate ? new Date(device.purchaseDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+      warrantyExpireDate: device.warrantyExpireDate || '',
+      memoryId: device.memory?.id,
+      graphicCardId: device.graphicCard?.id,
+      processorId: device.cpu?.id,
+      brandId: device.brand?.id,
+      device_status_id: device.device_status?.id || 1,
+      employee: device.employee,
+      deviceModelId: device.deviceModel?.id,
+      // التصحيح هنا - استخدام الـ storages الفعلية من الجهاز
+      storages: device.storages && device.storages.length > 0 
+        ? device.storages.map(storage => ({
+            type: storage.type || 'primary',
+            storageId: storage.storageId || 0
+          }))
+        : [{ type: 'primary', storageId: 0 }],
+      active: device.active ? 1 : 0,
+    });
+  }
+}, [isOpen, device]);
 
   // Filter device models based on selected brand
   const filteredDeviceModels = useMemo(() => {
@@ -136,20 +143,26 @@ const EditDeviceModal: React.FC<EditDeviceModalProps> = ({
     });
   }, [allDeviceModels, formData.brandId]);
 
-  const showComputerFields = formData.type === 'laptop' || formData.type === 'desktop';
-  const showLaptopOnlyFields = formData.type === 'laptop';
+const showComputerFields = formData.type?.toLowerCase() === 'laptop' || formData.type?.toLowerCase() === 'desktop';
+const showLaptopOnlyFields = formData.type?.toLowerCase() === 'laptop';
 
   // Update device mutation
-  const updateDeviceMutation = useMutation({
-    mutationFn: (deviceData: Partial<Device>) => updateDevice(device.id, deviceData as Device),
-    onSuccess: () => {
-      toast.success('Device updated successfully!');
-      onDeviceUpdated();
-    },
-    onError: (error: Error) => {
-      toast.error(`Failed to update device: ${error.message}`);
-    },
-  });
+// Update device mutation
+const updateDeviceMutation = useMutation({
+  mutationFn: (deviceData: Partial<Device>) => {
+    if (!device.id) {
+      throw new Error('Device ID is required');
+    }
+    return updateDevice(device.id, deviceData as Device);
+  },
+  onSuccess: () => {
+    toast.success('Device updated successfully!');
+    onDeviceUpdated();
+  },
+  onError: (error: Error) => {
+    toast.error(`Failed to update device: ${error.message}`);
+  },
+});
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -180,7 +193,7 @@ const EditDeviceModal: React.FC<EditDeviceModalProps> = ({
     }
 
     // Reset computer-specific fields when device type changes to non-computer
-    if (name === 'type' && value !== 'laptop' && value !== 'desktop') {
+    if (name === 'type' && value == 'Laptop' && value !== 'Laptop') {
       setFormData(prev => ({
         ...prev,
         processorId: undefined,
@@ -450,54 +463,66 @@ const EditDeviceModal: React.FC<EditDeviceModalProps> = ({
                 )}
 
                 {/* Storages (Laptop only) */}
-                {showLaptopOnlyFields && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Storages
-                    </label>
-                    {formData.storages?.map((storage, index) => (
-                      <div key={index} className="flex gap-2 mb-2">
-                        <select
-                          value={storage.storageId || 0}
-                          onChange={(e) => handleStorageChange(index, 'storageId', parseInt(e.target.value))}
-                          className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
-                        >
-                          <option value={0}>Select Storage</option>
-                          {storages.map(storageItem => (
-                            <option key={storageItem.id} value={storageItem.id}>
-                              {storageItem.size} {storageItem.type}
-                            </option>
-                          ))}
-                        </select>
-                        {index > 0 && (
-                          <button
-                            type="button"
-                            onClick={() => removeStorageField(index)}
-                            className="px-3 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
-                          >
-                            Remove
-                          </button>
-                        )}
-                      </div>
-                    ))}
-                    <div className="flex gap-2 mt-2">
-                      <button
-                        type="button"
-                        onClick={addStorageField}
-                        className="px-3 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 text-sm"
-                      >
-                        Add Storage
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setShowAddModal('storage')}
-                        className="px-3 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 text-sm"
-                      >
-                        <Plus className="w-4 h-4" /> New Storage
-                      </button>
-                    </div>
-                  </div>
-                )}
+              {/* Storages (Laptop only) */}
+{showLaptopOnlyFields && (
+  <div>
+    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+      Storages
+    </label>
+    {formData.storages?.map((storage, index) => (
+      <div key={index} className="flex gap-2 mb-2">
+        <select
+          value={storage.storageId || 0}
+          onChange={(e) => handleStorageChange(index, 'storageId', parseInt(e.target.value))}
+          className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+        >
+          <option value={0}>Select Storage</option>
+          {storages.map(storageItem => (
+            <option key={storageItem.id} value={storageItem.id}>
+              {storageItem.size} {storageItem.type}
+            </option>
+          ))}
+        </select>
+        
+        {/* عرض نوع الـ storage */}
+        <select
+          value={storage.type || 'primary'}
+          onChange={(e) => handleStorageChange(index, 'type', e.target.value)}
+          className="w-32 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+        >
+          <option value="primary">Primary</option>
+          <option value="additional">Additional</option>
+        </select>
+        
+        {index > 0 && (
+          <button
+            type="button"
+            onClick={() => removeStorageField(index)}
+            className="px-3 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
+          >
+            Remove
+          </button>
+        )}
+      </div>
+    ))}
+    <div className="flex gap-2 mt-2">
+      <button
+        type="button"
+        onClick={addStorageField}
+        className="px-3 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 text-sm"
+      >
+        Add Storage
+      </button>
+      <button
+        type="button"
+        onClick={() => setShowAddModal('storage')}
+        className="px-3 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 text-sm"
+      >
+        <Plus className="w-4 h-4" /> New Storage
+      </button>
+    </div>
+  </div>
+)}
               </>
             )}
 

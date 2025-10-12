@@ -16,7 +16,7 @@ export async function apiFetch(endpoint: string, options: RequestInit = {}) {
     console.log("📥 Raw response:", res);
 
     const contentType = res.headers.get("content-type");
-
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let data: any = null;
     if (contentType?.includes("application/json")) {
       data = await res.json().catch(() => null);

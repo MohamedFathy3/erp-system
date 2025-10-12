@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Send, Ticket } from "lucide-react";
+import { apiFetch } from '@/lib/api';
 
 interface CommentSelf {
   des: string;
@@ -10,58 +11,47 @@ interface CommentComponentProps {
   onCommentAdded?: () => void;
 }
 
-async function addComment(ticketId: number, comment: string): Promise<CommentSelf[]> {
-  const token = localStorage.getItem('token');
-  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/ticket/${ticketId}/help-desk-description`, {
-    method: 'PATCH',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ des: comment })
-  });
-
-  if (!response.ok) {
-    throw new Error('Failed to add comment');
-  }
-
-  const result = await response.json();
-  const users = result.data || result;
-
-  return users;
-}
-
 const CommentComponent = ({ ticketId, onCommentAdded }: CommentComponentProps) => {
   const [comment, setComment] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState('');
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  
+  if (!comment.trim()) {
+    setMessage('Please enter a comment');
+    return;
+  }
+
+  setIsLoading(true);
+  setMessage('');
+
+  try {
+    console.log('🔄 Adding comment for ticket:', ticketId);
     
-    if (!comment.trim()) {
-      setMessage('Please enter a comment');
-      return;
-    }
+    // جرب POST بدلاً من PATCH
+    const responseData = await apiFetch(`/ticket/${ticketId}/help-desk-description`, {
+      method: 'PATCH',
+      body: JSON.stringify({ des: comment })
+    });
 
-    setIsLoading(true);
-    setMessage('');
+    console.log('✅ Comment response:', responseData);
 
-    try {
-      await addComment(ticketId, comment);
-      setMessage('Comment added successfully!');
-      setComment('');
-      
-      if (onCommentAdded) {
-        onCommentAdded();
-      }
-    } catch (error) {
-      setMessage('Failed to add comment. Please try again.');
-      console.error('Error adding comment:', error);
-    } finally {
-      setIsLoading(false);
+    setMessage('Comment added successfully!');
+    setComment('');
+    
+    if (onCommentAdded) {
+      onCommentAdded();
     }
-  };
+  } catch (error) {
+    console.error('❌ Error adding comment:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Failed to add comment. Please try again.';
+    setMessage(errorMessage);
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   return (
     <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md">
@@ -88,11 +78,14 @@ const CommentComponent = ({ ticketId, onCommentAdded }: CommentComponentProps) =
         
         <button
           type="submit"
-          disabled={isLoading}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={isLoading || !comment.trim()}
+          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           {isLoading ? (
-            'Adding...'
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              Adding...
+            </div>
           ) : (
             <>
               <Send className="w-4 h-4" />
@@ -102,8 +95,19 @@ const CommentComponent = ({ ticketId, onCommentAdded }: CommentComponentProps) =
         </button>
         
         {message && (
-          <div className={`p-3 rounded-md ${message.includes('successfully') ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-            {message}
+          <div className={`p-3 rounded-md ${
+            message.includes('successfully') 
+              ? 'bg-green-100 text-green-800 border border-green-200' 
+              : 'bg-red-100 text-red-800 border border-red-200'
+          }`}>
+            <div className="flex items-center gap-2">
+              {message.includes('successfully') ? (
+                <span className="text-green-600">✓</span>
+              ) : (
+                <span className="text-red-600">✗</span>
+              )}
+              {message}
+            </div>
           </div>
         )}
       </form>

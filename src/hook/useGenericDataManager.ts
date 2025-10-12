@@ -1,6 +1,6 @@
 // hooks/useGenericDataManager.ts
 import { useState, FormEvent, useCallback, useEffect } from "react";
-import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
+import { useQuery,useQueries, useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { apiFetch } from "@/lib/api";
 import {
@@ -23,7 +23,7 @@ interface AdditionalQueryResult {
 
 export function useGenericDataManager({
   endpoint,
-  title,
+  // إزالة title غير المستخدم
   additionalData = [],
   formFields = [],
   initialData = {},
@@ -57,39 +57,41 @@ export function useGenericDataManager({
   const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set());
   const [formData, setFormData] = useState<Record<string, string | number>>({});
 
-  // Additional Data Queries
-// hooks/useGenericDataManager.ts - تحديث الـ additionalQueries
-const additionalQueries = additionalData && additionalData.length > 0 
-  ? additionalData.reduce((acc, data) => {
-      acc[data.key] = useQuery({
-        queryKey: [data.key],
-        queryFn: async (): Promise<unknown[]> => {
-          try {
-            const json = await apiFetch(data.endpoint);
-            
-            // Handle different response structures
-            if (json && Array.isArray(json.data)) {
-              return json.data;
-            }
-            if (Array.isArray(json)) {
-              return json;
-            }
-            if (json && json.items && Array.isArray(json.items)) {
-              return json.items;
-            }
-            console.warn(`Unexpected response structure for ${data.endpoint}:`, json);
-            return [];
-          } catch (error) {
-            console.error(`Error fetching ${data.endpoint}:`, error);
-            return [];
+  // حل مشكلة additionalQueries - استخدام useQueries بدلاً من reduce
+  const additionalQueriesArray = useQueries({
+    queries: additionalData.map(data => ({
+      queryKey: [data.key],
+      queryFn: async (): Promise<unknown[]> => {
+        try {
+          const json = await apiFetch(data.endpoint);
+          
+          // Handle different response structures
+          if (json && Array.isArray(json.data)) {
+            return json.data;
           }
-        },
-        staleTime: 10 * 60 * 1000,
-        enabled: open, // ← مهم: يجيب البيانات فقط لما المودال مفتوح
-      });
-      return acc;
-    }, {} as Record<string, AdditionalQueryResult>)
-  : {};
+          if (Array.isArray(json)) {
+            return json;
+          }
+          if (json && json.items && Array.isArray(json.items)) {
+            return json.items;
+          }
+          console.warn(`Unexpected response structure for ${data.endpoint}:`, json);
+          return [];
+        } catch (error) {
+          console.error(`Error fetching ${data.endpoint}:`, error);
+          return [];
+        }
+      },
+      staleTime: 10 * 60 * 1000,
+      enabled: open,
+    }))
+  });
+
+  // تحويل الـ array إلى object
+  const additionalQueries = additionalData.reduce((acc, data, index) => {
+    acc[data.key] = additionalQueriesArray[index];
+    return acc;
+  }, {} as Record<string, AdditionalQueryResult>);
 
   // Main Data Query
   const { data: itemsData, isLoading, error } = useQuery<ApiResponse>({
@@ -282,7 +284,7 @@ const additionalQueries = additionalData && additionalData.length > 0
   });
 
   const deleteItemMutation = useMutation<unknown, Error, { id: number; title: string }>({
-    mutationFn: async ({ id, title }: { id: number; title: string }): Promise<unknown> => {
+    mutationFn: async ({ id }: { id: number; title: string }): Promise<unknown> => {
       if (!id) throw new Error('No items to delete');
       const itemsToDelete = [id];
       return await apiFetch(`/${endpoint}/delete`, {
@@ -445,7 +447,8 @@ const additionalQueries = additionalData && additionalData.length > 0
         search: search.trim() 
       }));
     } else {
-      const { search: _, ...restFilters } = filters;
+      // إزالة المتغير غير المستخدم باستخدام destructuring
+      const { search: removedSearch, ...restFilters } = filters;
       setFilters(restFilters);
     }
     setCurrentPage(1);
@@ -453,7 +456,8 @@ const additionalQueries = additionalData && additionalData.length > 0
 
   const handleClearSearch = (): void => {
     setSearch('');
-    const { search: _, ...restFilters } = filters;
+    // إزالة المتغير غير المستخدم باستخدام destructuring
+    const { search: removedSearch, ...restFilters } = filters;
     setFilters(restFilters);
     setCurrentPage(1);
   };

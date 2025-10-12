@@ -39,8 +39,8 @@ export default function DeviceModelsPage() {
           required: false 
         },
       ]}
-      initialData={{ type: 'device' }} // علشان يبعت type عند الحفظ
-      defaultFilters={{ type: 'device' }} // علشان يفلتر البيانات حسب type
+      initialData={{ type: 'device' }} 
+      defaultFilters={{ type: 'device' }} 
     />
   );
 }

@@ -302,7 +302,8 @@ export default function SystemDevicesPage() {
             isOpen={true}
             onClose={() => setEditDevice(null)}
             onDeviceUpdated={handleEditSuccess}
-            device={editDevice}
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+             device={editDevice as any}
           />
         )}
       </div>

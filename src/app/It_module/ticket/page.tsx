@@ -3,17 +3,14 @@
 import { useState, useEffect } from "react";
 import { useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from "@/lib/api";
-
 import MainLayout from "@/components/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {  Eye } from "lucide-react";
+import { Eye } from "lucide-react";
 import toast from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
 import '@/styles/ticit.css';
 import AddTicketModal from '@/components/dashboard/AddTicketModal';
-
-
 
 interface Ticket {
   id: number;
@@ -26,7 +23,7 @@ interface Ticket {
   category?: { name: string };
   employee?: { name: string };
   company?: string;
-  dailyStatus:boolean;
+  dailyStatus: boolean;
 }
 
 interface PaginationMeta {
@@ -52,14 +49,14 @@ interface CheckboxProps {
 export default function Page() {
   const router = useRouter();
   const [data, setData] = useState<Ticket[]>([]);
-  const [, setLoading] = useState(true);
-  const [, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [showFilter,] = useState(false);
+  const [showFilter] = useState(false);
   const [perPage] = useState(15);
-  const [orderBy,] = useState('id');
-  const [orderByDirection,] = useState('asc');
+  const [orderBy] = useState('id');
+  const [orderByDirection] = useState('asc');
   const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set());
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const queryClient = useQueryClient();
@@ -67,7 +64,7 @@ export default function Page() {
   const [pagination, setPagination] = useState<PaginationMeta>({
     current_page: 1,
     last_page: 1,
-    per_page: 7,
+    per_page: 15,
     total: 0,
     links: []
   });
@@ -76,14 +73,21 @@ export default function Page() {
     if (!showFilter) {
       fetchTickets(currentPage);
     }
-  }, [currentPage]);
+  }, [currentPage, showFilter]);
 
-async function fetchTickets(page = 1) {
+ async function fetchTickets(page = 1) {
   try {
     setLoading(true);
+    setError(null);
     
-    const response = await apiFetch(`/ticket/index`, {
+    console.log('🔄 Fetching tickets for page:', page);
+    
+    // apiFetch يرجع البيانات مباشرة (ليست Response object)
+    const responseData = await apiFetch(`/ticket/index`, {
       method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify({
         filters: {},                
         orderBy: orderBy,           
@@ -94,73 +98,63 @@ async function fetchTickets(page = 1) {
       }),
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("API Error:", errorText);
-      throw new Error("Failed to fetch data");
+    console.log('✅ API Data received:', responseData);
+    
+    // تأكد من أن البيانات موجودة
+    if (responseData && responseData.data && Array.isArray(responseData.data)) {
+      setData(responseData.data);
+      console.log('📊 Tickets set:', responseData.data.length, 'items');
+    } else {
+      console.warn('⚠️ No data array in response:', responseData);
+      setData([]);
     }
-
-    const json: ApiResponse = await response.json();
-    setData(json.data || []);
-    setPagination(json.meta); 
+    
+    if (responseData && responseData.meta) {
+      setPagination(responseData.meta);
+    }
   } catch (err) {
-    toast.error("Failed to fetch tickets");
-    setError(err instanceof Error ? err.message : "An error occurred");
+    console.error('❌ Fetch error:', err);
+    const errorMessage = err instanceof Error ? err.message : "An error occurred";
+    setError(errorMessage);
+    toast.error(`Failed to fetch tickets: ${errorMessage}`);
   } finally {
     setLoading(false);
   }
 }
 
-
-
-    const handleTicketAdded = () => {
+  const handleTicketAdded = () => {
     queryClient.invalidateQueries({ queryKey: ['tickets'] });
+    fetchTickets(currentPage); // إعادة تحميل البيانات
   };
 
-
- 
-
-
-
-const handleChangeStatusAndNavigate = async (id: number, status: string) => {
+ const handleChangeStatusAndNavigate = async (id: number, status: string) => {
   if (status === 'open' || status === 'closed' || status === 'transfered' || status === 'postponed') {
     router.push(`/It_module/ticket/${id}`);
     return;
   }
 
   try {
-   
-
-    const res = await apiFetch(`/ticket/${id}/status`, {
+    // apiFetch يرجع البيانات مباشرة
+    const responseData = await apiFetch(`/ticket/${id}/status`, {
       method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify({ status: 'open' }),
     });
 
-    const data = await res.json().catch(() => null);
+    console.log('✅ Status change response:', responseData);
 
-    if (!res.ok) {
-      console.error('API error response:', res.status, data);
-      throw new Error(data?.message || `Server responded with status ${res.status}`);
-    }
-
+    // إذا وصلنا هنا، يعني الـ request نجح (apiFetch يthrow error إذا فشل)
     toast.success('Status changed successfully to open!');
     router.push(`/It_module/ticket/${id}`);
   } catch (err) {
-    console.error('Unexpected error:', err);
-    const message =
-      err instanceof Error
-        ? err.message
-        : typeof err === 'string'
-        ? err
-        : 'An unknown error occurred';
-
+    console.error('❌ Unexpected error:', err);
+    const message = err instanceof Error ? err.message : 'An unknown error occurred';
     toast.error(`Failed to change ticket status: ${message}`);
     setError(message);
   }
 };
-
-
-
 
   const toggleSelectAll = () => {
     const pageIds = filteredData.map(item => item.id);
@@ -186,11 +180,6 @@ const handleChangeStatusAndNavigate = async (id: number, status: string) => {
     }
     setSelectedItems(newSet);
   };
-
-
-
-
-
 
   const Checkbox = ({ checked, onChange, indeterminate, className }: CheckboxProps) => (
     <input
@@ -226,8 +215,6 @@ const handleChangeStatusAndNavigate = async (id: number, status: string) => {
     }
   };
 
- 
-
   const filteredData = data.filter((item) =>
     item.title.toLowerCase().includes(search.toLowerCase()) ||
     item.ticketNumber.toLowerCase().includes(search.toLowerCase())
@@ -236,6 +223,11 @@ const handleChangeStatusAndNavigate = async (id: number, status: string) => {
   const allSelected = filteredData.length > 0 && filteredData.every(item => selectedItems.has(item.id));
   const someSelected = filteredData.some(item => selectedItems.has(item.id));
 
+  // إضافة زر لإضافة تذكرة جديدة
+  const handleAddTicket = () => {
+    setIsAddModalOpen(true);
+  };
+
   return (
     <MainLayout>
       <div className="space-y-8 p-6">
@@ -243,9 +235,21 @@ const handleChangeStatusAndNavigate = async (id: number, status: string) => {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Tickets</h1>
+            <p className="text-gray-600 dark:text-gray-400 mt-1">
+              {loading ? 'Loading...' : `Showing ${filteredData.length} tickets`}
+            </p>
           </div>
-         
+          {/* <Button onClick={handleAddTicket} className="bg-indigo-600 hover:bg-indigo-700">
+            Add New Ticket
+          </Button> */}
         </div>
+
+        {/* Debug Info */}
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+            Error: {error}
+          </div>
+        )}
 
         {/* Search */}
         <Input
@@ -255,178 +259,180 @@ const handleChangeStatusAndNavigate = async (id: number, status: string) => {
           className="max-w-md text-black dark:text-gray-100 rounded-xl border border-gray-300 dark:border-gray-600 shadow-sm focus:ring-2 focus:ring-indigo-400 dark:bg-gray-800 dark:placeholder-gray-400"
         />
 
-     
+    
 
         {/* Table */}
-        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-md border border-gray-100 dark:border-gray-700 overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead className="bg-gray-50 dark:bg-gray-800">
-              <tr>
-                <th className="px-6 py-3 text-left">
-                  <Checkbox
-                    checked={allSelected}
-                    indeterminate={someSelected && !allSelected}
-                    onChange={toggleSelectAll}
-                    className="h-4 w-4"
-                  />
-                </th>
-                {["ID", "Ticket #", "Title", "Status", "Priority", "Category", "Actions"].map((header) => (
-                  <th key={header} className="px-6 py-3 text-center text-gray-700 dark:text-gray-300 font-medium uppercase tracking-wider">
-                    {header}
+        {!loading && (
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-md border border-gray-100 dark:border-gray-700 overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+              <thead className="bg-gray-50 dark:bg-gray-800">
+                <tr>
+                  <th className="px-6 py-3 text-left">
+                    <Checkbox
+                      checked={allSelected}
+                      indeterminate={someSelected && !allSelected}
+                      onChange={toggleSelectAll}
+                      className="h-4 w-4"
+                    />
                   </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="bg-white text-center dark:bg-gray-900 divide-y divide-gray-100 dark:divide-gray-700">
-              {filteredData.length ? (
-                filteredData.map((item) => (
-                  <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                    <td className="px-6 py-4">
-                      <Checkbox
-                        checked={selectedItems.has(item.id)}
-                        onChange={() => toggleSelectItem(item.id)}
-                        className="h-4 w-4"
-                      />
-                    </td>
-                    <td className="px-6 py-4 font-medium text-gray-900 dark:text-gray-100">{item.id}</td>
-                    <td className="px-6 py-4 font-mono text-gray-700 dark:text-gray-300">{item.ticketNumber}</td>
-                    <td className="px-6 py-4 text-gray-700 dark:text-gray-300">{item.title}</td>
-                    <td className="px-6 py-4">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(item.status)}`}>
-                        {item.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(item.priority)}`}>
-                        {item.priority}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-gray-700 dark:text-gray-300">
-                      {item.category?.name || 'No Category'}
-                    </td>
-                    <td className="px-6 py-4 flex justify-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-onClick={() => handleChangeStatusAndNavigate(item.id, item.status)}
-                      >
+                  {["ID", "Ticket #", "Title", "Status", "Priority", "Actions"].map((header) => (
+                    <th key={header} className="px-6 py-3 text-center text-gray-700 dark:text-gray-300 font-medium uppercase tracking-wider">
+                      {header}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="bg-white text-center dark:bg-gray-900 divide-y divide-gray-100 dark:divide-gray-700">
+                {filteredData.length ? (
+                  filteredData.map((item) => (
+                    <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                      <td className="px-6 py-4">
+                        <Checkbox
+                          checked={selectedItems.has(item.id)}
+                          onChange={() => toggleSelectItem(item.id)}
+                          className="h-4 w-4"
+                        />
+                      </td>
+                      <td className="px-6 py-4 font-medium text-gray-900 dark:text-gray-100">{item.id}</td>
+                      <td className="px-6 py-4 font-mono text-gray-700 dark:text-gray-300">{item.ticketNumber}</td>
+                      <td className="px-6 py-4 text-gray-700 dark:text-gray-300">{item.title}</td>
+                      <td className="px-6 py-4">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(item.status)}`}>
+                          {item.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(item.priority)}`}>
+                          {item.priority}
+                        </span>
+                      </td>
+                     
+                      <td className="px-6 py-4 flex justify-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleChangeStatusAndNavigate(item.id, item.status)}
+                        >
                       {item.dailyStatus === true ? (
   <div className="relative flex items-center justify-center w-10 h-10">
-    <span className="soft-ping"></span>
-    <Eye className="w-5 h-5 text-red-600 z-10" />
+    <span className="absolute animate-ping inline-flex h-full w-full rounded-full bg-red-300 opacity-60"></span>
+    <span className="absolute inline-flex rounded-full h-7 w-7 bg-red-500"></span>
+    <Eye className="w-4 h-4 text-white z-10 relative" />
   </div>
 ) : (
   <Eye className="w-4 h-4 text-gray-400" />
 )}
-
-
-                        View
-                      </Button>
-                   
+View
+                        </Button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={8} className="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+                      {search ? 'No tickets match your search' : 'No tickets found'}
                     </td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={8} className="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
-                    No tickets found
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
 
         {/* Pagination Controls */}
-        <div className="flex flex-col md:flex-row justify-between items-center gap-4 mt-6">
-          <div className="text-sm text-gray-600 dark:text-gray-400">
-            Page {pagination.current_page} of {pagination.last_page}
-          </div>
-          
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage === 1}
-              onClick={() => setCurrentPage(1)}
-            >
-              First
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage === 1}
-              onClick={() => setCurrentPage(currentPage - 1)}
-            >
-              Previous
-            </Button>
+        {!loading && filteredData.length > 0 && (
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4 mt-6">
+            <div className="text-sm text-gray-600 dark:text-gray-400">
+              Page {pagination.current_page} of {pagination.last_page} • Total {pagination.total} tickets
+            </div>
             
-            {/* Page Numbers */}
-            {Array.from({ length: Math.min(5, pagination.last_page) }, (_, i) => {
-              let pageNum;
-              if (pagination.last_page <= 5) {
-                pageNum = i + 1;
-              } else if (currentPage <= 3) {
-                pageNum = i + 1;
-              } else if (currentPage >= pagination.last_page - 2) {
-                pageNum = pagination.last_page - 4 + i;
-              } else {
-                pageNum = currentPage - 2 + i;
-              }
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage(1)}
+              >
+                First
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage(currentPage - 1)}
+              >
+                Previous
+              </Button>
               
-              return (
-                <Button
-                  key={pageNum}
-                  variant={currentPage === pageNum ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setCurrentPage(pageNum)}
-                  className={currentPage === pageNum ? "bg-indigo-600 text-white" : ""}
-                >
-                  {pageNum}
-                </Button>
-              );
-            })}
-            
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage === pagination.last_page}
-              onClick={() => setCurrentPage(currentPage + 1)}
-            >
-              Next
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage === pagination.last_page}
-              onClick={() => setCurrentPage(pagination.last_page)}
-            >
-              Last
-            </Button>
-          </div>
-          
-          <div className="flex items-center space-x-2">
-            <span className="text-sm text-gray-600 dark:text-gray-400">Go to page:</span>
-            <Input
-              type="number"
-              min="1"
-              max={pagination.last_page}
-              defaultValue={currentPage}
-              onChange={(e) => {
-                const page = parseInt(e.target.value);
-                if (page >= 1 && page <= pagination.last_page) {
-                  setCurrentPage(page);
+              {/* Page Numbers */}
+              {Array.from({ length: Math.min(5, pagination.last_page) }, (_, i) => {
+                let pageNum;
+                if (pagination.last_page <= 5) {
+                  pageNum = i + 1;
+                } else if (currentPage <= 3) {
+                  pageNum = i + 1;
+                } else if (currentPage >= pagination.last_page - 2) {
+                  pageNum = pagination.last_page - 4 + i;
+                } else {
+                  pageNum = currentPage - 2 + i;
                 }
-              }}
-              className="w-20 text-black dark:text-gray-100 rounded-xl border border-gray-300 dark:border-gray-600 shadow-sm focus:ring-2 focus:ring-indigo-400 dark:bg-gray-800"
-            />
+                
+                return (
+                  <Button
+                    key={pageNum}
+                    variant={currentPage === pageNum ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setCurrentPage(pageNum)}
+                    className={currentPage === pageNum ? "bg-indigo-600 text-white" : ""}
+                  >
+                    {pageNum}
+                  </Button>
+                );
+              })}
+              
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={currentPage === pagination.last_page}
+                onClick={() => setCurrentPage(currentPage + 1)}
+              >
+                Next
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={currentPage === pagination.last_page}
+                onClick={() => setCurrentPage(pagination.last_page)}
+              >
+                Last
+              </Button>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <span className="text-sm text-gray-600 dark:text-gray-400">Go to page:</span>
+              <Input
+                type="number"
+                min="1"
+                max={pagination.last_page}
+                defaultValue={currentPage}
+                onChange={(e) => {
+                  const page = parseInt(e.target.value);
+                  if (page >= 1 && page <= pagination.last_page) {
+                    setCurrentPage(page);
+                  }
+                }}
+                className="w-20 text-black dark:text-gray-100 rounded-xl border border-gray-300 dark:border-gray-600 shadow-sm focus:ring-2 focus:ring-indigo-400 dark:bg-gray-800"
+              />
+            </div>
           </div>
-        </div>
-              <AddTicketModal 
-        isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
-        onTicketAdded={handleTicketAdded}
-      />
+        )}
+
+        {/* Add Ticket Modal */}
+        <AddTicketModal 
+          isOpen={isAddModalOpen}
+          onClose={() => setIsAddModalOpen(false)}
+          onTicketAdded={handleTicketAdded}
+        />
       </div>
     </MainLayout>
   );
