@@ -75,86 +75,106 @@ export default function Page() {
     }
   }, [currentPage, showFilter]);
 
- async function fetchTickets(page = 1) {
-  try {
-    setLoading(true);
-    setError(null);
-    
-    console.log('🔄 Fetching tickets for page:', page);
-    
-    // apiFetch يرجع البيانات مباشرة (ليست Response object)
-    const responseData = await apiFetch(`/ticket/index`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        filters: {},                
-        orderBy: orderBy,           
-        orderByDirection: orderByDirection,
-        perPage: perPage,
-        paginate: true,           
-        page: page,                 
-      }),
-    });
+  async function fetchTickets(page = 1) {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      console.log('🔄 Fetching tickets for page:', page);
+      
+      const responseData = await apiFetch(`/ticket/index`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          filters: {},                
+          orderBy: orderBy,           
+          orderByDirection: orderByDirection,
+          perPage: perPage,
+          paginate: true,           
+          page: page,                 
+        }),
+      });
 
-    console.log('✅ API Data received:', responseData);
-    
-    // تأكد من أن البيانات موجودة
-    if (responseData && responseData.data && Array.isArray(responseData.data)) {
-      setData(responseData.data);
-      console.log('📊 Tickets set:', responseData.data.length, 'items');
-    } else {
-      console.warn('⚠️ No data array in response:', responseData);
-      setData([]);
+      console.log('✅ API Data received:', responseData);
+      
+      if (responseData && responseData.data && Array.isArray(responseData.data)) {
+        setData(responseData.data);
+        console.log('📊 Tickets set:', responseData.data.length, 'items');
+      } else {
+        console.warn('⚠️ No data array in response:', responseData);
+        setData([]);
+      }
+      
+      if (responseData && responseData.meta) {
+        setPagination(responseData.meta);
+      }
+    } catch (err) {
+      console.error('❌ Fetch error:', err);
+      const errorMessage = err instanceof Error ? err.message : "An error occurred";
+      setError(errorMessage);
+      toast.error(`Failed to fetch tickets: ${errorMessage}`);
+    } finally {
+      setLoading(false);
     }
-    
-    if (responseData && responseData.meta) {
-      setPagination(responseData.meta);
-    }
-  } catch (err) {
-    console.error('❌ Fetch error:', err);
-    const errorMessage = err instanceof Error ? err.message : "An error occurred";
-    setError(errorMessage);
-    toast.error(`Failed to fetch tickets: ${errorMessage}`);
-  } finally {
-    setLoading(false);
   }
-}
 
   const handleTicketAdded = () => {
     queryClient.invalidateQueries({ queryKey: ['tickets'] });
-    fetchTickets(currentPage); // إعادة تحميل البيانات
+    fetchTickets(currentPage);
   };
 
- const handleChangeStatusAndNavigate = async (id: number, status: string) => {
-  if (status === 'open' || status === 'closed' || status === 'transfered' || status === 'postponed') {
-    router.push(`/It_module/ticket/${id}`);
-    return;
-  }
-
+  // دالة جديدة لمعالجة الضغط على View
+ const handleViewTicket = async (ticketId: number) => {
   try {
-    // apiFetch يرجع البيانات مباشرة
-    const responseData = await apiFetch(`/ticket/${id}/status`, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ status: 'open' }),
-    });
-
-    console.log('✅ Status change response:', responseData);
-
-    // إذا وصلنا هنا، يعني الـ request نجح (apiFetch يthrow error إذا فشل)
-    toast.success('Status changed successfully to open!');
-    router.push(`/It_module/ticket/${id}`);
+    console.log(`🔄 Fetching ticket details for ID: ${ticketId}`);
+    
+    // إرسال طلبات متعددة في نفس الوقت
+    const [ticketData, additionalData] = await Promise.all([
+      // الطلب الأول: بيانات التذكرة
+      apiFetch(`/ticket/${ticketId}`),
+      
+      apiFetch(`/ticket/${ticketId}`), 
+    ]);
+    
+    console.log('✅ Ticket details received:', ticketData);
+    console.log('✅ Additional data received:', additionalData);
+    
+    // إذا نجحت الـ requests، انتقل إلى صفحة التذكرة
+    router.push(`/It_module/ticket/${ticketId}`);
+    
   } catch (err) {
-    console.error('❌ Unexpected error:', err);
-    const message = err instanceof Error ? err.message : 'An unknown error occurred';
-    toast.error(`Failed to change ticket status: ${message}`);
-    setError(message);
+    console.error('❌ Error fetching ticket details:', err);
+    const errorMessage = err instanceof Error ? err.message : "Failed to fetch ticket details";
+    toast.error(errorMessage);
   }
 };
+
+  // دالة لتغيير الحالة (إذا كنت تحتاجها لشيء آخر)
+  const handleChangeStatus = async (id: number, newStatus: string) => {
+    try {
+      const responseData = await apiFetch(`/ticket/${id}/status`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      console.log('✅ Status change response:', responseData);
+      toast.success(`Status changed successfully to ${newStatus}!`);
+      
+      // إعادة تحميل البيانات
+      fetchTickets(currentPage);
+      
+    } catch (err) {
+      console.error('❌ Error changing status:', err);
+      const message = err instanceof Error ? err.message : 'An unknown error occurred';
+      toast.error(`Failed to change ticket status: ${message}`);
+      setError(message);
+    }
+  };
 
   const toggleSelectAll = () => {
     const pageIds = filteredData.map(item => item.id);
@@ -223,7 +243,6 @@ export default function Page() {
   const allSelected = filteredData.length > 0 && filteredData.every(item => selectedItems.has(item.id));
   const someSelected = filteredData.some(item => selectedItems.has(item.id));
 
-  // إضافة زر لإضافة تذكرة جديدة
   const handleAddTicket = () => {
     setIsAddModalOpen(true);
   };
@@ -239,9 +258,6 @@ export default function Page() {
               {loading ? 'Loading...' : `Showing ${filteredData.length} tickets`}
             </p>
           </div>
-          {/* <Button onClick={handleAddTicket} className="bg-indigo-600 hover:bg-indigo-700">
-            Add New Ticket
-          </Button> */}
         </div>
 
         {/* Debug Info */}
@@ -258,8 +274,6 @@ export default function Page() {
           onChange={(e) => setSearch(e.target.value)}
           className="max-w-md text-black dark:text-gray-100 rounded-xl border border-gray-300 dark:border-gray-600 shadow-sm focus:ring-2 focus:ring-indigo-400 dark:bg-gray-800 dark:placeholder-gray-400"
         />
-
-    
 
         {/* Table */}
         {!loading && (
@@ -311,18 +325,18 @@ export default function Page() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleChangeStatusAndNavigate(item.id, item.status)}
+                          onClick={() => handleViewTicket(item.id)} // استخدام الدالة الجديدة
                         >
-                      {item.dailyStatus === true ? (
-  <div className="relative flex items-center justify-center w-10 h-10">
-    <span className="absolute animate-ping inline-flex h-full w-full rounded-full bg-red-300 opacity-60"></span>
-    <span className="absolute inline-flex rounded-full h-7 w-7 bg-red-500"></span>
-    <Eye className="w-4 h-4 text-white z-10 relative" />
-  </div>
-) : (
-  <Eye className="w-4 h-4 text-gray-400" />
-)}
-View
+                          {item.dailyStatus === true ? (
+                            <div className="relative flex items-center justify-center w-10 h-10">
+                              <span className="absolute animate-ping inline-flex h-full w-full rounded-full bg-red-300 opacity-60"></span>
+                              <span className="absolute inline-flex rounded-full h-7 w-7 bg-red-500"></span>
+                              <Eye className="w-4 h-4 text-white z-10 relative" />
+                            </div>
+                          ) : (
+                            <Eye className="w-4 h-4 text-gray-400" />
+                          )}
+                          View
                         </Button>
                       </td>
                     </tr>
