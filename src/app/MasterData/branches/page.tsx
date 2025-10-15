@@ -72,9 +72,9 @@ export default function DeviceModelsPage() {
      
       // APIs إضافية للـ dropdowns
       additionalData={[
-        { key: 'companies', endpoint: '/company' },
-        { key: 'cities', endpoint: '/city' },
-        { key: 'countries', endpoint: '/country' },
+        { key: 'company', endpoint: '/company' },
+        { key: 'city', endpoint: '/city' },
+        { key: 'country', endpoint: '/country' },
         { key: 'phone_keys', endpoint: '/phone-key' }
       ]}
      
@@ -162,21 +162,21 @@ export default function DeviceModelsPage() {
           name: "company_id",
           label: "Company",
           type: "select",
-          optionsKey: "companies",
+          optionsKey: "company",
           required: true
         },
         {
           name: "city_id",
           label: "City",
           type: "select",
-          optionsKey: "cities",
+          optionsKey: "city",
           required: false
         },
         {
           name: "country_id",
           label: "Country",
           type: "select",
-          optionsKey: "countries",
+          optionsKey: "country",
           required: false
         },
         {
@@ -187,7 +187,6 @@ export default function DeviceModelsPage() {
           required: false
         }
       ]}
-      // لمنع الفلترز
       availableFilters={[]}
     />
   );

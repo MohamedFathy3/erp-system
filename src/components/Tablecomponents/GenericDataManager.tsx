@@ -25,7 +25,8 @@ import {
   Entity,
   SelectOption,
   PaginationMeta,
-  FilterField
+  FilterField,
+  SaveOptions,
 } from "@/types/generic-data-manager";
 
 interface ExtendedHeaderProps extends HeaderProps {
@@ -39,6 +40,192 @@ const defaultPagination: PaginationMeta = {
   per_page: 7,
   total: 0,
   links: []
+};
+
+// الدوال المساعدة المستقلة - برة الـ component
+const isRelationField = (key: string): boolean => {
+  const relationPatterns = ['_id$', 'Id$', '_by$', 'By$'];
+  return relationPatterns.some(pattern => new RegExp(pattern).test(key));
+};
+
+const isBooleanField = (key: string): boolean => {
+  const booleanFields = ['active', 'is_active', 'enabled', 'verified', 'status'];
+  return booleanFields.includes(key);
+};
+
+const hasRelationData = (key: string, columns: ColumnDefinition[]): boolean => {
+  const relationField = key.replace(/_id$/, '');
+  return columns.some(col => col.key === relationField);
+};
+
+const getOptionsForRelationField = (
+  fieldKey: string, 
+  additionalQueries: Record<string, { data?: unknown[] }>,
+  data: Entity[],
+  columns: ColumnDefinition[]
+): { value: string; label: string }[] => {
+  let relationName: string;
+  
+  if (fieldKey.endsWith('_id')) {
+    relationName = fieldKey.replace('_id', 's');
+  } else {
+    relationName = fieldKey + 's';
+  }
+  
+  // جرب الـ additionalQueries أولاً
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let queryData = additionalQueries[relationName]?.data as any[];
+  
+  if (!Array.isArray(queryData) || queryData.length === 0) {
+    const singularName = relationName.endsWith('s') ? relationName.slice(0, -1) : relationName;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    queryData = additionalQueries[singularName]?.data as any[];
+  }
+  
+  if (Array.isArray(queryData) && queryData.length > 0) {
+    return queryData.map(item => ({
+      value: item.id.toString(),
+      label: item.name || item.title || item.code || item.local_name || `Item ${item.id}`
+    }));
+  }
+
+  // لو مفيش additional queries، استخرج من البيانات الموجودة
+  const uniqueValues = new Set<string>();
+  
+  data.forEach(item => {
+    // جرب الحقل العلائقي مباشرة (مثل company بدل company_id)
+    const relationField = fieldKey.replace(/_id$/, '');
+    const relationValue = item[relationField];
+    
+    if (relationValue) {
+      if (typeof relationValue === 'object' && relationValue.name) {
+        uniqueValues.add(relationValue.name);
+      } else if (typeof relationValue === 'string') {
+        uniqueValues.add(relationValue);
+      }
+    }
+    
+    // جرب الحقل الأصلي (مثل company_id)
+    const originalValue = item[fieldKey];
+    if (originalValue && typeof originalValue === 'string') {
+      uniqueValues.add(originalValue);
+    }
+  });
+
+  if (uniqueValues.size > 0) {
+    return Array.from(uniqueValues).map(value => ({
+      value: value.toLowerCase().replace(/\s+/g, '_'),
+      label: value
+    }));
+  }
+
+  return [];
+};
+
+// الدالة الرئيسية لإنشاء الفلاتر
+const generateDynamicFilters = (
+  columns: ColumnDefinition[],
+  additionalQueries: Record<string, { data?: unknown[] }>,
+  data: Entity[],
+  additionalData: { key: string; endpoint: string }[] = []
+): FilterField[] => {
+  const dynamicFilters: FilterField[] = [];
+  const addedFilters = new Set<string>();
+
+  // فلتر البحث الأساسي - الاسم
+  if (!addedFilters.has('name')) {
+    dynamicFilters.push({
+      key: 'name',
+      label: 'Name',
+      type: 'text' as const,
+      placeholder: 'Search by name'
+    });
+    addedFilters.add('name');
+  }
+
+  // إضافة فلاتر من الـ columns
+  columns.forEach(column => {
+    const excludedKeys = [
+      'id', 'actions', 'created_at', 'updated_at', 'deleted_at', 
+      'image', 'avatar', 'photo', 'logo', 'local_name', 'phone', 
+      'code', 'Status', 'fax', 'address', 'zip_code', 'alias_name', 
+      'notes', 'mobile', 'phone_two', 'email'
+    ];
+    
+    if (!excludedKeys.includes(column.key) && 
+        !addedFilters.has(column.key) &&
+        column.key !== 'name') {
+      
+      if (isRelationField(column.key) || hasRelationData(column.key, columns)) {
+        const baseFieldName = column.key.replace(/_id$/, '');
+        if (!addedFilters.has(baseFieldName)) {
+          const options = getOptionsForRelationField(column.key, additionalQueries, data, columns);
+          if (options.length > 0) {
+            dynamicFilters.push({
+              key: column.key,
+              label: column.label,
+              type: 'select' as const,
+              options: options
+            });
+            addedFilters.add(column.key);
+          }
+        }
+      } else if (isBooleanField(column.key)) {
+        dynamicFilters.push({
+          key: column.key,
+          label: column.label,
+          type: 'select' as const,
+          options: [
+            { value: 'true', label: 'Yes' },
+            { value: 'false', label: 'No' }
+          ]
+        });
+        addedFilters.add(column.key);
+      } else {
+        dynamicFilters.push({
+          key: column.key,
+          label: column.label,
+          type: 'text' as const,
+          placeholder: `Filter by ${column.label.toLowerCase()}`
+        });
+        addedFilters.add(column.key);
+      }
+    }
+  });
+
+  // إضافة فلاتر من الـ additionalData
+  additionalData?.forEach(dataItem => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const queryData = additionalQueries[dataItem.key]?.data as any[];
+    if (Array.isArray(queryData) && queryData.length > 0) {
+      
+      let fieldName: string;
+      let label: string;
+      
+      if (dataItem.key.endsWith('s')) {
+        fieldName = dataItem.key.replace('s', '_id');
+        label = dataItem.key.charAt(0).toUpperCase() + dataItem.key.slice(1, -1);
+      } else {
+        fieldName = dataItem.key + '_id';
+        label = dataItem.key.charAt(0).toUpperCase() + dataItem.key.slice(1);
+      }
+      
+      if (!addedFilters.has(fieldName)) {
+        dynamicFilters.push({
+          key: fieldName,
+          label: label,
+          type: 'select' as const,
+          options: queryData.map(item => ({
+            value: item.id.toString(),
+            label: item.name || item.title || item.code || `Item ${item.id}`
+          }))
+        });
+        addedFilters.add(fieldName);
+      }
+    }
+  });
+
+  return dynamicFilters;
 };
 
 export default function GenericDataManager(props: GenericDataManagerProps): React.ReactElement {
@@ -95,118 +282,9 @@ export default function GenericDataManager(props: GenericDataManagerProps): Reac
   // استخدام pagination آمن مع قيمة افتراضية
   const safePagination: PaginationMeta = pagination || defaultPagination;
 
-  // دالة لتوليد الفلاتر ديناميكياً
-  const generateDynamicFilters = (): FilterField[] => {
-    const dynamicFilters: FilterField[] = [];
-    const addedFilters = new Set<string>();
-
-    // فلتر البحث الأساسي - الاسم
-    if (!addedFilters.has('name')) {
-      dynamicFilters.push({
-        key: 'name',
-        label: 'Name',
-        type: 'text' as const,
-        placeholder: 'Search by name'
-      });
-      addedFilters.add('name');
-    }
-
-    // إضافة فلاتر من الـ columns (بدون الصورة والحقول المكررة)
-    columns.forEach(column => {
-      // نتجنب بعض الحقول
-      const excludedKeys = [
-        'id', 'actions', 'created_at', 'updated_at', 'deleted_at', 
-        'image', 'avatar', 'photo','Logo' // نشيل حقول الصور
-      ];
-      
-      if (!excludedKeys.includes(column.key) && 
-          !addedFilters.has(column.key) &&
-          column.key !== 'name') {
-        
-        // إذا الحقل موجود في additionalData أو له render function
-        if (column.render || column.key.includes('Id') || column.key.endsWith('Id')) {
-          const fieldName = column.key.replace('Id', '');
-          if (!addedFilters.has(fieldName)) {
-            dynamicFilters.push({
-              key: column.key,
-              label: column.label,
-              type: 'select' as const,
-              options: getOptionsForField(column.key)
-            });
-            addedFilters.add(column.key);
-          }
-        } else {
-          // الحقول النصية العادية
-          dynamicFilters.push({
-            key: column.key,
-            label: column.label,
-            type: 'text' as const,
-            placeholder: `Filter by ${column.label.toLowerCase()}`
-          });
-          addedFilters.add(column.key);
-        }
-      }
-    });
-
-    // إضافة فلاتر من الـ additionalData (بدون تكرار)
-    additionalData?.forEach(data => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const queryData = additionalQueries[data.key]?.data as any[];
-      if (Array.isArray(queryData) && queryData.length > 0) {
-        const fieldName = data.key.replace('s', 'Id'); // تحويل 'brands' لـ 'brandId'
-        const label = data.key.charAt(0).toUpperCase() + data.key.slice(1, -1); // 'brands' لـ 'Brand'
-        
-        // نتأكد إن الحقل مش موجود بالفعل
-        if (!addedFilters.has(fieldName)) {
-          dynamicFilters.push({
-            key: fieldName,
-            label: label,
-            type: 'select' as const,
-            options: queryData.map(item => ({
-              value: item.id.toString(),
-              label: item.name || item.title || `Item ${item.id}`
-            }))
-          });
-          addedFilters.add(fieldName);
-        }
-      }
-    });
-
-    return dynamicFilters;
-  };
-
-  // دالة مساعدة للحصول على options للحقول
-  const getOptionsForField = (fieldKey: string): { value: string; label: string }[] => {
-    const additionalDataKey = fieldKey.replace('Id', 's'); 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const queryData = additionalQueries[additionalDataKey]?.data as any[];
-    
-    if (Array.isArray(queryData)) {
-      return queryData.map(item => ({
-        value: item.id.toString(),
-        label: item.name || item.title || `Item ${item.id}`
-      }));
-    }
-
-    const defaultOptions: Record<string, { value: string; label: string }[]> = {
-      status: [
-        { value: 'active', label: 'Active' },
-        { value: 'inactive', label: 'Inactive' },
-        { value: 'pending', label: 'Pending' }
-      ],
-      type: [
-        { value: 'physical', label: 'Physical' },
-        { value: 'digital', label: 'Digital' },
-        { value: 'service', label: 'Service' }
-      ]
-    };
-
-    return defaultOptions[fieldKey] || [];
-  };
-
   const finalAvailableFilters: FilterField[] = availableFilters.length > 0 
     ? availableFilters 
-    : generateDynamicFilters();
+    : generateDynamicFilters(columns, additionalQueries, data, additionalData);
 
   // Checkbox Component
   const Checkbox: React.FC<CheckboxProps> = ({ checked, onChange, indeterminate, className }) => (
@@ -571,20 +649,13 @@ const Header: React.FC<ExtendedHeaderProps> = ({
           onClick={onAddItem}
         >
            <span className="flex items-center gap-3">
-        
               <>
                 <div className="bg-green-100 dark:bg-green-900/30 p-2 rounded-lg group-hover:scale-110 transition-transform duration-200">
                   <i className="fas fa-arrow-left text-green-600 dark:text-green-400 text-sm"></i>
                 </div>
                 <span className="text-black dark:text-green-300">Add {title}</span>
               </>
-      
-         
-          
           </span>
-
-
-
           
           {/* Shine effect */}
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
@@ -1157,14 +1228,18 @@ const FormModal: React.FC<FormModalProps & { compactLayout?: boolean }> = ({
     {saveLoading ? "Saving..." : editingItem ? "Update" : "Create"}
   </Button>
 
-  <Button
+<Button
   style={{color:'black'}}
-    type="submit"
-    className="w-full bg-gradient-to-r from-green-50 to-green-100 text-black hover:bg-indigo-700 transition-all rounded-xl"
-    disabled={saveLoading}
-  >
-    {saveLoading ? "Saving..." : editingItem ? "Update & Continue" : "Create & Continue"}
-  </Button>
+  type="button"
+  className="w-full bg-gradient-to-r from-green-50 to-green-100 text-black hover:bg-green-200 transition-all rounded-xl"
+  disabled={saveLoading}
+  onClick={() => {
+    const saveOptions: SaveOptions = { keepOpen: true };
+    onSave(saveOptions);
+  }}
+>
+  {saveLoading ? "Saving..." : editingItem ? "Update & Continue" : "Create & Continue"}
+</Button>
 </div>
 
         </form>

@@ -68,12 +68,12 @@ export default function DeviceModelsPage() {
 
       // APIs إضافية للـ dropdowns
       additionalData={[
-        { key: 'departments', endpoint: '/department' },
-        { key: 'companies', endpoint: '/company' },
-        { key: 'branches', endpoint: '/branch' },
-        { key: 'positions', endpoint: '/position' },
-        { key: 'cities', endpoint: '/city' },
-        { key: 'countries', endpoint: '/country' }
+        { key: 'department', endpoint: '/department' },
+        { key: 'company', endpoint: '/company' },
+        { key: 'branch', endpoint: '/branch' },
+        { key: 'position', endpoint: '/position' },
+        { key: 'city', endpoint: '/city' },
+        { key: 'country', endpoint: '/country' }
       ]}
 
       // هنا بنمنع الفلترز خالص
@@ -96,21 +96,21 @@ export default function DeviceModelsPage() {
           name: "positionId",
           label: "Position",
           type: "select",
-          optionsKey: "positions",
+          optionsKey: "position",
           required: false
         },
         {
           name: "cityId",
           label: "City",
           type: "select",
-          optionsKey: "cities",
+          optionsKey: "city",
           required: false
         },
         {
           name: "countryId",
           label: "Country",
           type: "select",
-          optionsKey: "countries",
+          optionsKey: "country",
           required: false
         },
         { 
@@ -153,27 +153,22 @@ export default function DeviceModelsPage() {
           name: "departmentId",
           label: "Department",
           type: "select",
-          optionsKey: "departments",
+          optionsKey: "department",
           required: false
         },
-        {
-          name: "phoneKeyId",
-          label: "Phone Key",
-          type: "text",
-          required: false
-        },
+        
         {
           name: "companyId",
           label: "Company",
           type: "select",
-          optionsKey: "companies",
+          optionsKey: "company",
           required: false
         },
         {
           name: "branchId",
           label: "Branch",
           type: "select",
-          optionsKey: "branches",
+          optionsKey: "branch",
           required: false
         }
       ]}

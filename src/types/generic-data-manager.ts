@@ -1,7 +1,7 @@
 // types/generic-data-manager.ts
 import { UseMutationResult } from '@tanstack/react-query';
 export type ModalType = 'simple' | 'tabs' | 'steps' | 'profile';
-
+import { FormEvent } from 'react';
 export interface Entity {
   id: number;
   name: string;
@@ -118,7 +118,7 @@ export interface ImageData {
 export interface FormField {
   name: string;
   label: string;
-  type: 'text' | 'number' | 'select' | 'email' | 'password' | 'date' | 'image' | 'switch' | 'textarea' | 'file' | 'tel' | 'url';
+  type: 'text' | 'number' | 'select' | 'email' | 'password' | 'date' | 'image' | 'switch' | 'textarea' | 'file' | 'tel' | 'url'|'checkbox';
   required?: boolean;
   options?: { value: string | number; label: string }[];
   optionsKey?: string;
@@ -164,8 +164,16 @@ export interface GenericDataManagerState {
   setFormData: React.Dispatch<React.SetStateAction<Record<string, any>>>;
 }
 
+export type SaveOptions = FormEvent<HTMLFormElement> | { keepOpen?: boolean };
+
+// عدل تعريف الـ saveItemMutation
+export interface SaveMutationVariables {
+  data: Entity | FormData;
+  isFormData?: boolean;
+}
+
 export interface GenericDataManagerHandlers {
-  handleSave: (e: React.FormEvent<HTMLFormElement>) => void;
+  handleSave: (e: SaveOptions) => Promise<void>;
   handleDelete: (id: number, title: string) => void;
   handleBulkDelete: () => void;
   handleBulkRestore: () => void;
@@ -202,11 +210,12 @@ export interface FormModalProps {
   additionalQueries: Record<string, unknown>;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onFormDataChange: (formData: Record<string, any>) => void;
-  onSave: (e: React.FormEvent<HTMLFormElement>) => void;
+onSave: (e: SaveOptions) => void;
   onClose: () => void;
   saveLoading: boolean;
   onAddNewItem?: (fieldName: string) => void;
   compactLayout?: boolean;
+  
 }
 
 export interface FilterSearchProps {

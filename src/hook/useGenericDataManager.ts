@@ -11,6 +11,7 @@ import {
   GenericDataManagerProps,
   GenericDataManagerState,
   GenericDataManagerHandlers,
+  SaveOptions,
 } from "@/types/generic-data-manager";
 
 const PER_PAGE = 15;
@@ -23,7 +24,6 @@ interface AdditionalQueryResult {
 
 export function useGenericDataManager({
   endpoint,
-  // إزالة title غير المستخدم
   additionalData = [],
   formFields = [],
   initialData = {},
@@ -34,7 +34,8 @@ export function useGenericDataManager({
   isLoading: boolean;
   error: Error | null;
   additionalQueries: Record<string, AdditionalQueryResult>;
-  saveItemMutation: UseMutationResult<unknown, Error, Entity>;
+  // غير من Entity لـ { data: Entity | FormData; isFormData?: boolean }
+  saveItemMutation: UseMutationResult<unknown, Error, { data: Entity | FormData; isFormData?: boolean }>;
   deleteItemMutation: UseMutationResult<unknown, Error, { id: number; title: string }>;
   bulkDeleteMutation: UseMutationResult<unknown, Error, number[]>;
   bulkRestoreMutation: UseMutationResult<unknown, Error, number[]>;
@@ -254,34 +255,56 @@ export function useGenericDataManager({
 
   const currentPageData = getPaginatedData();
 
-  // Mutations
-  const saveItemMutation = useMutation<unknown, Error, Entity>({
-    mutationFn: async (item: Entity): Promise<unknown> => {
-      if (item.id) {
-        return apiFetch(`/${endpoint}/${item.id}`, {
+
+const saveItemMutation = useMutation<unknown, Error, { 
+  data: Entity | FormData; 
+  isFormData?: boolean 
+}>({
+  mutationFn: async ({ data, isFormData = false }): Promise<unknown> => {
+    if (isFormData) {
+      // استخدام FormData للملفات
+      const formData = data as FormData;
+      
+      if (editingItem?.id) {
+        // للتعديل - أضف _method للـ FormData
+        formData.append('_method', 'PUT');
+        return apiFetch(`/${endpoint}/${editingItem.id}`, {
+          method: "POST",
+          body: formData,
+        });
+      } else {
+        // للإضافة
+        return apiFetch(`/${endpoint}`, {
+          method: "POST",
+          body: formData,
+        });
+      }
+    } else {
+      // استخدام JSON العادي
+      const jsonData = data as Entity;
+      if (jsonData.id) {
+        return apiFetch(`/${endpoint}/${jsonData.id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(item),
+          body: JSON.stringify(jsonData),
         });
       } else {
         return apiFetch(`/${endpoint}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...initialData, ...item }),
+          body: JSON.stringify({ ...initialData, ...jsonData }),
         });
       }
-    },
-    onSuccess: (): void => {
-      queryClient.invalidateQueries({ queryKey: [endpoint] });
-      setOpen(false);
-      setEditingItem(null);
-      setFormData({});
-      toast.success("Saved successfully!");
-    },
-    onError: (error: Error): void => {
-      toast.error(error.message || "Error saving item");
-    },
-  });
+    }
+  },
+  onSuccess: (): void => {
+    queryClient.invalidateQueries({ queryKey: [endpoint] });
+  },
+  onError: (error: Error): void => {
+    toast.error(error.message || "Error saving item");
+  },
+});
+
 
   const deleteItemMutation = useMutation<unknown, Error, { id: number; title: string }>({
     mutationFn: async ({ id }: { id: number; title: string }): Promise<unknown> => {
@@ -365,22 +388,44 @@ export function useGenericDataManager({
     }
   };
 
-  // Handlers
-  const handleSave = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
+ const isFormEvent = (e: SaveOptions | FormEvent<HTMLFormElement>): e is FormEvent<HTMLFormElement> => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   return typeof (e as any)?.preventDefault === 'function';
+ };
+
+// في useGenericDataManager.ts - عدل الـ handleSave كالتالي:
+const handleSave = async (e: SaveOptions): Promise<void> => {
+  let itemData: Record<string, string | number | File | null> = {};
+  let keepOpen = false;
+  let hasFiles = false;
+
+  // التحقق من نوع e باستخدام الدالة المساعدة
+  if (isFormEvent(e)) {
+    // الحالة القديمة (FormEvent)
     e.preventDefault();
     
     const formDataObj = new FormData(e.currentTarget);
-    const itemData: Record<string, string | number> = {
-      ...initialData,
-    };
+    itemData = { ...initialData };
+    hasFiles = false;
 
     formFields.forEach(field => {
-      const value = formDataObj.get(field.name) as string;
+      const value = formDataObj.get(field.name);
+      
       if (value !== null && value !== undefined) {
-        if (field.type === 'number') {
+        if (value instanceof File) {
+          // إذا كان ملف
+          if (value.size > 0) {
+            itemData[field.name] = value;
+            hasFiles = true;
+          } else {
+            itemData[field.name] = null;
+          }
+        } else if (field.type === 'number') {
           itemData[field.name] = Number(value);
+        } else if (field.type === 'checkbox') {
+          itemData[field.name] = value === 'on' ? 1 : 0;
         } else {
-          itemData[field.name] = value;
+          itemData[field.name] = value as string;
         }
       }
     });
@@ -388,9 +433,87 @@ export function useGenericDataManager({
     if (editingItem?.id) {
       itemData.id = editingItem.id;
     }
+  } else {
+    // الحالة الجديدة (object من زر Continue)
+    itemData = { ...formData, ...initialData };
+    keepOpen = e.keepOpen || false;
+    
+    if (editingItem?.id) {
+      itemData.id = editingItem.id;
+    }
 
-    saveItemMutation.mutate(itemData as Entity);
-  };
+    // تحقق إذا فيه ملفات
+    hasFiles = Object.values(itemData).some(value => {
+      return value instanceof File;
+    });
+  }
+
+  // ... باقي الكود بدون تغيير
+  // إعداد البيانات للإرسال
+  let dataToSend: Entity | FormData;
+  let isFormData = false;
+
+  if (hasFiles) {
+    // استخدام FormData للملفات
+    const formDataToSend = new FormData();
+    
+    Object.entries(itemData).forEach(([key, value]) => {
+      if (value instanceof File) {
+        formDataToSend.append(key, value);
+        console.log(`📤 Appending file: ${key}`, value);
+      } else if (value !== null && value !== undefined && value !== '') {
+        // تحويل جميع القيم إلى string قبل الإضافة
+        formDataToSend.append(key, String(value));
+        console.log(`📤 Appending field: ${key} = ${value}`);
+      }
+    });
+    
+    dataToSend = formDataToSend;
+    isFormData = true;
+    console.log('🔄 Sending as FormData');
+  } else {
+    // استخدام JSON عادي
+    const cleanData: Record<string, unknown> = {};
+    Object.entries(itemData).forEach(([key, value]) => {
+      if (value !== null && value !== undefined && value !== '') {
+        cleanData[key] = value;
+      }
+    });
+    
+    dataToSend = cleanData as Entity;
+    isFormData = false;
+    console.log('🔄 Sending as JSON:', cleanData);
+  }
+
+  saveItemMutation.mutate({ data: dataToSend, isFormData }, {
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [endpoint] });
+      
+      if (!keepOpen) {
+        // إغلاق الفورم - للحالة العادية
+        setOpen(false);
+        setEditingItem(null);
+        setFormData({});
+      } else {
+        // تنظيف الفورم بس يفضل مفتوح - لحالة Continue
+        setFormData({});
+        setEditingItem(null);
+        
+        // تركيز على أول حقل بعد الحفظ
+        setTimeout(() => {
+          const firstInput = document.querySelector('input, select, textarea') as HTMLElement;
+          firstInput?.focus();
+        }, 100);
+      }
+      
+      toast.success(editingItem ? "Updated successfully!" : "Created successfully!");
+    },
+    onError: (error: Error) => {
+      console.error('❌ Save error:', error);
+      toast.error(error.message || "Error saving item");
+    }
+  });
+};
 
   const handleDelete = (id: number, itemTitle: string): void => {
     if (!id) return;

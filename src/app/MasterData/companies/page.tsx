@@ -6,14 +6,14 @@ export default function DeviceModelsPage() {
   return (
     <GenericDataManager
       endpoint="company"
-      title="Companies"
+      title="Company"
       columns={[
         { 
           key: 'id', 
           label: 'ID', 
           sortable: true,
           render: (item) => {
-            const ep = "Companies";
+            const ep = "Company";
             const firstLetter = ep[0]?.toUpperCase() || 'D';
             const lastLetter = ep[ep.length - 1]?.toUpperCase() || 'D';
             return `${firstLetter}${lastLetter}${String(item.id).padStart(3, '0')}`;
@@ -35,12 +35,6 @@ export default function DeviceModelsPage() {
           label: 'Phone', 
           sortable: false,
           render: (item) => item.phone || 'N/A'
-        },
-        { 
-          key: 'address', 
-          label: 'Address', 
-          sortable: false,
-          render: (item) => item.address || 'N/A'
         },
         { 
           key: 'email', 
@@ -71,29 +65,10 @@ export default function DeviceModelsPage() {
           )
         },
         { 
-          key: 'website', 
-          label: 'Website', 
-          sortable: false,
-          render: (item) => item.website || 'N/A'
-        },
-      
-        { 
           key: 'type', 
           label: 'Type', 
           sortable: false,
           render: (item) => item.type || 'N/A'
-        },
-        { 
-          key: 'city', 
-          label: 'City', 
-          sortable: false,
-       
-        },
-        { 
-          key: 'country', 
-          label: 'Country', 
-          sortable: false,
-       
         },
         { 
           key: 'organization', 
@@ -118,6 +93,15 @@ export default function DeviceModelsPage() {
       ]}
      
       formFields={[
+        // حقل الصورة في الأول
+        { 
+          name: 'avatar', 
+          label: 'Company Logo/Avatar', 
+          type: 'file', 
+          required: false,
+          accept: 'image/*',
+          multiple: false
+        },
         { 
           name: 'name', 
           label: 'Name', 
@@ -154,19 +138,12 @@ export default function DeviceModelsPage() {
           placeholder: 'Enter email address'
         },
         { 
-          name: 'avatar', 
-          label: 'Avatar', 
-          type: 'image', 
-          required: false
-        },
-        { 
           name: 'website', 
           label: 'Website', 
           type: 'url', 
           required: false,
           placeholder: 'Enter website URL'
         },
-      
         { 
           name: 'type', 
           label: 'Type', 
@@ -200,6 +177,13 @@ export default function DeviceModelsPage() {
           required: true
         }
       ]}
+      
+      // ممكن تضيف initial data لو عاوز قيم افتراضية
+      initialData={{ 
+        type: 'branch',
+        // أي قيم افتراضية تانيه
+      }}
+      
       // لمنع الفلترز
       availableFilters={[]}
     />
