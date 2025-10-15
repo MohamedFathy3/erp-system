@@ -206,20 +206,16 @@ export default function SupportTicketsPage() {
     }
   }
 
-  // استخدام React Query للتحولات (Mutations) مع apiFetch - باستخدام JSON بدلاً من FormData
+  // استخدام React Query للتحولات (Mutations) مع apiFetch - باستخدام FormData للملفات
   const createTicketMutation = useMutation({
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    mutationFn: async (ticketData: any) => {
+    mutationFn: async (formData: FormData) => {
       console.log('🔄 Creating ticket...');
-      console.log('📤 Ticket data:', ticketData);
       
-      // استخدام apiFetch مع JSON بدلاً من FormData
+      // استخدام apiFetch مع FormData - بدون تعيين Content-Type يدوياً
       const responseData = await apiFetch('ticket/create-by-employee', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(ticketData)
+        // إزالة headers - المتصفح سيقوم بتعيين Content-Type تلقائياً مع boundary
+        body: formData
       });
 
       console.log('✅ Ticket creation response:', responseData);
@@ -270,35 +266,35 @@ export default function SupportTicketsPage() {
     }
     
     try {
-      const ticketData = {
-        title: newTicket.title,
-        content: newTicket.content,
-        category_id: parseInt(newTicket.category_id),
-        type_id: parseInt(newTicket.type_id),
-        priority: newTicket.priority,
-        device_id: parseInt(newTicket.device_id),
-        status: newTicket.status,
-        // إذا كان الـ API يتوقع ملف، يمكنك إضافة منطق لتحويل الملف إلى base64 هنا
-        // avatar: newTicket.avatar ? await convertFileToBase64(newTicket.avatar) : null
-      };
+      const formData = new FormData();
+      
+      // إضافة الحقول النصية
+      formData.append('title', newTicket.title);
+      formData.append('content', newTicket.content);
+      formData.append('category_id', newTicket.category_id);
+      formData.append('type_id', newTicket.type_id);
+      formData.append('priority', newTicket.priority);
+      formData.append('device_id', newTicket.device_id);
+      formData.append('status', newTicket.status);
+      formData.append('employee_id', '2'); // إضافة employee_id كما في البيانات المرسلة
+      
+      // إضافة الملف إذا كان موجوداً
+      if (newTicket.avatar) {
+        formData.append('avatar', newTicket.avatar);
+      }
 
-      console.log('📤 Sending ticket data:', ticketData);
-      createTicketMutation.mutate(ticketData);
+      // طباعة محتويات FormData للتأكد
+      console.log('📤 FormData contents:');
+      for (let [key, value] of formData.entries()) {
+        console.log(`${key}:`, value);
+      }
+
+      createTicketMutation.mutate(formData);
     } catch (error) {
       console.error('❌ Error creating ticket:', error);
       setError('An error occurred while creating the ticket');
       setUploading(false);
     }
-  }
-
-  // دالة لتحويل الملف إلى base64 (إذا كان الـ API يتطلبه)
-  const convertFileToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = error => reject(error);
-    });
   }
 
   const getStatusColor = (status: string) => {
