@@ -42,48 +42,17 @@ export default function DeviceModelsPage() {
           sortable: false,
           render: (item) => item.phone || 'N/A'
         },
-        { 
-          key: 'phone_two', 
-          label: 'Phone Two', 
-          sortable: false,
-          render: (item) => item.phone_two || 'N/A'
-        },
+   
         { 
           key: 'mobile', 
           label: 'Mobile', 
           sortable: false,
           render: (item) => item.mobile || 'N/A'
         },
-        { 
-          key: 'fax', 
-          label: 'Fax', 
-          sortable: false,
-          render: (item) => item.fax || 'N/A'
-        },
-        { 
-          key: 'address', 
-          label: 'Address', 
-          sortable: false,
-          render: (item) => item.address || 'N/A'
-        },
-        { 
-          key: 'zip_code', 
-          label: 'Zip Code', 
-          sortable: false,
-          render: (item) => item.zip_code || 'N/A'
-        },
-        { 
-          key: 'alias_name', 
-          label: 'Alias Name', 
-          sortable: false,
-          render: (item) => item.alias_name || 'N/A'
-        },
-        { 
-          key: 'notes', 
-          label: 'Notes', 
-          sortable: false,
-          render: (item) => item.notes || 'N/A'
-        },
+ 
+      
+      
+  
         { 
           key: 'active', 
           label: 'Status', 
@@ -188,17 +157,7 @@ export default function DeviceModelsPage() {
           placeholder: 'Enter notes',
           rows: 3
         },
-        { 
-          name: 'active', 
-          label: 'Status', 
-          type: 'select',
-          options: [
-            { value: 'true', label: 'Active' },
-            { value: 'false', label: 'Inactive' }
-          ],
-          required: true,
-          defaultValue: 'true'
-        },
+       
         {
           name: "company_id",
           label: "Company",

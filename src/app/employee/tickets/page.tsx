@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
+import { apiFetch } from '@/lib/api'
 
 interface Category {
   id: number;
@@ -52,114 +53,130 @@ export default function SupportTicketsPage() {
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState('')
 
-  // استخدام React Query لجلب البيانات
+  // استخدام React Query مع apiFetch لجلب البيانات
   const { data: tickets, isLoading: ticketsLoading, error: ticketsError } = useQuery({
     queryKey: ['tickets'],
     queryFn: async () => {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}ticket`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+      try {
+        console.log('🔄 Fetching tickets...');
+        const responseData = await apiFetch('/ticket');
+        console.log('✅ Tickets response:', responseData);
+
+        if (!responseData || !responseData.data) {
+          throw new Error('No tickets data received');
         }
-      });
-      
-      if (!response.ok) throw new Error('Failed to fetch tickets');
-      
-      const data = await response.json();
-      return data.data || [];
+
+        return responseData.data;
+      } catch (error) {
+        console.error('❌ Error fetching tickets:', error);
+        throw new Error('Failed to fetch tickets');
+      }
     },
-    staleTime: 5 * 60 * 1000, // البيانات تصبح قديمة بعد 5 دقائق
+    staleTime: 5 * 60 * 1000,
   })
 
   const { data: categories, isLoading: categoriesLoading } = useQuery({
     queryKey: ['categories'],
     queryFn: async () => {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/category`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+      try {
+        console.log('🔄 Fetching categories...');
+        const responseData = await apiFetch('/category');
+        console.log('✅ Categories response:', responseData);
+
+        if (!responseData || !responseData.data) {
+          throw new Error('No categories data received');
         }
-      });
-      
-      if (!response.ok) throw new Error('Failed to fetch categories');
-      
-      const data = await response.json();
-      return data.data || [];
+
+        return responseData.data;
+      } catch (error) {
+        console.error('❌ Error fetching categories:', error);
+        throw new Error('Failed to fetch categories');
+      }
     },
     staleTime: 5 * 60 * 1000,
   })
 
-const { data: priorities, isLoading: prioritiesLoading } = useQuery({
-  queryKey: ['priorities'],
-  queryFn: async () => {
-    try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/priorities`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+  const { data: priorities, isLoading: prioritiesLoading } = useQuery({
+    queryKey: ['priorities'],
+    queryFn: async () => {
+      try {
+        console.log('🔄 Fetching priorities...');
+        
+        // جرب جلب الأولويات من الـ API
+        try {
+          const responseData = await apiFetch('/priorities');
+          console.log('✅ Priorities response:', responseData);
+
+          if (responseData && responseData.data) {
+            return responseData.data;
+          }
+        } catch (apiError) {
+          console.warn('❌ API priorities not available, using fallback data');
         }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        return data.data || [];
+        
+        // استخدام البيانات الافتراضية إذا فشل الـ API
+        const fallbackPriorities = [
+          { id: 'low', name: 'Low' },
+          { id: 'medium', name: 'Medium' },
+          { id: 'high', name: 'High' },
+          { id: 'urgent', name: 'Urgent' }
+        ];
+        
+        return fallbackPriorities;
+      } catch (error) {
+        console.error('❌ Error fetching priorities:', error);
+        throw new Error('Failed to fetch priorities');
       }
-      
-      throw new Error('API not available, using fallback data');
-    } catch (error) {
-      console.warn('Failed to fetch priorities, using fallback data:', error);
-      
-      const fallbackPriorities = [
-        { id: 'low', name: 'Low' },
-        { id: 'medium', name: 'Medium' },
-        { id: 'high', name: 'High' },
-        { id: 'urgent', name: 'Urgent' }
-      ];
-      
-      return fallbackPriorities;
-    }
-  },
-  staleTime: 5 * 60 * 1000,
-});
+    },
+    staleTime: 5 * 60 * 1000,
+  });
 
   const { data: types, isLoading: typesLoading } = useQuery({
     queryKey: ['types'],
     queryFn: async () => {
-      const payload = {
-        filters: {
-          type: "device", 
-        },
-        orderBy: 'id',  
-        deleted: false,
-      };
-      
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/type/index`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify(payload),
-      });
-      
-      if (!response.ok) throw new Error('Failed to fetch types');
-      
-      const data = await response.json();
-      return data.data || [];
+      try {
+        console.log('🔄 Fetching types...');
+        
+        const payload = {
+          filters: {
+            type: "device", 
+          },
+          orderBy: 'id',  
+          deleted: false,
+        };
+        
+        const responseData = await apiFetch('/type/index', {
+          method: 'POST',
+          body: JSON.stringify(payload)
+        });
+
+        console.log('✅ Types response:', responseData);
+
+        if (!responseData || !responseData.data) {
+          throw new Error('No types data received');
+        }
+
+        return responseData.data;
+      } catch (error) {
+        console.error('❌ Error fetching types:', error);
+        throw new Error('Failed to fetch types');
+      }
     },
     staleTime: 5 * 60 * 1000,
   })
 
   // Apply filter when tickets or activeFilter changes
-
   const applyFilter = (filter: string) => {
-  if (!tickets) return;
-  
-  if (filter === 'all') {
-    setFilteredTickets(tickets);
-  } else {
-    setFilteredTickets(tickets.filter((t: Ticket) => t.status === filter));
+    if (!tickets) return;
+    
+    if (filter === 'all') {
+      setFilteredTickets(tickets);
+    } else {
+      setFilteredTickets(tickets.filter((t: Ticket) => t.status === filter));
+    }
   }
-}
 
-    useState(() => {
+  useState(() => {
     if (tickets) {
       applyFilter(activeFilter);
     }
@@ -187,25 +204,25 @@ const { data: priorities, isLoading: prioritiesLoading } = useQuery({
     }
   }
 
-  // استخدام React Query للتحولات (Mutations)
+  // استخدام React Query للتحولات (Mutations) مع apiFetch
   const createTicketMutation = useMutation({
     mutationFn: async (formData: FormData) => {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/create-by-employee`, {
+      console.log('🔄 Creating ticket...');
+      
+      // استخدام apiFetch مع FormData
+      const responseData = await apiFetch('/create-by-employee', {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
         body: formData
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to create ticket');
-      }
-      toast.success('success add ticket')
-      return response.json();
-    },
+      console.log('✅ Ticket creation response:', responseData);
 
+      if (!responseData) {
+        throw new Error('Failed to create ticket');
+      }
+
+      return responseData;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tickets'] });
       setIsModalOpen(false);
@@ -219,10 +236,11 @@ const { data: priorities, isLoading: prioritiesLoading } = useQuery({
         device_id: '1',
         status: 'pending'
       });
-      setError('Ticket created successfully!');
-      setTimeout(() => setError(''), 3000);
+      toast.success('Ticket created successfully!');
+      setError('');
     },
     onError: (error: Error) => {
+      console.error('❌ Ticket creation error:', error);
       setError(error.message || 'An error occurred while creating the ticket');
     },
     onSettled: () => {
@@ -251,7 +269,7 @@ const { data: priorities, isLoading: prioritiesLoading } = useQuery({
 
       createTicketMutation.mutate(formData);
     } catch (error) {
-      console.error('Error creating ticket:', error);
+      console.error('❌ Error creating ticket:', error);
       setError('An error occurred while creating the ticket');
       setUploading(false);
     }
@@ -311,8 +329,7 @@ const { data: priorities, isLoading: prioritiesLoading } = useQuery({
     queryClient.invalidateQueries({ queryKey: ['priorities'] });
     queryClient.invalidateQueries({ queryKey: ['types'] });
     
-    setError('Data refreshed successfully!');
-    setTimeout(() => setError(''), 3000);
+    toast.success('Data refreshed successfully!');
   }
 
   const loading = ticketsLoading || categoriesLoading || prioritiesLoading || typesLoading;
@@ -322,9 +339,8 @@ const { data: priorities, isLoading: prioritiesLoading } = useQuery({
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex justify-between items-center mb-4">
-  
-
-</div>
+          {/* يمكنك إضافة محتوى هنا إذا كان مطلوبًا */}
+        </div>
         
 
         <div className="mb-8 text-center">
@@ -342,12 +358,14 @@ const { data: priorities, isLoading: prioritiesLoading } = useQuery({
             Refresh Data
           </button>
         </div>
-<button
-    onClick={() => router.back()}  // العودة للصفحة السابقة
-    className="px-4 py-2  m-5 p-5 rounded-lg "
-  >
-    &#8592; Back
-  </button>
+
+        <button
+          onClick={() => router.back()}
+          className="px-4 py-2 m-5 p-5 rounded-lg"
+        >
+          &#8592; Back
+        </button>
+
         {/* Error/Success Message */}
         {error && (
           <div className={`px-4 py-3 rounded-lg mb-6 ${
@@ -359,6 +377,7 @@ const { data: priorities, isLoading: prioritiesLoading } = useQuery({
           </div>
         )}
 
+        {/* باقي الكود يبقى كما هو بدون تغيير */}
         {/* Filters and Actions */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4 bg-white p-4 rounded-lg shadow-sm">
           <div className="flex flex-wrap gap-2">

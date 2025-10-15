@@ -19,7 +19,7 @@ export default function Breadcrumb() {
   });
 
   return (
-    <nav className="text-sm text-gray-600 dark:text-gray-300 mb-4">
+    <nav className="text-sm text-blue-800  dark:text-gray-300 mb-4">
       <ol className="flex flex-wrap items-center space-x-2">
         <li>
           <Link href="/" className="hover:underline">

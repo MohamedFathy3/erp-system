@@ -23,7 +23,6 @@ export default function DeviceModelsPage() {
         },
         { key: 'name', label: 'Name', sortable: true },
         { key: 'ArabicName', label: 'Arabic Name', sortable: false },
-        { key: 'type', label: 'Type', sortable: false },
       ]}
       formFields={[
         { 

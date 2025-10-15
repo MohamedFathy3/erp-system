@@ -85,7 +85,7 @@ export default function Pagination({
           size="sm"
           disabled={currentPage === 1}
           onClick={() => onPageChange(currentPage - 1)}
-          className="min-w-[80px]"
+          className="min-w-[80px] text-black bg-green-300  dark:bg-green-900/30 p-2 rounded-lg group-hover:scale-110 transition-transform duration-200"
         >
           Previous
         </Button>
@@ -107,7 +107,7 @@ export default function Pagination({
               onClick={() => onPageChange(page as number)}
               className={`min-w-[40px] ${
                 currentPage === page 
-                  ? "bg-indigo-600 text-white hover:bg-indigo-700" 
+                  ? "bg-green-100 dark:bg-green-900/30 p-2 rounded-lg group-hover:scale-110 transition-transform duration-200 text-white hover:bg-green-500" 
                   : ""
               }`}
             >
@@ -122,7 +122,7 @@ export default function Pagination({
           size="sm"
           disabled={currentPage === lastPage}
           onClick={() => onPageChange(currentPage + 1)}
-          className="min-w-[60px]"
+          className="min-w-[60px] bg-green-100 dark:bg-orange-900/30 p-2 rounded-lg group-hover:scale-110 transition-transform duration-200"
         >
           Next
         </Button>
@@ -141,7 +141,7 @@ export default function Pagination({
       
       {/* الانتقال لصفحة محددة */}
       <div className="flex items-center space-x-2">
-        <span className="text-sm text-gray-600 dark:text-gray-400">Go to:</span>
+        <span className="text-sm text-gray-600 dark:text-gray-400 w-40">Go to:</span>
         <Input
           type="number"
           min="1"

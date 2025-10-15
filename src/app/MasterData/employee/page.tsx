@@ -52,7 +52,6 @@ export default function DeviceModelsPage() {
         { key: 'name', label: 'Name', sortable: true },
         { key: 'position', label: 'Position', sortable: false },
         { key: 'phone', label: 'Phone', sortable: false },
-        { key: 'cell', label: 'Cell', sortable: false },
         { key: 'email', label: 'Email', sortable: true },
     
         { key: 'role', label: 'Role', sortable: false },
@@ -62,24 +61,9 @@ export default function DeviceModelsPage() {
           sortable: false,
           render: (item) => item.department?.name || item.department || 'N/A'
         },
-        { 
-          key: 'company', 
-          label: 'Company', 
-          sortable: false,
-          render: (item) => item.company?.name || item.company || 'N/A'
-        },
-        { 
-          key: 'city', 
-          label: 'City', 
-          sortable: false,
-          render: (item) => item.city || 'N/A'
-        },
-        { 
-          key: 'country', 
-          label: 'Country', 
-          sortable: false,
-          render: (item) => item.country || 'N/A'
-        },
+     
+     
+       
       ]}
 
       // APIs إضافية للـ dropdowns
@@ -153,16 +137,7 @@ export default function DeviceModelsPage() {
           type: 'email', 
           required: true 
         },
-        {
-          name: "active",
-          label: "Active",
-          type: "select",
-          options: [
-            { value: '1', label: 'Yes' },
-            { value: '0', label: 'No' }
-          ],
-          required: true
-        },
+       
         {
           name: "role",
           label: "Role",

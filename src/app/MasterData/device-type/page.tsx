@@ -6,14 +6,14 @@ export default function DeviceModelsPage() {
   return (
     <GenericDataManager
       endpoint="type"
-      title="Issue Categories"
+      title="Device Types"
       columns={[
         { 
           key: 'id', 
           label: 'ID', 
           sortable: true,
           render: (item) => {
-            const ep = "issue-status";
+            const ep = "DeviceType".split(''); // Example endpoint name
             const firstLetter = ep[0]?.toUpperCase() || 'D';
             const lastLetter = ep[ep.length - 1]?.toUpperCase() || 'D';
             

@@ -14,7 +14,7 @@ export default function ITModulePage() {
 
   return (
     <MainLayout>
-      <div className="w-full h-full  p-6 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+      <div className="w-full h-300  p-6 bg-white dark:from-gray-900 dark:to-gray-800">
          <Cards />
 
          <MasterDataPage />

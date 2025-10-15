@@ -39,7 +39,7 @@ export default function Navbar({
   ]
 
   return (
-    <header className="sticky top-0 z-50 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+  <> <header className="sticky top-0 z-50 border-b-black bg-white dark:bg-gray-800 border-b  border-gray-200 dark:border-gray-700">
       <div className="flex items-center justify-between h-16 px-4">
         <div className="flex items-center space-x-2">
           <Button
@@ -150,5 +150,8 @@ export default function Navbar({
         </div>
       </div>
     </header>
+      <div className="h-2 w-full bg-gradient-to-bl from-[#3D63F4] to-[#000000]" />
+</>
+   
   )
 }

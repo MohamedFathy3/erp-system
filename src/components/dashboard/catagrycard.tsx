@@ -671,8 +671,8 @@ export default function MasterDataPage() {
 
               <div className="flex items-center justify-between p-6">
                 <div className="flex items-center gap-4">
-                  <div className="p-4 bg-blue-200 dark:bg-blue-900 text-blue-600 dark:text-blue-300 rounded-full">
-                    <Icon className="w-6 h-6" />
+                  <div className="p-4 bg-gradient-to-r from-green-50 to-green-100 text-green-700 dark:bg-blue-900 text-blue-600 dark:text-blue-300 rounded-full">
+                    <Icon className="w-6 h-6 "   />
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-gray-800 dark:text-white">
@@ -689,8 +689,8 @@ export default function MasterDataPage() {
                   className="
                     flex items-center justify-center gap-1
                     w-28 h-10 rounded-lg
-                    bg-blue-100 dark:bg-blue-900
-                    text-blue-600 dark:text-blue-300
+                    bg-gradient-to-r from-green-50 to-green-100 dark:bg-blue-900
+                    text-green-600 dark:text-blue-300
                     text-xs font-medium
                     hover:bg-blue-200 dark:hover:bg-blue-800
                     hover:shadow-md transition-all duration-200

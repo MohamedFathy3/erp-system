@@ -9,7 +9,8 @@ import { Input } from "@/components/ui/input";
 import { 
   Filter, ArrowUpDown, Image, Mail, MapPin, Phone, Globe, Building, 
   Users, Briefcase, Shield, Circle, User, Smartphone, Landmark
-} from "lucide-react";import { useGenericDataManager } from "@/hook/useGenericDataManager";
+} from "lucide-react";
+import { useGenericDataManager } from "@/hook/useGenericDataManager";
 import FilterSearch from "@/components/Tablecomponents/FilterSearch/FilterSearch";
 import { ImageUpload } from "@/components/Tablecomponents/ImageUpload";
 import { Switch } from "@/components/Tablecomponents/Switch";
@@ -95,85 +96,85 @@ export default function GenericDataManager(props: GenericDataManagerProps): Reac
   const safePagination: PaginationMeta = pagination || defaultPagination;
 
   // دالة لتوليد الفلاتر ديناميكياً
-// دالة لتوليد الفلاتر ديناميكياً
-const generateDynamicFilters = (): FilterField[] => {
-  const dynamicFilters: FilterField[] = [];
-  const addedFilters = new Set<string>();
+  const generateDynamicFilters = (): FilterField[] => {
+    const dynamicFilters: FilterField[] = [];
+    const addedFilters = new Set<string>();
 
-  // فلتر البحث الأساسي - الاسم
-  if (!addedFilters.has('name')) {
-    dynamicFilters.push({
-      key: 'name',
-      label: 'Name',
-      type: 'text' as const,
-      placeholder: 'Search by name'
-    });
-    addedFilters.add('name');
-  }
+    // فلتر البحث الأساسي - الاسم
+    if (!addedFilters.has('name')) {
+      dynamicFilters.push({
+        key: 'name',
+        label: 'Name',
+        type: 'text' as const,
+        placeholder: 'Search by name'
+      });
+      addedFilters.add('name');
+    }
 
-  // إضافة فلاتر من الـ columns (بدون الصورة والحقول المكررة)
-  columns.forEach(column => {
-    // نتجنب بعض الحقول
-    const excludedKeys = [
-      'id', 'actions', 'created_at', 'updated_at', 'deleted_at', 
-      'image', 'avatar', 'photo','Logo' // نشيل حقول الصور
-    ];
-    
-    if (!excludedKeys.includes(column.key) && 
-        !addedFilters.has(column.key) &&
-        column.key !== 'name') {
+    // إضافة فلاتر من الـ columns (بدون الصورة والحقول المكررة)
+    columns.forEach(column => {
+      // نتجنب بعض الحقول
+      const excludedKeys = [
+        'id', 'actions', 'created_at', 'updated_at', 'deleted_at', 
+        'image', 'avatar', 'photo','Logo' // نشيل حقول الصور
+      ];
       
-      // إذا الحقل موجود في additionalData أو له render function
-      if (column.render || column.key.includes('Id') || column.key.endsWith('Id')) {
-        const fieldName = column.key.replace('Id', '');
-        if (!addedFilters.has(fieldName)) {
+      if (!excludedKeys.includes(column.key) && 
+          !addedFilters.has(column.key) &&
+          column.key !== 'name') {
+        
+        // إذا الحقل موجود في additionalData أو له render function
+        if (column.render || column.key.includes('Id') || column.key.endsWith('Id')) {
+          const fieldName = column.key.replace('Id', '');
+          if (!addedFilters.has(fieldName)) {
+            dynamicFilters.push({
+              key: column.key,
+              label: column.label,
+              type: 'select' as const,
+              options: getOptionsForField(column.key)
+            });
+            addedFilters.add(column.key);
+          }
+        } else {
+          // الحقول النصية العادية
           dynamicFilters.push({
             key: column.key,
             label: column.label,
-            type: 'select' as const,
-            options: getOptionsForField(column.key)
+            type: 'text' as const,
+            placeholder: `Filter by ${column.label.toLowerCase()}`
           });
           addedFilters.add(column.key);
         }
-      } else {
-        // الحقول النصية العادية
-        dynamicFilters.push({
-          key: column.key,
-          label: column.label,
-          type: 'text' as const,
-          placeholder: `Filter by ${column.label.toLowerCase()}`
-        });
-        addedFilters.add(column.key);
       }
-    }
-  });
+    });
 
-  // إضافة فلاتر من الـ additionalData (بدون تكرار)
-  additionalData?.forEach(data => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const queryData = additionalQueries[data.key]?.data as any[];
-    if (Array.isArray(queryData) && queryData.length > 0) {
-      const fieldName = data.key.replace('s', 'Id'); // تحويل 'brands' لـ 'brandId'
-      const label = data.key.charAt(0).toUpperCase() + data.key.slice(1, -1); // 'brands' لـ 'Brand'
-      
-      // نتأكد إن الحقل مش موجود بالفعل
-      if (!addedFilters.has(fieldName)) {
-        dynamicFilters.push({
-          key: fieldName,
-          label: label,
-          type: 'select' as const,
-          options: queryData.map(item => ({
-            value: item.id.toString(),
-            label: item.name || item.title || `Item ${item.id}`
-          }))
-        });
-        addedFilters.add(fieldName);
+    // إضافة فلاتر من الـ additionalData (بدون تكرار)
+    additionalData?.forEach(data => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const queryData = additionalQueries[data.key]?.data as any[];
+      if (Array.isArray(queryData) && queryData.length > 0) {
+        const fieldName = data.key.replace('s', 'Id'); // تحويل 'brands' لـ 'brandId'
+        const label = data.key.charAt(0).toUpperCase() + data.key.slice(1, -1); // 'brands' لـ 'Brand'
+        
+        // نتأكد إن الحقل مش موجود بالفعل
+        if (!addedFilters.has(fieldName)) {
+          dynamicFilters.push({
+            key: fieldName,
+            label: label,
+            type: 'select' as const,
+            options: queryData.map(item => ({
+              value: item.id.toString(),
+              label: item.name || item.title || `Item ${item.id}`
+            }))
+          });
+          addedFilters.add(fieldName);
+        }
       }
-    }
-  });
+    });
 
-  return dynamicFilters;
-};
+    return dynamicFilters;
+  };
+
   // دالة مساعدة للحصول على options للحقول
   const getOptionsForField = (fieldKey: string): { value: string; label: string }[] => {
     const additionalDataKey = fieldKey.replace('Id', 's'); 
@@ -303,76 +304,86 @@ const generateDynamicFilters = (): FilterField[] => {
 
   return (
     <MainLayout>
-      <div className="space-y-8 p-6">
-        {/* Header */}
-        <Header 
-          title={title}
-          currentPage={currentPage}
-          pagination={safePagination}
-          selectedItems={selectedItems}
-          showingDeleted={showingDeleted}
-          showFilter={showFilter}
-          searchTerm={filters.search}
-          onBulkAction={showingDeleted ? handleBulkRestore : handleBulkDelete}
-          onToggleFilter={handleToggleFilter}
-          onToggleDeleted={handleToggleDeleted}
-          onAddItem={handleAddItem}
-          bulkLoading={bulkDeleteMutation.isPending || bulkRestoreMutation.isPending}
-        />
+      <div className="space-y-6 p-6">
+        {/* Main Section - كل المكونات في سكشن واحد */}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl  border border-gray-100 dark:border-gray-700 p-6">
+          
+          {/* Header داخل السكشن */}
+          <Header 
+            title={title}
+            currentPage={currentPage}
+            pagination={safePagination}
+            selectedItems={selectedItems}
+            showingDeleted={showingDeleted}
+            showFilter={showFilter}
+            searchTerm={filters.search}
+            onBulkAction={showingDeleted ? handleBulkRestore : handleBulkDelete}
+            onToggleFilter={handleToggleFilter}
+            onToggleDeleted={handleToggleDeleted}
+            onAddItem={handleAddItem}
+            bulkLoading={bulkDeleteMutation.isPending || bulkRestoreMutation.isPending}
+          />
 
-        {/* Search & Filter Component */}
-        <FilterSearch
-          search={search}
-          onSearchChange={setSearch}
-          onSearch={handleSearch}
-          filters={filters}
-          onFiltersChange={handleFiltersChange}
-          orderBy={orderBy}
-          onOrderByChange={handleOrderByChange}
-          orderByDirection={orderByDirection}
-          onOrderByDirectionChange={handleOrderByDirectionChange}
-          onApplyFilter={handleFilter}
-          onResetFilters={handleResetFilters}
-          showFilter={showFilter}
-          onToggleFilter={handleToggleFilter}
-          availableFilters={finalAvailableFilters}
-        />
+          {/* Search & Filter داخل السكشن */}
+          <div className="mt-6">
+            <FilterSearch
+              search={search}
+              onSearchChange={setSearch}
+              onSearch={handleSearch}
+              filters={filters}
+              onFiltersChange={handleFiltersChange}
+              orderBy={orderBy}
+              onOrderByChange={handleOrderByChange}
+              orderByDirection={orderByDirection}
+              onOrderByDirectionChange={handleOrderByDirectionChange}
+              onApplyFilter={handleFilter}
+              onResetFilters={handleResetFilters}
+              showFilter={showFilter}
+              onToggleFilter={handleToggleFilter}
+              availableFilters={finalAvailableFilters}
+            />
+          </div>
 
-        {/* Table */}
-     <DataTable
-          title={title}
-          data={data}
-          columns={columns}
-          selectedItems={selectedItems}
-          allSelected={allSelected}
-          someSelected={someSelected}
-          orderBy={orderBy}
-          orderByDirection={orderByDirection}
-          pagination={safePagination}
-          onToggleSelectAll={toggleSelectAll}
-          onToggleSelectItem={toggleSelectItem}
-          onSort={handleSort}
-          onEdit={handleEditItem}
-          onDelete={handleDelete}
-          onToggleActive={handleItemToggleActive}
-          deleteLoading={deleteItemMutation.isPending}
-          Checkbox={Checkbox}
-          showingDeleted={showingDeleted}
-          onRestore={handleRestore} 
-          onForceDelete={handleForceDelete}
-          compactView={shouldUseCompactView}
-        />
+          {/* Table داخل السكشن */}
+          <div className="mt-6">
+            <DataTable
+              title={title}
+              data={data}
+              columns={columns}
+              selectedItems={selectedItems}
+              allSelected={allSelected}
+              someSelected={someSelected}
+              orderBy={orderBy}
+              orderByDirection={orderByDirection}
+              pagination={safePagination}
+              onToggleSelectAll={toggleSelectAll}
+              onToggleSelectItem={toggleSelectItem}
+              onSort={handleSort}
+              onEdit={handleEditItem}
+              onDelete={handleDelete}
+              onToggleActive={handleItemToggleActive}
+              deleteLoading={deleteItemMutation.isPending}
+              Checkbox={Checkbox}
+              showingDeleted={showingDeleted}
+              onRestore={handleRestore} 
+              onForceDelete={handleForceDelete}
+              compactView={shouldUseCompactView}
+            />
+          </div>
 
-        {/* Pagination */}
-        <Pagination
-          currentPage={safePagination.current_page}
-          lastPage={safePagination.last_page}
-          total={safePagination.total}
-          perPage={safePagination.per_page}
-          onPageChange={setCurrentPage}
-        />
+          {/* Pagination داخل السكشن */}
+          <div className="mt-6">
+            <Pagination
+              currentPage={safePagination.current_page}
+              lastPage={safePagination.last_page}
+              total={safePagination.total}
+              perPage={safePagination.per_page}
+              onPageChange={setCurrentPage}
+            />
+          </div>
+        </div>
 
-        {/* Modal */}
+        {/* Modal خارج السكشن الرئيسي */}
         {open && (
           <FormModal
             title={title}
@@ -407,37 +418,176 @@ const Header: React.FC<ExtendedHeaderProps> = ({
         <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">{title}</h1>
         <p className="text-gray-600 dark:text-gray-400 mt-1">
           Showing {startItem} to {endItem} of {totalItems} entries
-       {searchTerm && (
-  <span className="text-blue-600 dark:text-blue-400 ml-2">
-    • Searching for: &quot;{searchTerm}&quot;
-  </span>
-)}
+          {searchTerm && (
+            <span className="text-blue-600 dark:text-blue-400 ml-2">
+              • Searching for: &quot;{searchTerm}&quot;
+            </span>
+          )}
         </p>
       </div>
-      <div className="flex gap-2 flex-wrap">
+     
+      <div className="flex gap-3 flex-wrap">
         {selectedItems.size > 0 && (
           <Button
             variant="destructive"
             onClick={onBulkAction}
-            className="bg-red-600 text-white hover:bg-red-700 transition-all"
+            style={{color:'black'}}
+
+                         className={`
+            relative
+            overflow-hidden
+            bg-gradient-to-r
+            from-red-50
+            to-red-100
+            dark:from-red-900/30
+            dark:to-red-800/30
+            hover:from-red-100
+            hover:to-red-200
+            dark:hover:from-red-800/40
+            dark:hover:to-red-700/40
+            text-black
+            dark:text-red-200
+            font-semibold
+            py-3
+            px-6
+            rounded-2xl
+            shadow-md
+            hover:shadow-lg
+            transform
+            hover:-translate-y-0.5
+            active:translate-y-0
+            transition-all
+            duration-250
+            ease-in-out
+            border
+            border-red-100
+            dark:border-red-900/50
+            group
+              ${bulkLoading ? 'opacity-70 cursor-wait' : ''}
+            `}
             disabled={bulkLoading}
           >
-            {showingDeleted ? `Restore Selected (${selectedItems.size})` : `Delete Selected (${selectedItems.size})`}
+            <span className="relative z-10 flex items-center gap-3">
+              {bulkLoading ? (
+                <i className="fas fa-spinner fa-spin text-sm"></i>
+              ) : showingDeleted ? (
+                <i className="fas fa-rotate-left group-hover:rotate-180 transition-transform duration-500"></i>
+              ) : (
+                <i className="fas fa-trash group-hover:scale-110 transition-transform duration-200"></i>
+              )}
+              {showingDeleted ? `Restore Selected (${selectedItems.size})` : `Delete Selected (${selectedItems.size})`}
+            </span>
+            
+            {/* Shine effect */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
           </Button>
         )}
 
         <Button 
           onClick={onToggleDeleted} 
-          className={showingDeleted ? "bg-red-400 text-white dark:bg-gray-600" : "bg-red-400 text-white"}
+          className={`
+            relative
+            overflow-hidden
+            bg-gradient-to-r
+            from-red-50
+            to-red-100
+            dark:from-red-900/30
+            dark:to-red-800/30
+            hover:from-red-100
+            hover:to-red-200
+            dark:hover:from-red-800/40
+            dark:hover:to-red-700/40
+            text-black
+            dark:text-red-200
+            font-semibold
+            py-3
+            px-6
+            rounded-2xl
+            shadow-md
+            hover:shadow-lg
+            transform
+            hover:-translate-y-0.5
+            active:translate-y-0
+            transition-all
+            duration-250
+            ease-in-out
+            border
+            border-red-100
+            dark:border-red-900/50
+            group
+          `}
         >
-          {showingDeleted ? 'Back to Active Items' : 'Show Deleted Items'}
+          <span className="flex items-center gap-3">
+            {showingDeleted ? (
+              <>
+                <div className="bg-red-100 dark:bg-red-900/30 p-2 rounded-lg group-hover:scale-110 transition-transform duration-200">
+                  <i className="fas fa-arrow-left text-red-600 dark:text-red-400 text-sm"></i>
+                </div>
+                <span className="text-red-700 dark:text-red-300">Back to Active Items</span>
+              </>
+            ) : (
+              <>
+                <div className="bg-gradient-to-r from-red-50 to-red-100 dark:bg-red-900/30 p-2 rounded-lg group-hover:scale-110 transition-transform duration-200">
+                  <i className="fas fa-trash-can text-red-600 dark:text-red-400 text-sm"></i>
+                </div>
+                <span className="text-black dark:text-red-300">Show Deleted Items</span>
+              </>
+            )}
+          </span>
         </Button>
 
         <Button
-          className="bg-green-400 text-white hover:bg-green-700 transition-all dark:bg-green-500"
+         className={`
+            relative
+            overflow-hidden
+            bg-gradient-to-r
+            from-green-50
+            to-green-100
+            dark:from-green-900/30
+            dark:to-green-800/30
+            hover:from-green-100
+            hover:to-green-200
+            dark:hover:from-green-800/40
+            dark:hover:to-green-700/40
+            text-black
+            dark:text-green-200
+            font-semibold
+            py-3
+            px-6
+            rounded-2xl
+            shadow-md
+            hover:shadow-lg
+            transform
+            hover:-translate-y-0.5
+            active:translate-y-0
+            transition-all
+            duration-250
+            ease-in-out
+            border
+            border-green-100
+            dark:border-green-900/50
+            group
+          `}
           onClick={onAddItem}
         >
-          + Add {title}
+           <span className="flex items-center gap-3">
+        
+              <>
+                <div className="bg-green-100 dark:bg-green-900/30 p-2 rounded-lg group-hover:scale-110 transition-transform duration-200">
+                  <i className="fas fa-arrow-left text-green-600 dark:text-green-400 text-sm"></i>
+                </div>
+                <span className="text-black dark:text-green-300">Add {title}</span>
+              </>
+      
+         
+          
+          </span>
+
+
+
+          
+          {/* Shine effect */}
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
         </Button>
       </div>
     </div>
@@ -464,9 +614,6 @@ const DataTable: React.FC<DataTableProps & {
   // الحقول التي تظهر في العرض المدمج (فقط هذه)
   const compactDisplayFields = ['name', 'company', 'email', 'phone'];
   
-  // الحقول التي تظهر في الجدول العادي (كل ما عدا اللي فوق)
-  const tableDisplayFields = ['position', 'cell', 'role', 'department', 'city', 'country'];
-
   // الحصول على مفتاح الصورة الفعلي المستخدم في البيانات
   const getImageFieldKey = (item: Entity) => {
     return imageFieldKeys.find(key => item[key]) || 'image';
@@ -586,13 +733,25 @@ const DataTable: React.FC<DataTableProps & {
     }
   };
 
+  // دالة للتعامل مع الضغط المزدوج
+  const handleDoubleClick = (item: Entity) => {
+    onEdit(item);
+  };
+
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-md border border-gray-100 dark:border-gray-700 overflow-x-auto">
-      <div className={`${showingDeleted ? 'bg-red-100 dark:bg-red-800 text-red-400 dark:text-red-100' : 'bg-blue-100 dark:bg-blue-800 text-blue-400 dark:text-blue-100'} font-semibold text-lg px-6 py-4 rounded-t-2xl dark:border-blue-900`}>
-        {title} Management {showingDeleted && '(Deleted Items)'}
-      </div>
+    <div className="bg-white dark:bg-gray-800 dark:border-gray-700 overflow-x-auto">
+
+      {/* Table Header */}
+      <div className={`${showingDeleted 
+  ? 'bg-red-100 dark:bg-red-800 text-red-400 dark:text-red-100' 
+  : 'relative overflow-hidden bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/30 hover:from-green-100 hover:to-green-200 dark:hover:from-green-800/40 dark:hover:to-green-700/40 text-black dark:text-green-200  ransform hover:-translate-y-0.5 active:translate-y-0 transition-all duration-250 ease-in-out border border-green-100 dark:border-green-900/50'
+} font-semibold text-lg px-6 py-1 rounded-t-2xl group`}>
+  {title} Management {showingDeleted && '(Deleted Items)'}
+</div>
+
    
-      <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+      {/* Table Info Bar */}
+      <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between bg-white dark:bg-gray-800">
         <div className="flex items-center gap-2">
           <span className="text-sm text-gray-600 dark:text-gray-400">
             Showing {data.length} of {pagination.total} items
@@ -607,10 +766,11 @@ const DataTable: React.FC<DataTableProps & {
         </div>
       </div>
 
-      <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-        <thead className="bg-gray-50 dark:bg-gray-800">
+      {/* Table Content */}
+      <table className="min-w-full divide-y text-center divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-800">
+        <thead className="bg-gray-50 text-center dark:bg-gray-700">
           <tr>
-            <th className="px-6 py-3 text-left">
+            <th className="px-6 py-3 text-center">
               <Checkbox
                 checked={allSelected}
                 indeterminate={someSelected && !allSelected}
@@ -620,15 +780,15 @@ const DataTable: React.FC<DataTableProps & {
             </th>
             {compactView && hasImageColumn ? (
               <>
-                {/* عمود البيانات المدمجة */}
+                {/* Compact Data Column */}
                 <th className="px-6 py-3 text-left text-gray-700 dark:text-gray-300 font-medium uppercase tracking-wider">
                   Basic Info
                 </th>
-                {/* الأعمدة العادية للباقي */}
+                {/* Regular Columns */}
                 {getTableColumns().map((column: ColumnDefinition) => (
                   <th key={column.key} className="px-6 py-3 text-center text-gray-700 dark:text-gray-300 font-medium uppercase tracking-wider">
                     <div 
-                      className="flex items-center justify-center gap-1 cursor-pointer hover:text-indigo-600"
+                      className="flex items-center justify-center gap-1 cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors duration-200"
                       onClick={() => onSort(column)}
                     >
                       {column.label}
@@ -638,11 +798,11 @@ const DataTable: React.FC<DataTableProps & {
                 ))}
               </>
             ) : (
-              // العرض العادي بدون دمج
+              // Normal View
               columns.map((column: ColumnDefinition) => (
                 <th key={column.key} className="px-6 py-3 text-center text-gray-700 dark:text-gray-300 font-medium uppercase tracking-wider">
                   <div 
-                    className="flex items-center justify-center gap-1 cursor-pointer hover:text-indigo-600"
+                    className="flex items-center justify-center gap-1 cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors duration-200"
                     onClick={() => onSort(column)}
                   >
                     {column.label}
@@ -656,7 +816,7 @@ const DataTable: React.FC<DataTableProps & {
             </th>
           </tr>
         </thead>
-        <tbody className="bg-white text-center dark:bg-gray-900 divide-y divide-gray-100 dark:divide-gray-700">
+        <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
           {data.length ? (
             data.map((item: Entity) => {
               const itemImage = getItemImage(item);
@@ -665,7 +825,11 @@ const DataTable: React.FC<DataTableProps & {
               const itemName = item.name || item.title || 'Unknown';
 
               return (
-                <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                <tr 
+                  key={item.id} 
+                  className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200 cursor-pointer"
+                  onDoubleClick={() => handleDoubleClick(item)}
+                >
                   <td className="px-6 py-4">
                     <Checkbox
                       checked={selectedItems.has(item.id)}
@@ -676,19 +840,19 @@ const DataTable: React.FC<DataTableProps & {
                   
                   {shouldUseCompactView ? (
                     <>
-                      {/* الخلية المدمجة - فقط: صورة + اسم + شركة + ايميل + هاتف */}
+                      {/* Compact Cell */}
                       <td className="px-6 py-4">
                         <div className="flex items-start gap-4">
-                          {/* الصورة - مستطيلة */}
+                          {/* Image */}
                           <div className="flex-shrink-0">
                             {itemImage ? (
                               <img 
                                 src={itemImage}
                                 alt={itemName}
-                                className="w-16 h-16 rounded-lg object-cover border border-gray-200 dark:border-gray-600"
+                                className="w-16 h-16 rounded-lg object-cover border border-gray-200 dark:border-gray-600 shadow-sm"
                               />
                             ) : (
-                              <div className="w-16 h-16 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center border border-gray-200 dark:border-gray-600">
+                              <div className="w-16 h-16 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center border border-gray-200 dark:border-gray-600 shadow-sm">
                                 <span className="text-white font-bold text-xl">
                                   {getInitial(item)}
                                 </span>
@@ -696,7 +860,7 @@ const DataTable: React.FC<DataTableProps & {
                             )}
                           </div>
                           
-                          {/* البيانات الأساسية فقط */}
+                          {/* Basic Data */}
                           <div className="flex-1 text-left min-w-0">
                             <div className="space-y-2">
                               {compactData.map((data, index) => (
@@ -708,7 +872,6 @@ const DataTable: React.FC<DataTableProps & {
                                   ) : (
                                     <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                                       <IconComponent icon={data.icon || 'default-icon'} />
-
                                       <span className="truncate">{data.value}</span>
                                     </div>
                                   )}
@@ -719,17 +882,25 @@ const DataTable: React.FC<DataTableProps & {
                         </div>
                       </td>
                       
-                      {/* باقي الأعمدة في الجدول عادي */}
+                      {/* Other Columns */}
                       {getTableColumns().map((column: ColumnDefinition) => (
-                        <td key={column.key} className="px-6 py-4 text-gray-700 dark:text-gray-300">
+                        <td 
+                          key={column.key} 
+                          className="px-6 py-4 text-gray-700 dark:text-gray-300"
+                          onDoubleClick={() => handleDoubleClick(item)}
+                        >
                           {column.render ? column.render(item) : getNestedValue(item, column.key)}
                         </td>
                       ))}
                     </>
                   ) : (
-                    // العرض العادي بدون دمج
+                    // Normal View
                     columns.map((column: ColumnDefinition) => (
-                      <td key={column.key} className="px-6 py-4 text-gray-700 dark:text-gray-300">
+                      <td 
+                        key={column.key} 
+                        className="px-6 py-4 text-gray-700 dark:text-gray-300"
+                        onDoubleClick={() => handleDoubleClick(item)}
+                      >
                         {column.render ? column.render(item) : getNestedValue(item, column.key)}
                       </td>
                     ))
@@ -743,22 +914,57 @@ const DataTable: React.FC<DataTableProps & {
                             variant="outline"
                             size="sm"
                             onClick={() => onRestore?.(item.id, itemName)}
-                            className="bg-green-600 text-white hover:bg-green-700 border-0"
-                          >
+className={`
+            relative
+            overflow-hidden
+            bg-gradient-to-r
+            from-green-50
+            to-green-100
+            text-black
+
+            dark:from-green-900/30
+            dark:to-green-800/30
+            hover:from-green-100
+            hover:to-green-200
+            dark:hover:from-green-800/40
+            dark:hover:to-green-700/40
+            dark:text-green-200
+            font-semibold
+            py-3
+            px-6
+            rounded-2xl
+            shadow-md
+            hover:shadow-lg
+            transform
+            hover:-translate-y-0.5
+            active:translate-y-0
+            transition-all
+            duration-250
+            ease-in-out
+            border
+            border-green-100
+            dark:border-green-900/50
+            group
+          `}                                    >
+                            <i className="fas fa-rotate-left mr-2"></i>
+                            
                             Restore
                           </Button>
                           <Button
                             variant="destructive"
                             size="sm"
                             onClick={() => onForceDelete?.(item.id, itemName)}
-                            className="bg-red-800 text-white hover:bg-red-900 border-0"
+                            style={{color:'black'}}
+                            className=" bg-gradient-to-r
+            from-red-50  to-red-100 hover:bg-red-900 border-0 px-4 py-2 rounded-lg font-medium transition-colors duration-200 shadow-sm"
                           >
+                            <i className="fas fa-trash mr-2"></i>
                             Delete Permanently
                           </Button>
                         </div>
                       ) : (
                         <div className="flex items-center gap-3">
-                          {/* زر التبديل للنشاط إذا كان موجوداً */}
+                          {/* Active Toggle */}
                           {item.hasOwnProperty('active') && (
                             <div className="flex items-center gap-2">
                               <Switch
@@ -775,8 +981,39 @@ const DataTable: React.FC<DataTableProps & {
                             variant="outline"
                             size="sm"
                             onClick={() => onEdit(item)}
-                            className="border-indigo-600 text-indigo-600 hover:bg-indigo-600 hover:text-white"
-                          >
+ className={`
+            relative
+            overflow-hidden
+            bg-gradient-to-r
+            from-green-50
+            to-green-100
+            text-black
+
+            dark:from-green-900/30
+            dark:to-green-800/30
+            hover:from-green-100
+            hover:to-green-200
+            dark:hover:from-green-800/40
+            dark:hover:to-green-700/40
+            dark:text-green-200
+            font-semibold
+            py-3
+            px-6
+            rounded-2xl
+            shadow-md
+            hover:shadow-lg
+            transform
+            hover:-translate-y-0.5
+            active:translate-y-0
+            transition-all
+            duration-250
+            ease-in-out
+            border
+            border-green-100
+            dark:border-green-900/50
+            group
+          `}                          >
+                            <i className="fas fa-edit mr-2"></i>
                             Edit
                           </Button>
                           <Button
@@ -784,8 +1021,52 @@ const DataTable: React.FC<DataTableProps & {
                             size="sm"
                             onClick={() => onDelete(item.id, itemName)}
                             disabled={deleteLoading}
+
+                                                        style={{color:'black'}}
+
+                         className={`
+            relative
+            overflow-hidden
+            bg-gradient-to-r
+            from-red-50
+            to-red-100
+            dark:from-red-900/30
+            dark:to-red-800/30
+            hover:from-red-100
+            hover:to-red-200
+            dark:hover:from-red-800/40
+            dark:hover:to-red-700/40
+            text-black
+            dark:text-red-200
+            font-semibold
+            py-3
+            px-6
+            rounded-2xl
+            shadow-md
+            hover:shadow-lg
+            transform
+            hover:-translate-y-0.5
+            active:translate-y-0
+            transition-all
+            duration-250
+            ease-in-out
+            border
+            border-red-100
+            dark:border-red-900/50
+            group
+          `}
                           >
-                            {deleteLoading ? 'Deleting...' : 'Delete'}
+                            {deleteLoading ? (
+                              <>
+                                <i className="fas fa-spinner fa-spin mr-2"></i>
+                                Deleting...
+                              </>
+                            ) : (
+                              <>
+                                <i className="fas fa-trash mr-2"></i>
+                                Delete
+                              </>
+                            )}
                           </Button>
                         </div>
                       )}
@@ -796,8 +1077,16 @@ const DataTable: React.FC<DataTableProps & {
             })
           ) : (
             <tr>
-              <td colSpan={columns.length + 2} className="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
-                No {title.toLowerCase()} found
+              <td colSpan={columns.length + 2} className="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
+                <div className="flex flex-col items-center justify-center py-8">
+                  <i className="fas fa-inbox text-4xl text-gray-300 dark:text-gray-600 mb-4"></i>
+                  <div className="text-lg font-medium text-gray-600 dark:text-gray-400">
+                    No {title.toLowerCase()} found
+                  </div>
+                  <div className="text-sm text-gray-400 dark:text-gray-500 mt-1">
+                    {showingDeleted ? 'No deleted items available' : 'Get started by adding a new item'}
+                  </div>
+                </div>
               </td>
             </tr>
           )}
@@ -857,19 +1146,34 @@ const FormModal: React.FC<FormModalProps & { compactLayout?: boolean }> = ({
               ))}
             </div>
           ))}
+<div className="flex space-x-4 mt-6">
+  <Button
+    style={{color:'black'}}
 
-          <Button
-            type="submit"
-            className="w-full bg-indigo-600 text-white hover:bg-indigo-700 transition-all rounded-xl mt-6"
-            disabled={saveLoading}
-          >
-            {saveLoading ? "Saving..." : editingItem ? "Update" : "Create"}
-          </Button>
+    type="submit"
+    className="w-full bg-gradient-to-r from-green-50 to-green-100 text-black hover:bg-indigo-700 transition-all rounded-xl"
+    disabled={saveLoading}
+  >
+    {saveLoading ? "Saving..." : editingItem ? "Update" : "Create"}
+  </Button>
+
+  <Button
+  style={{color:'black'}}
+    type="submit"
+    className="w-full bg-gradient-to-r from-green-50 to-green-100 text-black hover:bg-indigo-700 transition-all rounded-xl"
+    disabled={saveLoading}
+  >
+    {saveLoading ? "Saving..." : editingItem ? "Update & Continue" : "Create & Continue"}
+  </Button>
+</div>
+
         </form>
       </div>
     </div>
   );
 };
+
+
 
 const FormFieldComponent: React.FC<FormFieldProps & { compact?: boolean }> = ({ 
   field, value, onChange, additionalQueries, formData = {}, compact = false 

@@ -1,5 +1,6 @@
 // types/generic-data-manager.ts
 import { UseMutationResult } from '@tanstack/react-query';
+export type ModalType = 'simple' | 'tabs' | 'steps' | 'profile';
 
 export interface Entity {
   id: number;
@@ -74,6 +75,10 @@ export interface GenericDataManagerProps {
   initialData?: Record<string, any>;
   defaultFilters?: Record<string, string>;
   onToggleActive?: (id: number, itemName: string, currentActive: boolean) => void;
+    modalType?: ModalType;
+  fieldCategories?: {
+    [key: string]: string[]; 
+  };
 }
 
 export interface ColumnDefinition {
