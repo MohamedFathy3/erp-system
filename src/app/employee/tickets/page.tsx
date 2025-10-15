@@ -214,7 +214,7 @@ export default function SupportTicketsPage() {
       console.log('📤 Ticket data:', ticketData);
       
       // استخدام apiFetch مع JSON بدلاً من FormData
-      const responseData = await apiFetch('/create-by-employee', {
+      const responseData = await apiFetch('ticket/create-by-employee', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
