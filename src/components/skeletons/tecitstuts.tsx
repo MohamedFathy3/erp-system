@@ -20,10 +20,12 @@ export const getPriorityColor = (priority: string) => {
   }
 };
 
-export const getDailyStatus = (dailyTime: number) => {
-  return dailyTime > 0 ? 'On time' : 'Overdue';
+export const getDailyStatusColor = (dailyStatus: boolean | number) => {
+  const isActive = typeof dailyStatus === 'boolean' ? dailyStatus : dailyStatus > 0;
+  return isActive ? 'text-green-600' : 'text-red-600';
 };
 
-export const getDailyStatusColor = (dailyTime: number) => {
-  return dailyTime > 0 ? 'text-green-600' : 'text-red-600';
+export const getDailyStatus = (dailyStatus: boolean | number) => {
+  const isActive = typeof dailyStatus === 'boolean' ? dailyStatus : dailyStatus > 0;
+  return isActive ? 'Active' : 'Inactive';
 };

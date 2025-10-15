@@ -330,8 +330,8 @@ export default function TicketDetailPage() {
                 
                 <div className="flex justify-between">
                   <span className="text-gray-600 dark:text-gray-400">Daily Status:</span>
-                  <span className={`font-medium ${getDailyStatusColor(ticket.dailyTime)}`}>
-                    {getDailyStatus(ticket.dailyTime)}
+                  <span className={`font-medium ${getDailyStatusColor(ticket.dailyStatus)}`}>
+                    {getDailyStatus(ticket.dailyStatus)}
                   </span>
                 </div>
                 
