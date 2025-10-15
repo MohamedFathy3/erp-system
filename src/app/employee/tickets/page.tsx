@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -147,6 +147,9 @@ export default function SupportTicketsPage() {
         
         const responseData = await apiFetch('/type/index', {
           method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
           body: JSON.stringify(payload)
         });
 
@@ -165,7 +168,13 @@ export default function SupportTicketsPage() {
     staleTime: 5 * 60 * 1000,
   })
 
-  // Apply filter when tickets or activeFilter changes
+  // تطبيق الفلتر عندما تتغير التذاكر أو الفلتر النشط
+  useEffect(() => {
+    if (tickets) {
+      applyFilter(activeFilter);
+    }
+  }, [tickets, activeFilter])
+
   const applyFilter = (filter: string) => {
     if (!tickets) return;
     
@@ -176,15 +185,8 @@ export default function SupportTicketsPage() {
     }
   }
 
-  useState(() => {
-    if (tickets) {
-      applyFilter(activeFilter);
-    }
-  })
-
   const handleFilterClick = (filter: string) => {
     setActiveFilter(filter);
-    applyFilter(filter);
   }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -204,15 +206,19 @@ export default function SupportTicketsPage() {
     }
   }
 
-  // استخدام React Query للتحولات (Mutations) مع apiFetch
+  // استخدام React Query للتحولات (Mutations) مع apiFetch - باستخدام JSON بدلاً من FormData
   const createTicketMutation = useMutation({
-    mutationFn: async (formData: FormData) => {
+    mutationFn: async (ticketData: any) => {
       console.log('🔄 Creating ticket...');
+      console.log('📤 Ticket data:', ticketData);
       
-      // استخدام apiFetch مع FormData
+      // استخدام apiFetch مع JSON بدلاً من FormData
       const responseData = await apiFetch('/create-by-employee', {
         method: 'POST',
-        body: formData
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(ticketData)
       });
 
       console.log('✅ Ticket creation response:', responseData);
@@ -223,7 +229,8 @@ export default function SupportTicketsPage() {
 
       return responseData;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('🎉 Ticket created successfully:', data);
       queryClient.invalidateQueries({ queryKey: ['tickets'] });
       setIsModalOpen(false);
       setNewTicket({
@@ -242,6 +249,7 @@ export default function SupportTicketsPage() {
     onError: (error: Error) => {
       console.error('❌ Ticket creation error:', error);
       setError(error.message || 'An error occurred while creating the ticket');
+      toast.error('Failed to create ticket');
     },
     onSettled: () => {
       setUploading(false);
@@ -253,26 +261,43 @@ export default function SupportTicketsPage() {
     setUploading(true);
     setError('');
     
+    // التحقق من الحقول المطلوبة
+    if (!newTicket.title || !newTicket.content || !newTicket.category_id || !newTicket.type_id) {
+      setError('Please fill all required fields');
+      setUploading(false);
+      return;
+    }
+    
     try {
-      const formData = new FormData();
-      formData.append('title', newTicket.title);
-      formData.append('content', newTicket.content);
-      formData.append('category_id', newTicket.category_id);
-      formData.append('type_id', newTicket.type_id);
-      formData.append('priority', newTicket.priority);
-      formData.append('device_id', newTicket.device_id);
-      formData.append('status', newTicket.status);
-      
-      if (newTicket.avatar) {
-        formData.append('avatar', newTicket.avatar);
-      }
+      const ticketData = {
+        title: newTicket.title,
+        content: newTicket.content,
+        category_id: parseInt(newTicket.category_id),
+        type_id: parseInt(newTicket.type_id),
+        priority: newTicket.priority,
+        device_id: parseInt(newTicket.device_id),
+        status: newTicket.status,
+        // إذا كان الـ API يتوقع ملف، يمكنك إضافة منطق لتحويل الملف إلى base64 هنا
+        // avatar: newTicket.avatar ? await convertFileToBase64(newTicket.avatar) : null
+      };
 
-      createTicketMutation.mutate(formData);
+      console.log('📤 Sending ticket data:', ticketData);
+      createTicketMutation.mutate(ticketData);
     } catch (error) {
       console.error('❌ Error creating ticket:', error);
       setError('An error occurred while creating the ticket');
       setUploading(false);
     }
+  }
+
+  // دالة لتحويل الملف إلى base64 (إذا كان الـ API يتطلبه)
+  const convertFileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = error => reject(error);
+    });
   }
 
   const getStatusColor = (status: string) => {
@@ -324,18 +349,31 @@ export default function SupportTicketsPage() {
 
   const refreshData = async () => {
     // إعادة جلب جميع البيانات
-    queryClient.invalidateQueries({ queryKey: ['tickets'] });
-    queryClient.invalidateQueries({ queryKey: ['categories'] });
-    queryClient.invalidateQueries({ queryKey: ['priorities'] });
-    queryClient.invalidateQueries({ queryKey: ['types'] });
+    await queryClient.invalidateQueries({ queryKey: ['tickets'] });
+    await queryClient.invalidateQueries({ queryKey: ['categories'] });
+    await queryClient.invalidateQueries({ queryKey: ['priorities'] });
+    await queryClient.invalidateQueries({ queryKey: ['types'] });
     
     toast.success('Data refreshed successfully!');
   }
 
   const loading = ticketsLoading || categoriesLoading || prioritiesLoading || typesLoading;
 
+  // عرض loading spinner أثناء التحميل
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 text-lg">Loading your tickets...</p>
+          <p className="text-gray-400 text-sm mt-2">Please wait while we fetch your data</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen  p-4 md:p-6">
+    <div className="min-h-screen bg-gray-50 p-4 md:p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex justify-between items-center mb-4">
@@ -344,8 +382,8 @@ export default function SupportTicketsPage() {
         
 
         <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Support Tickets</h1>
-          <p className="text-gray-600 mt-2 dark:text-white">Manage and track your support tickets</p>
+          <h1 className="text-3xl font-bold text-gray-900">Support Tickets</h1>
+          <p className="text-gray-600 mt-2">Manage and track your support tickets</p>
           
           {/* Refresh Button */}
           <button
@@ -361,9 +399,12 @@ export default function SupportTicketsPage() {
 
         <button
           onClick={() => router.back()}
-          className="px-4 py-2 m-5 p-5 rounded-lg"
+          className="px-4 py-2 mb-6 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors flex items-center gap-2"
         >
-          &#8592; Back
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
+          </svg>
+          Back
         </button>
 
         {/* Error/Success Message */}
@@ -377,7 +418,6 @@ export default function SupportTicketsPage() {
           </div>
         )}
 
-        {/* باقي الكود يبقى كما هو بدون تغيير */}
         {/* Filters and Actions */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4 bg-white p-4 rounded-lg shadow-sm">
           <div className="flex flex-wrap gap-2">
@@ -392,6 +432,11 @@ export default function SupportTicketsPage() {
                 }`}
               >
                 {filter === 'all' ? 'All Tickets' : filter.charAt(0).toUpperCase() + filter.slice(1)}
+                {filter !== 'all' && (
+                  <span className="ml-2 bg-gray-200 text-gray-700 px-2 py-1 rounded-full text-xs">
+                    {tickets?.filter((t: Ticket) => t.status === filter).length || 0}
+                  </span>
+                )}
               </button>
             ))}
           </div>
@@ -408,11 +453,7 @@ export default function SupportTicketsPage() {
         </div>
 
         {/* Tickets List */}
-        {loading ? (
-          <div className="flex justify-center items-center h-64 bg-white rounded-lg shadow-sm">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
-          </div>
-        ) : filteredTickets.length === 0 ? (
+        {filteredTickets.length === 0 ? (
           <div className="bg-white rounded-lg shadow-sm p-8 text-center">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -492,7 +533,9 @@ export default function SupportTicketsPage() {
               <form onSubmit={handleSubmit} className="p-6 space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label htmlFor="type_id" className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                    <label htmlFor="type_id" className="block text-sm font-medium text-gray-700 mb-1">
+                      Type <span className="text-red-500">*</span>
+                    </label>
                     <select
                       id="type_id"
                       name="type_id"
@@ -509,31 +552,35 @@ export default function SupportTicketsPage() {
                   </div>
                   
                   <div>
-                    <label htmlFor="category_id" className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                    <label htmlFor="category_id" className="block text-sm font-medium text-gray-700 mb-1">
+                      Category <span className="text-red-500">*</span>
+                    </label>
                     <select
                       id="category_id"
                       name="category_id"
                       value={newTicket.category_id}
                       onChange={handleInputChange}
-                      className="w-full px-3 py-2  bg-white text-black border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                      className="w-full px-3 py-2 bg-white text-black border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
                       required
                     >
-                      <option className='' value="">Select Category</option>
+                      <option value="">Select Category</option>
                       {categories?.map((category: Category) => (
-                        <option  key={category.id} value={category.id}>{category.name}</option>
+                        <option key={category.id} value={category.id}>{category.name}</option>
                       ))}
                     </select>
                   </div>
                 </div>
 
                 <div>
-                  <label htmlFor="priority" className="block  bg-white text-black text-sm font-medium text-gray-700 mb-1">Priority</label>
+                  <label htmlFor="priority" className="block text-sm font-medium text-gray-700 mb-1">
+                    Priority <span className="text-red-500">*</span>
+                  </label>
                   <select
                     id="priority"
                     name="priority"
                     value={newTicket.priority}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300  bg-white text-black rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                    className="w-full px-3 py-2 border border-gray-300 bg-white text-black rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
                     required
                   >
                     <option value="">Select Priority</option>
@@ -544,7 +591,9 @@ export default function SupportTicketsPage() {
                 </div>
                 
                 <div>
-                  <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">Ticket Title</label>
+                  <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
+                    Ticket Title <span className="text-red-500">*</span>
+                  </label>
                   <input
                     type="text"
                     id="title"
@@ -558,7 +607,9 @@ export default function SupportTicketsPage() {
                 </div>
                 
                 <div>
-                  <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                  <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-1">
+                    Description <span className="text-red-500">*</span>
+                  </label>
                   <textarea
                     id="content"
                     name="content"
@@ -572,7 +623,9 @@ export default function SupportTicketsPage() {
                 </div>
                 
                 <div>
-                  <label htmlFor="avatar" className="block text-sm font-medium text-gray-700 mb-1">Attachment (Optional)</label>
+                  <label htmlFor="avatar" className="block text-sm font-medium text-gray-700 mb-1">
+                    Attachment (Optional)
+                  </label>
                   <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg">
                     <div className="space-y-1 text-center">
                       <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
