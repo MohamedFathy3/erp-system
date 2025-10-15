@@ -403,7 +403,7 @@ export default function GenericDataManager(props: GenericDataManagerProps): Reac
           />
 
           {/* Search & Filter داخل السكشن */}
-          <div className="mt-6">
+          {/* <div className="mt-6">
             <FilterSearch
               search={search}
               onSearchChange={setSearch}
@@ -420,7 +420,7 @@ export default function GenericDataManager(props: GenericDataManagerProps): Reac
               onToggleFilter={handleToggleFilter}
               availableFilters={finalAvailableFilters}
             />
-          </div>
+          </div> */}
 
           {/* Table داخل السكشن */}
           <div className="mt-6">
