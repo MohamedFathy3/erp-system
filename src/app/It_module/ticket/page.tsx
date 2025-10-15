@@ -321,24 +321,22 @@ export default function Page() {
                         </span>
                       </td>
                      
-                      <td className="px-6 py-4 flex justify-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleViewTicket(item.id)} // استخدام الدالة الجديدة
-                        >
-                          {item.dailyStatus === true ? (
-                            <div className="relative flex items-center justify-center w-10 h-10">
-                              <span className="absolute animate-ping inline-flex h-full w-full rounded-full bg-red-300 opacity-60"></span>
-                              <span className="absolute inline-flex rounded-full h-7 w-7 bg-red-500"></span>
-                              <Eye className="w-4 h-4 text-white z-10 relative" />
-                            </div>
-                          ) : (
-                            <Eye className="w-4 h-4 text-gray-400" />
-                          )}
-                          View
-                        </Button>
-                      </td>
+                  <td className="px-6 py-4 flex justify-center gap-2">
+  <Button
+    variant="outline"
+    size="sm"
+    onClick={() => handleViewTicket(item.id)}
+    className="flex items-center gap-2 relative"
+  >
+    {/* تأثير الـ Ping */}
+    {item.dailyStatus === true && (
+      <span className="animate-ping absolute inline-flex h-6 w-6 rounded-full bg-red-400 opacity-75 -top-1 -left-1"></span>
+    )}
+    
+    <Eye className="w-4 h-4 relative z-10" />
+    View
+  </Button>
+</td>
                     </tr>
                   ))
                 ) : (

@@ -25,13 +25,14 @@ const FilterSearch: React.FC<FilterSearchProps> = ({
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-        <SearchBar 
+        {/* <SearchBar 
           search={search}
           onSearchChange={onSearchChange}
           onSearch={onSearch}
           placeholder="Search by name..."
           className="flex-1"
-        />
+        /> */}
+        <div></div>
         
        <Button
   variant="default"
