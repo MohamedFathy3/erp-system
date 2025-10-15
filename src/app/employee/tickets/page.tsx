@@ -208,6 +208,7 @@ export default function SupportTicketsPage() {
 
   // استخدام React Query للتحولات (Mutations) مع apiFetch - باستخدام JSON بدلاً من FormData
   const createTicketMutation = useMutation({
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
     mutationFn: async (ticketData: any) => {
       console.log('🔄 Creating ticket...');
       console.log('📤 Ticket data:', ticketData);
