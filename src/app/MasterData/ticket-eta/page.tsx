@@ -3,6 +3,9 @@
 import GenericDataManager from "@/components/Tablecomponents/GenericDataManager";
 import { smartTranslate } from '@/utils/translations';
 
+
+
+
 export default function TicketETAPage() {
   return (
     <GenericDataManager
@@ -27,26 +30,30 @@ export default function TicketETAPage() {
           sortable: true,
         
         },
-        { 
-          key: 'priority', 
-          label: 'Priority', 
-          sortable: true,
-          render: (item) => {
-            const priorityColors = {
-              'Low': 'bg-green-100 text-green-800',
-              'Medium': 'bg-yellow-100 text-yellow-800',
-              'High': 'bg-orange-100 text-orange-800',
-              'Critical': 'bg-red-100 text-red-800'
-            };
-            const colorClass = priorityColors[item.priority] || 'bg-gray-100 text-gray-800';
-            
-            return (
-              <span className={`px-2 py-1 rounded-full text-xs font-medium ${colorClass}`}>
-                {item.priority}
-              </span>
-            );
-          }
-        },
+   {
+  key: 'priority',
+  label: 'Priority',
+  sortable: true,
+  render: (item) => {
+    const priorityColors: Record<'Low' | 'Medium' | 'High' | 'Critical', string> = {
+      Low: 'bg-green-100 text-green-800',
+      Medium: 'bg-yellow-100 text-yellow-800',
+      High: 'bg-orange-100 text-orange-800',
+      Critical: 'bg-red-100 text-red-800'
+    };
+
+    const colorClass =
+      priorityColors[item.priority as keyof typeof priorityColors] ||
+      'bg-gray-100 text-gray-800';
+    
+    return (
+      <span className={`px-2 py-1 rounded-full text-xs font-medium ${colorClass}`}>
+        {item.priority}
+      </span>
+    );
+  }
+}
+,
         { 
           key: 'time', 
           label: 'Time', 
