@@ -6,6 +6,7 @@ import { apiFetch } from '@/lib/api'
 import MainLayout from '@/components/MainLayout'
 import Image from 'next/image'
 import toast from 'react-hot-toast'
+import withAuth from "@/components/withAuth";
 
 interface FormData {
   name: string

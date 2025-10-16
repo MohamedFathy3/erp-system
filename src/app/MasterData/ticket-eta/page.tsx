@@ -22,7 +22,7 @@ export default function TicketETAPage() {
             <div className="flex flex-col">
               <span className="font-medium text-gray-900">{item.name}</span>
               <span className="text-sm text-gray-500 mt-1">
-                {item.type_id}
+                {item.type?.name || item.type_id}
               </span>
               <div className="mt-1">
                 <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
@@ -55,14 +55,20 @@ export default function TicketETAPage() {
                 <span className="font-semibold text-gray-900">
                   {`${parts[0]}:${parts[1]}`}
                 </span>
-                <div className="text-xs text-gray-500 mt-1">hours</div>
+                <div className="text-xs text-gray-500 mt-1">Time</div>
               </div>
             );
           }
         },
       ]}
       additionalData={[
-        { key: 'type', endpoint: '/type' }
+        { 
+          key: 'type', 
+          endpoint: '/type', 
+          filters: { 
+            "type": 'issue'  // أو 'issue' أو 'ticket'
+          } 
+        }
       ]}
       formFields={[
         { 

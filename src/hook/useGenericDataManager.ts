@@ -59,36 +59,60 @@ export function useGenericDataManager({
   const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set());
   const [formData, setFormData] = useState<Record<string, string | number>>({});
 
-  // حل مشكلة additionalQueries - استخدام useQueries بدلاً من reduce
-  const additionalQueriesArray = useQueries({
-    queries: additionalData.map(data => ({
-      queryKey: [data.key],
-      queryFn: async (): Promise<unknown[]> => {
-        try {
-          const json = await apiFetch(data.endpoint);
+const additionalQueriesArray = useQueries({
+  queries: additionalData.map(data => ({
+    queryKey: [data.key, data.filters],
+    queryFn: async (): Promise<unknown[]> => {
+      try {
+        let json;
+        
+        if (data.filters && Object.keys(data.filters).length > 0) {
+          const payload = {
+            filters: data.filters,
+            orderBy: "id",
+            orderByDirection: "desc", 
+            perPage: 100,
+            paginate: true,
+            deleted: false
+          };
           
-          // Handle different response structures
-          if (json && Array.isArray(json.data)) {
-            return json.data;
-          }
-          if (Array.isArray(json)) {
-            return json;
-          }
-          if (json && json.items && Array.isArray(json.items)) {
-            return json.items;
-          }
-          console.warn(`Unexpected response structure for ${data.endpoint}:`, json);
-          return [];
-        } catch (error) {
-          console.error(`Error fetching ${data.endpoint}:`, error);
-          return [];
+          console.log('🔍 Fetching additional data with payload:', payload);
+          
+          json = await apiFetch(`${data.endpoint}/index`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+        } else {
+          // استخدام GET عادي إذا مفيش filters
+          console.log('🔍 Fetching additional data without filters:', data.endpoint);
+          json = await apiFetch(data.endpoint);
         }
-      },
-      staleTime: 10 * 60 * 1000,
-      enabled: open,
-    }))
-  });
-
+        
+        // Handle different response structures
+        if (json && Array.isArray(json.data)) {
+          console.log('✅ Additional data received:', json.data.length, 'items');
+          return json.data;
+        }
+        if (Array.isArray(json)) {
+          console.log('✅ Additional data received:', json.length, 'items');
+          return json;
+        }
+        if (json && json.items && Array.isArray(json.items)) {
+          console.log('✅ Additional data received:', json.items.length, 'items');
+          return json.items;
+        }
+        console.warn(`❌ Unexpected response structure for ${data.endpoint}:`, json);
+        return [];
+      } catch (error) {
+        console.error(`❌ Error fetching ${data.endpoint}:`, error);
+        return [];
+      }
+    },
+    staleTime: 10 * 60 * 1000,
+    enabled: open,
+  }))
+});
   // تحويل الـ array إلى object
   const additionalQueries = additionalData.reduce((acc, data, index) => {
     acc[data.key] = additionalQueriesArray[index];

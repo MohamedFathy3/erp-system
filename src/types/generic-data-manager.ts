@@ -99,6 +99,7 @@ export interface ColumnDefinition {
 export interface AdditionalData {
   key: string;
   endpoint: string;
+  filters?: Record<string, string | number | boolean>;
 }
 
 export interface ImageUploadProps {
