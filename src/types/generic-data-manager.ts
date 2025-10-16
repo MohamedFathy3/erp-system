@@ -79,6 +79,14 @@ export interface GenericDataManagerProps {
   fieldCategories?: {
     [key: string]: string[]; 
   };
+  showAddButton?: boolean;
+  showEditButton?: boolean;
+  showDeleteButton?: boolean;
+  showActiveToggle?: boolean;
+  showSearch?: boolean;
+  showFilter?: boolean;
+  showBulkActions?: boolean;
+  showDeletedToggle?: boolean;
 }
 
 export interface ColumnDefinition {
@@ -233,6 +241,8 @@ export interface FilterSearchProps {
   onResetFilters: () => void;
   showFilter: boolean;
   onToggleFilter: () => void;
+    showSearch?: boolean;
+  showFilterSection?: boolean;
   availableFilters?: FilterField[];
 }
 
@@ -257,6 +267,12 @@ export interface HeaderProps {
   bulkLoading: boolean;
   showFilter: boolean;
   searchTerm?: string;
+    showAddButton?: boolean;
+  showEditButton?: boolean;
+  showDeleteButton?: boolean;
+  showActiveToggle?: boolean;
+  showBulkActions?: boolean;
+  showDeletedToggle?: boolean;
 }
 
 export interface SearchBarProps {
@@ -298,6 +314,9 @@ export interface DataTableProps {
   onRestore?: (id: number, itemName: string) => void; 
   onForceDelete?: (id: number, itemName: string) => void;
   compactView?: boolean;
+    showEditButton?: boolean;
+  showDeleteButton?: boolean;
+  showActiveToggle?: boolean;
 }
 
 export interface SelectOption {

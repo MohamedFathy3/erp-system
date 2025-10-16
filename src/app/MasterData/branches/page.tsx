@@ -75,7 +75,6 @@ export default function DeviceModelsPage() {
         { key: 'company', endpoint: '/company' },
         { key: 'city', endpoint: '/city' },
         { key: 'country', endpoint: '/country' },
-        { key: 'phone_keys', endpoint: '/phone-key' }
       ]}
      
       formFields={[
@@ -179,13 +178,7 @@ export default function DeviceModelsPage() {
           optionsKey: "country",
           required: false
         },
-        {
-          name: "phone_key_id",
-          label: "Phone Key",
-          type: "select",
-          optionsKey: "phone_keys",
-          required: false
-        }
+  
       ]}
       availableFilters={[]}
     />

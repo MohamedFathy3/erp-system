@@ -20,6 +20,8 @@ const FilterSearch: React.FC<FilterSearchProps> = ({
   onResetFilters,
   showFilter,
   onToggleFilter,
+   showSearch = true,
+  showFilterSection = true,
   availableFilters = []
 }) => {
   return (

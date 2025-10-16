@@ -149,7 +149,7 @@ const generateDynamicFilters = (
       'id', 'actions', 'created_at', 'updated_at', 'deleted_at', 
       'image', 'avatar', 'photo', 'logo', 'local_name', 'phone', 
       'code', 'Status', 'fax', 'address', 'zip_code', 'alias_name', 
-      'notes', 'mobile', 'phone_two', 'email'
+      'notes', 'mobile', 'phone_two', 'email','flag','imageUrl'
     ];
     
     if (!excludedKeys.includes(column.key) && 
@@ -276,7 +276,14 @@ export default function GenericDataManager(props: GenericDataManagerProps): Reac
     formFields = [],
     availableFilters = [],
     additionalData = [],
-    onToggleActive
+    onToggleActive,
+   showAddButton = true,
+    showEditButton = true,
+    showDeleteButton = true,
+    showActiveToggle = true,
+    showSearch = true,
+    showBulkActions = true,
+    showDeletedToggle = true
   } = props;
 
   // استخدام pagination آمن مع قيمة افتراضية
@@ -402,10 +409,18 @@ export default function GenericDataManager(props: GenericDataManagerProps): Reac
             onToggleDeleted={handleToggleDeleted}
             onAddItem={handleAddItem}
             bulkLoading={bulkDeleteMutation.isPending || bulkRestoreMutation.isPending}
+            showEditButton={showEditButton}
+            showDeleteButton={showDeleteButton}
+            showActiveToggle={showActiveToggle}
+                  showAddButton={showAddButton}
+            showBulkActions={showBulkActions}
+            showDeletedToggle={showDeletedToggle}
           />
 
           {/* Search & Filter داخل السكشن */}
+            {(showSearch || showFilter) && (
           <div className="mt-6">
+            
             <FilterSearch
               search={search}
               onSearchChange={setSearch}
@@ -421,8 +436,10 @@ export default function GenericDataManager(props: GenericDataManagerProps): Reac
               showFilter={showFilter}
               onToggleFilter={handleToggleFilter}
               availableFilters={finalAvailableFilters}
+           
             />
           </div>
+ )}
 
           {/* Table داخل السكشن */}
           <div className="mt-6">
@@ -448,6 +465,9 @@ export default function GenericDataManager(props: GenericDataManagerProps): Reac
               onRestore={handleRestore} 
               onForceDelete={handleForceDelete}
               compactView={shouldUseCompactView}
+                showEditButton={showEditButton}
+              showDeleteButton={showDeleteButton}
+              showActiveToggle={showActiveToggle}
             />
           </div>
 
@@ -464,7 +484,7 @@ export default function GenericDataManager(props: GenericDataManagerProps): Reac
         </div>
 
         {/* Modal خارج السكشن الرئيسي */}
-        {open && (
+        {(showAddButton || showEditButton) && open && (
           <FormModal
             title={title}
             editingItem={editingItem}
@@ -485,19 +505,32 @@ export default function GenericDataManager(props: GenericDataManagerProps): Reac
 
 // Sub-components
 const Header: React.FC<ExtendedHeaderProps & { 
-  onDeleteAll?: () => void; 
+ onDeleteAll?: () => void; 
   dataLength: number;
+  
+  showAddButton?: boolean;
+  showEditButton?: boolean;
+  showDeleteButton?: boolean;
+  showActiveToggle?: boolean;
+  showBulkActions?: boolean;
+  showDeletedToggle?: boolean;
 }> = ({ 
   title, currentPage, pagination, selectedItems, showingDeleted, showFilter, searchTerm,
   onBulkAction, onToggleFilter, onToggleDeleted, onAddItem, onDeleteAll, dataLength,
-  bulkLoading 
+  bulkLoading,  
+  showAddButton = true,
+  showEditButton = true,
+  showDeleteButton = true,
+  showActiveToggle = true,
+  showBulkActions = true,
+  showDeletedToggle = true
 }) => {
   const startItem = ((currentPage - 1) * pagination.per_page) + 1;
   const endItem = Math.min(currentPage * pagination.per_page, pagination.total);
   const totalItems = pagination.total;
 
   // إظهار زر Delete All فقط إذا تم تحديد عناصر
-  const shouldShowDeleteAll = selectedItems.size > 0 && onDeleteAll;
+  const shouldShowDeleteAll = selectedItems.size > 0 && onDeleteAll && showDeleteButton && showBulkActions;
 
   return (
     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -515,7 +548,7 @@ const Header: React.FC<ExtendedHeaderProps & {
      
       <div className="flex gap-3 flex-wrap">
         {/* Delete All Button - يظهر فقط لما يتم تحديد عناصر */}
-        {shouldShowDeleteAll && (
+        {shouldShowDeleteAll &&  showDeleteButton &&(
           <Button
             variant="destructive"
             onClick={onDeleteAll}
@@ -563,7 +596,7 @@ const Header: React.FC<ExtendedHeaderProps & {
         )}
 
         {/* Bulk Action Button - يظهر فقط لما يتم تحديد عناصر */}
-        {selectedItems.size > 0 && (
+        {selectedItems.size > 0 && showDeleteButton && showBulkActions && (
           <Button
             variant="destructive"
             onClick={onBulkAction}
@@ -671,7 +704,7 @@ const Header: React.FC<ExtendedHeaderProps & {
             )}
           </span>
         </Button>
-
+ {showAddButton && (
         <Button
           className={`
             relative
@@ -717,7 +750,7 @@ const Header: React.FC<ExtendedHeaderProps & {
           
           {/* Shine effect */}
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
-        </Button>
+        </Button>)}
       </div>
     </div>
   );
@@ -728,12 +761,18 @@ const Header: React.FC<ExtendedHeaderProps & {
     onRestore?: (id: number, itemName: string) => void;
     onForceDelete?: (id: number, itemName: string) => void;
     compactView?: boolean;
+       showEditButton?:boolean,
+  showDeleteButton?:boolean,
+  showActiveToggle?:boolean
   }> = ({
     title, data, columns, selectedItems, allSelected, someSelected,
     orderBy, orderByDirection, pagination, onToggleSelectAll, onToggleSelectItem,
     onSort, onEdit, onDelete, onRestore, onForceDelete, onToggleActive, deleteLoading, Checkbox, 
     showingDeleted = false,
-    compactView = false
+    compactView = false,  
+     showEditButton = true,
+  showDeleteButton = true,
+  showActiveToggle = true
   }) => {
     
     // تحديد إذا كان هناك أي عمود صورة
@@ -867,18 +906,17 @@ const Header: React.FC<ExtendedHeaderProps & {
       onEdit(item);
     };
 
-    return (
+ return (
       <div className="bg-white dark:bg-gray-800 dark:border-gray-700 overflow-x-auto">
 
         {/* Table Header */}
         <div className={`${showingDeleted 
-    ? 'bg-red-100 dark:bg-red-800 text-red-400 dark:text-red-100' 
-    : 'relative overflow-hidden bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/30 hover:from-green-100 hover:to-green-200 dark:hover:from-green-800/40 dark:hover:to-green-700/40 text-black dark:text-green-200  ransform hover:-translate-y-0.5 active:translate-y-0 transition-all duration-250 ease-in-out border border-green-100 dark:border-green-900/50'
-  } font-semibold text-lg px-6 py-1 rounded-t-2xl group`}>
-    {title} Management {showingDeleted && '(Deleted Items)'}
-  </div>
+          ? 'bg-red-100 dark:bg-red-800 text-red-400 dark:text-red-100' 
+          : 'relative overflow-hidden bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/30 hover:from-green-100 hover:to-green-200 dark:hover:from-green-800/40 dark:hover:to-green-700/40 text-black dark:text-green-200  ransform hover:-translate-y-0.5 active:translate-y-0 transition-all duration-250 ease-in-out border border-green-100 dark:border-green-900/50'
+        } font-semibold text-lg px-6 py-1 rounded-t-2xl group`}>
+          {title} Management {showingDeleted && '(Deleted Items)'}
+        </div>
 
-    
         {/* Table Info Bar */}
         <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between bg-white dark:bg-gray-800">
           <div className="flex items-center gap-2">
@@ -940,9 +978,12 @@ const Header: React.FC<ExtendedHeaderProps & {
                   </th>
                 ))
               )}
-              <th className="px-6 py-3 text-center text-gray-700 dark:text-gray-300 font-medium uppercase tracking-wider">
-                Actions
-              </th>
+              {/* إخفاء عمود الإجراءات إذا لم يكن هناك أي أزرار مسموح بها */}
+              {(showEditButton || showDeleteButton || showActiveToggle) && (
+                <th className="px-6 py-3 text-center text-gray-700 dark:text-gray-300 font-medium uppercase tracking-wider">
+                  Actions
+                </th>
+              )}
             </tr>
           </thead>
           <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
@@ -957,7 +998,7 @@ const Header: React.FC<ExtendedHeaderProps & {
                   <tr 
                     key={item.id} 
                     className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200 cursor-pointer"
-                    onDoubleClick={() => handleDoubleClick(item)}
+                    onDoubleClick={() => showEditButton && handleDoubleClick(item)}
                   >
                     <td className="px-6 py-4">
                       <Checkbox
@@ -1016,7 +1057,7 @@ const Header: React.FC<ExtendedHeaderProps & {
                           <td 
                             key={column.key} 
                             className="px-6 py-4 text-gray-700 dark:text-gray-300"
-                            onDoubleClick={() => handleDoubleClick(item)}
+                            onDoubleClick={() => showEditButton && handleDoubleClick(item)}
                           >
                             {column.render ? column.render(item) : getNestedValue(item, column.key)}
                           </td>
@@ -1028,185 +1069,201 @@ const Header: React.FC<ExtendedHeaderProps & {
                         <td 
                           key={column.key} 
                           className="px-6 py-4 text-gray-700 dark:text-gray-300"
-                          onDoubleClick={() => handleDoubleClick(item)}
+                          onDoubleClick={() => showEditButton && handleDoubleClick(item)}
                         >
                           {column.render ? column.render(item) : getNestedValue(item, column.key)}
                         </td>
                       ))
                     )}
                     
-                    <td className="px-6 py-4">
-                      <div className="flex justify-center items-center gap-2">
-                        {showingDeleted ? (
-                          <div className="flex gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => onRestore?.(item.id, itemName)}
-  className={`
-              relative
-              overflow-hidden
-              bg-gradient-to-r
-              from-green-50
-              to-green-100
-              text-black
-
-              dark:from-green-900/30
-              dark:to-green-800/30
-              hover:from-green-100
-              hover:to-green-200
-              dark:hover:from-green-800/40
-              dark:hover:to-green-700/40
-              dark:text-green-200
-              font-semibold
-              py-3
-              px-6
-              rounded-2xl
-              shadow-md
-              hover:shadow-lg
-              transform
-              hover:-translate-y-0.5
-              active:translate-y-0
-              transition-all
-              duration-250
-              ease-in-out
-              border
-              border-green-100
-              dark:border-green-900/50
-              group
-            `}                                    >
-                              <i className="fas fa-rotate-left mr-2"></i>
-                              
-                              Restore
-                            </Button>
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => onForceDelete?.(item.id, itemName)}
-                              style={{color:'black'}}
-                              className=" bg-gradient-to-r
-              from-red-50  to-red-100 hover:bg-red-900 border-0 px-4 py-2 rounded-lg font-medium transition-colors duration-200 shadow-sm"
-                            >
-                              <i className="fas fa-trash mr-2"></i>
-                              Delete Permanently
-                            </Button>
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-3">
-                            {/* Active Toggle */}
-                            {item.hasOwnProperty('active') && (
-                              <div className="flex items-center gap-2">
-                                <Switch
-                                  checked={!!item.active}
-                                  onChange={() => onToggleActive?.(item.id, itemName, !!item.active)}
-                                />
-                                <span className={`text-sm font-medium ${item.active ? 'text-green-600' : 'text-red-600'}`}>
-                                  {item.active ? 'Active' : 'Inactive'}
-                                </span>
-                              </div>
-                            )}
-                            
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => onEdit(item)}
-  className={`
-              relative
-              overflow-hidden
-              bg-gradient-to-r
-              from-green-50
-              to-green-100
-              text-black
-
-              dark:from-green-900/30
-              dark:to-green-800/30
-              hover:from-green-100
-              hover:to-green-200
-              dark:hover:from-green-800/40
-              dark:hover:to-green-700/40
-              dark:text-green-200
-              font-semibold
-              py-3
-              px-6
-              rounded-2xl
-              shadow-md
-              hover:shadow-lg
-              transform
-              hover:-translate-y-0.5
-              active:translate-y-0
-              transition-all
-              duration-250
-              ease-in-out
-              border
-              border-green-100
-              dark:border-green-900/50
-              group
-            `}                          >
-                              <i className="fas fa-edit mr-2"></i>
-                              Edit
-                            </Button>
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => onDelete(item.id, itemName)}
-                              disabled={deleteLoading}
-
-                                                          style={{color:'black'}}
-
-                          className={`
-              relative
-              overflow-hidden
-              bg-gradient-to-r
-              from-red-50
-              to-red-100
-              dark:from-red-900/30
-              dark:to-red-800/30
-              hover:from-red-100
-              hover:to-red-200
-              dark:hover:from-red-800/40
-              dark:hover:to-red-700/40
-              text-black
-              dark:text-red-200
-              font-semibold
-              py-3
-              px-6
-              rounded-2xl
-              shadow-md
-              hover:shadow-lg
-              transform
-              hover:-translate-y-0.5
-              active:translate-y-0
-              transition-all
-              duration-250
-              ease-in-out
-              border
-              border-red-100
-              dark:border-red-900/50
-              group
-            `}
-                            >
-                              {deleteLoading ? (
-                                <>
-                                  <i className="fas fa-spinner fa-spin mr-2"></i>
-                                  Deleting...
-                                </>
-                              ) : (
-                                <>
+                    {/* إخفاء خلية الإجراءات إذا لم يكن هناك أي أزرار مسموح بها */}
+                    {(showEditButton || showDeleteButton || showActiveToggle) && (
+                      <td className="px-6 py-4">
+                        <div className="flex justify-center items-center gap-2">
+                          {showingDeleted ? (
+                            <div className="flex gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => onRestore?.(item.id, itemName)}
+                                className={`
+                                  relative
+                                  overflow-hidden
+                                  bg-gradient-to-r
+                                  from-green-50
+                                  to-green-100
+                                  text-black
+                                  dark:from-green-900/30
+                                  dark:to-green-800/30
+                                  hover:from-green-100
+                                  hover:to-green-200
+                                  dark:hover:from-green-800/40
+                                  dark:hover:to-green-700/40
+                                  dark:text-green-200
+                                  font-semibold
+                                  py-3
+                                  px-6
+                                  rounded-2xl
+                                  shadow-md
+                                  hover:shadow-lg
+                                  transform
+                                  hover:-translate-y-0.5
+                                  active:translate-y-0
+                                  transition-all
+                                  duration-250
+                                  ease-in-out
+                                  border
+                                  border-green-100
+                                  dark:border-green-900/50
+                                  group
+                                `}
+                              >
+                                <i className="fas fa-rotate-left mr-2"></i>
+                                Restore
+                              </Button>
+                              {/* زر الحذف الدائم - يظهر فقط إذا كان مسموحاً بالحذف */}
+                              {showDeleteButton && (
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  onClick={() => onForceDelete?.(item.id, itemName)}
+                                  style={{color:'black'}}
+                                  className=" bg-gradient-to-r from-red-50  to-red-100 hover:bg-red-900 border-0 px-4 py-2 rounded-lg font-medium transition-colors duration-200 shadow-sm"
+                                >
                                   <i className="fas fa-trash mr-2"></i>
-                                  Delete
-                                </>
+                                  Delete Permanently
+                                </Button>
                               )}
-                            </Button>
-                          </div>
-                        )}
-                      </div>
-                    </td>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-3">
+                              {/* Active Toggle - يظهر فقط إذا كان مسموحاً به */}
+                              {item.hasOwnProperty('active') && showActiveToggle && (
+                                <div className="flex items-center gap-2">
+                                  <Switch
+                                    checked={!!item.active}
+                                    onChange={() => onToggleActive?.(item.id, itemName, !!item.active)}
+                                  />
+                                  <span className={`text-sm font-medium ${item.active ? 'text-green-600' : 'text-red-600'}`}>
+                                    {item.active ? 'Active' : 'Inactive'}
+                                  </span>
+                                </div>
+                              )}
+                              
+                              {/* زر التعديل - يظهر فقط إذا كان مسموحاً به */}
+                              {showEditButton && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => onEdit(item)}
+                                  className={`
+                                    relative
+                                    overflow-hidden
+                                    bg-gradient-to-r
+                                    from-green-50
+                                    to-green-100
+                                    text-black
+                                    dark:from-green-900/30
+                                    dark:to-green-800/30
+                                    hover:from-green-100
+                                    hover:to-green-200
+                                    dark:hover:from-green-800/40
+                                    dark:hover:to-green-700/40
+                                    dark:text-green-200
+                                    font-semibold
+                                    py-3
+                                    px-6
+                                    rounded-2xl
+                                    shadow-md
+                                    hover:shadow-lg
+                                    transform
+                                    hover:-translate-y-0.5
+                                    active:translate-y-0
+                                    transition-all
+                                    duration-250
+                                    ease-in-out
+                                    border
+                                    border-green-100
+                                    dark:border-green-900/50
+                                    group
+                                  `}
+                                >
+                                  <i className="fas fa-edit mr-2"></i>
+                                  Edit
+                                </Button>
+                              )}
+                              
+                              {/* زر الحذف - يظهر فقط إذا كان مسموحاً به */}
+                              {showDeleteButton && (
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  onClick={() => onDelete(item.id, itemName)}
+                                  disabled={deleteLoading}
+                                  style={{color:'black'}}
+                                  className={`
+                                    relative
+                                    overflow-hidden
+                                    bg-gradient-to-r
+                                    from-red-50
+                                    to-red-100
+                                    dark:from-red-900/30
+                                    dark:to-red-800/30
+                                    hover:from-red-100
+                                    hover:to-red-200
+                                    dark:hover:from-red-800/40
+                                    dark:hover:to-red-700/40
+                                    text-black
+                                    dark:text-red-200
+                                    font-semibold
+                                    py-3
+                                    px-6
+                                    rounded-2xl
+                                    shadow-md
+                                    hover:shadow-lg
+                                    transform
+                                    hover:-translate-y-0.5
+                                    active:translate-y-0
+                                    transition-all
+                                    duration-250
+                                    ease-in-out
+                                    border
+                                    border-red-100
+                                    dark:border-red-900/50
+                                    group
+                                  `}
+                                >
+                                  {deleteLoading ? (
+                                    <>
+                                      <i className="fas fa-spinner fa-spin mr-2"></i>
+                                      Deleting...
+                                    </>
+                                  ) : (
+                                    <>
+                                      <i className="fas fa-trash mr-2"></i>
+                                      Delete
+                                    </>
+                                  )}
+                                </Button>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 );
               })
             ) : (
               <tr>
-                <td colSpan={columns.length + 2} className="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
+                <td 
+                  colSpan={
+                    columns.length + 
+                    (compactView && hasImageColumn ? 2 : 1) + 
+                    ((showEditButton || showDeleteButton || showActiveToggle) ? 1 : 0)
+                  } 
+                  className="px-6 py-8 text-center text-gray-500 dark:text-gray-400"
+                >
                   <div className="flex flex-col items-center justify-center py-8">
                     <i className="fas fa-inbox text-4xl text-gray-300 dark:text-gray-600 mb-4"></i>
                     <div className="text-lg font-medium text-gray-600 dark:text-gray-400">

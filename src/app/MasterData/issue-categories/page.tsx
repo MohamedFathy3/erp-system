@@ -8,7 +8,7 @@ export default function DeviceModelsPage() {
       endpoint="type"
       title="IT Issue Categories"
       columns={[
-                { key: 'code', label: 'code', sortable: true },
+                { key: 'code', label: 'code', sortable: false },
         { key: 'name', label: 'Name', sortable: true },
         { key: 'ArabicName', label: 'Arabic Name', sortable: false },
       ]}
