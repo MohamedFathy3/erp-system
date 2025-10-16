@@ -10,28 +10,43 @@ export default function TicketETAPage() {
       title="Ticket ETA"
       columns={[
         { 
-          key: 'id', 
-          label: 'ID', 
-          sortable: true
+          key: 'code', 
+          label: 'Code', 
+          sortable: false
         },
         { key: 'name', label: 'Name', sortable: true },
         { 
-          key: 'Arabic', 
-          label: 'Arabic Name', 
+          key: 'short_description', 
+          label: 'Description', 
           sortable: false,
+         
+        },
+        { 
+          key: 'type_id', 
+          label: 'Type', 
+          sortable: true,
+        
+        },
+        { 
+          key: 'priority', 
+          label: 'Priority', 
+          sortable: true,
           render: (item) => {
-            const arabicName = smartTranslate(item.name);
+            const priorityColors = {
+              'Low': 'bg-green-100 text-green-800',
+              'Medium': 'bg-yellow-100 text-yellow-800',
+              'High': 'bg-orange-100 text-orange-800',
+              'Critical': 'bg-red-100 text-red-800'
+            };
+            const colorClass = priorityColors[item.priority] || 'bg-gray-100 text-gray-800';
+            
             return (
-              <div className="flex flex-col">
-                <span className="text-gray-800 dark:text-gray-200">{arabicName}</span>
-                {arabicName.includes('(غير مترجم)') && (
-                  <span className="text-xs text-gray-500">ترجمة تلقائية</span>
-                )}
-              </div>
+              <span className={`px-2 py-1 rounded-full text-xs font-medium ${colorClass}`}>
+                {item.priority}
+              </span>
             );
           }
         },
-        { key: 'type_id', label: 'Type ID', sortable: false },
         { 
           key: 'time', 
           label: 'Time', 
@@ -43,34 +58,72 @@ export default function TicketETAPage() {
           }
         },
       ]}
+      additionalData={[
+        { key: 'type', endpoint: '/type' }
+      ]}
       formFields={[
+        { 
+          name: 'code', 
+          label: 'Code', 
+          type: 'text', 
+          required: true,
+          placeholder: 'Enter unique code'
+        },
         { 
           name: 'name', 
           label: 'Name', 
           type: 'text', 
-          required: true 
+          required: true,
+          placeholder: 'Enter issue name'
         },
         { 
           name: 'Arabic', 
           label: 'Arabic Name', 
           type: 'text', 
-          required: false 
+          required: false,
+          placeholder: 'ادخل الاسم العربي'
+        },
+        {
+          name: "type_id",
+          label: "IT Issue Categories",
+          type: "select",
+          required: true,
+          optionsKey: "type",
+          placeholder: "Select type"
+        },
+        {
+          name: "priority",
+          label: "Priority",
+          type: "select",
+          required: true,
+          options: [
+            { value: 'Low', label: 'Low' },
+            { value: 'Medium', label: 'Medium' },
+            { value: 'High', label: 'High' },
+            { value: 'Critical', label: 'Critical' }
+          ],
+          placeholder: "Select priority level"
         },
         { 
           name: 'time', 
           label: 'Time (HH:MM)', 
           type: 'text', 
           required: true,
+          placeholder: '00:00'
         },
         { 
           name: 'short_description', 
           label: 'Short Description', 
-          type: 'text', 
-          required: false 
+          type: 'text',
+          rows: 3,
+          required: false,
+          placeholder: 'Enter short description'
         },
       ]}
-      initialData={{ type_id: 8 }}
-      defaultFilters={{ type_id: '8' }}
+      initialData={{ 
+      }}
+      defaultFilters={{ 
+      }}
     />
   );
 }

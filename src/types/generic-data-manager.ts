@@ -179,6 +179,7 @@ export interface GenericDataManagerHandlers {
   handleBulkRestore: () => void;
   handleFilter: () => void;
   handleResetFilters: () => void;
+   handleDeleteAll: () => void;
   handleSearch: () => void;
   handleClearSearch: () => void;
   toggleSelectAll: () => void;

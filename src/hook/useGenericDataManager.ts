@@ -40,6 +40,7 @@ export function useGenericDataManager({
   bulkDeleteMutation: UseMutationResult<unknown, Error, number[]>;
   bulkRestoreMutation: UseMutationResult<unknown, Error, number[]>;
   handleClearSearch: () => void;
+  handleDeleteAll: () => void; 
 } {
   const queryClient = useQueryClient();
   
@@ -255,6 +256,41 @@ export function useGenericDataManager({
 
   const currentPageData = getPaginatedData();
 
+// في useGenericDataManager.ts - أضف هذه الدالة
+const handleDeleteAll = (): void => {
+  if (currentPageData.length === 0) return;
+  
+  const allIds = currentPageData.map(item => item.id);
+  const itemTitles = currentPageData
+    .map(item => item?.title || item?.name || `Item ${item.id}`)
+    .join(', ');
+
+  const message = showingDeleted 
+    ? `⚠️ Are you sure you want to PERMANENTLY delete ALL ${allIds.length} item(s) on this page? This action cannot be undone!`
+    : `Are you sure you want to delete ALL ${allIds.length} item(s) on this page: ${itemTitles}?`;
+
+  if (confirm(message)) {
+    if (showingDeleted) {
+      // Force delete all
+      const forceDeletePromises = allIds.map(id => 
+        apiForceDelete(id)
+      );
+      
+      Promise.all(forceDeletePromises)
+        .then(() => {
+          queryClient.invalidateQueries({ queryKey: [endpoint] });
+          toast.success(`All ${allIds.length} items permanently deleted!`);
+        })
+        .catch((error) => {
+          console.error("Error force deleting all items:", error);
+          toast.error("Error permanently deleting items");
+        });
+    } else {
+      // Soft delete all
+      bulkDeleteMutation.mutate(allIds);
+    }
+  }
+};
 
 const saveItemMutation = useMutation<unknown, Error, { 
   data: Entity | FormData; 
@@ -696,6 +732,7 @@ const handleSave = async (e: SaveOptions): Promise<void> => {
     handleBulkDelete,
     handleBulkRestore,
     handleFilter,
+      handleDeleteAll,
     handleResetFilters,
     handleSearch,
     handleClearSearch,
@@ -706,6 +743,7 @@ const handleSave = async (e: SaveOptions): Promise<void> => {
     handleToggleActive, 
     // Mutations
     saveItemMutation,
+    
     deleteItemMutation,
     bulkDeleteMutation,
     bulkRestoreMutation,

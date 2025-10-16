@@ -242,7 +242,7 @@ export default function GenericDataManager(props: GenericDataManagerProps): Reac
     orderByDirection, setOrderByDirection,
     selectedItems, setSelectedItems,
     formData, setFormData,
-    
+     handleDeleteAll,
     // Data
     data,
     pagination,
@@ -389,6 +389,8 @@ export default function GenericDataManager(props: GenericDataManagerProps): Reac
           {/* Header داخل السكشن */}
           <Header 
             title={title}
+              dataLength={data.length} 
+            onDeleteAll={handleDeleteAll} 
             currentPage={currentPage}
             pagination={safePagination}
             selectedItems={selectedItems}
@@ -482,13 +484,20 @@ export default function GenericDataManager(props: GenericDataManagerProps): Reac
 }
 
 // Sub-components
-const Header: React.FC<ExtendedHeaderProps> = ({ 
+const Header: React.FC<ExtendedHeaderProps & { 
+  onDeleteAll?: () => void; 
+  dataLength: number;
+}> = ({ 
   title, currentPage, pagination, selectedItems, showingDeleted, showFilter, searchTerm,
-  onBulkAction, onToggleFilter, onToggleDeleted, onAddItem, bulkLoading 
+  onBulkAction, onToggleFilter, onToggleDeleted, onAddItem, onDeleteAll, dataLength,
+  bulkLoading 
 }) => {
   const startItem = ((currentPage - 1) * pagination.per_page) + 1;
   const endItem = Math.min(currentPage * pagination.per_page, pagination.total);
   const totalItems = pagination.total;
+
+  // إظهار زر Delete All فقط إذا تم تحديد عناصر
+  const shouldShowDeleteAll = selectedItems.size > 0 && onDeleteAll;
 
   return (
     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -505,42 +514,90 @@ const Header: React.FC<ExtendedHeaderProps> = ({
       </div>
      
       <div className="flex gap-3 flex-wrap">
+        {/* Delete All Button - يظهر فقط لما يتم تحديد عناصر */}
+        {shouldShowDeleteAll && (
+          <Button
+            variant="destructive"
+            onClick={onDeleteAll}
+            style={{color:'black'}}
+            className={`
+              relative
+              overflow-hidden
+              bg-gradient-to-r
+              from-red-50
+              to-red-100
+              dark:from-red-900/30
+              dark:to-red-800/30
+              hover:from-red-100
+              hover:to-red-200
+              dark:hover:from-red-800/40
+              dark:hover:to-red-700/40
+              text-black
+              dark:text-red-200
+              font-semibold
+              py-3
+              px-6
+              rounded-2xl
+              shadow-md
+              hover:shadow-lg
+              transform
+              hover:-translate-y-0.5
+              active:translate-y-0
+              transition-all
+              duration-250
+              ease-in-out
+              border
+              border-red-100
+              dark:border-red-900/50
+              group
+            `}
+          >
+            <span className="relative z-10 flex items-center gap-3">
+              <i className="fas fa-trash-can-arrow-up group-hover:scale-110 transition-transform duration-200"></i>
+              {showingDeleted ? 'Force Delete All' : 'Delete All'} ({selectedItems.size})
+            </span>
+            
+            {/* Shine effect */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+          </Button>
+        )}
+
+        {/* Bulk Action Button - يظهر فقط لما يتم تحديد عناصر */}
         {selectedItems.size > 0 && (
           <Button
             variant="destructive"
             onClick={onBulkAction}
             style={{color:'black'}}
-
-                         className={`
-            relative
-            overflow-hidden
-            bg-gradient-to-r
-            from-red-50
-            to-red-100
-            dark:from-red-900/30
-            dark:to-red-800/30
-            hover:from-red-100
-            hover:to-red-200
-            dark:hover:from-red-800/40
-            dark:hover:to-red-700/40
-            text-black
-            dark:text-red-200
-            font-semibold
-            py-3
-            px-6
-            rounded-2xl
-            shadow-md
-            hover:shadow-lg
-            transform
-            hover:-translate-y-0.5
-            active:translate-y-0
-            transition-all
-            duration-250
-            ease-in-out
-            border
-            border-red-100
-            dark:border-red-900/50
-            group
+            className={`
+              relative
+              overflow-hidden
+              bg-gradient-to-r
+              from-red-50
+              to-red-100
+              dark:from-red-900/30
+              dark:to-red-800/30
+              hover:from-red-100
+              hover:to-red-200
+              dark:hover:from-red-800/40
+              dark:hover:to-red-700/40
+              text-black
+              dark:text-red-200
+              font-semibold
+              py-3
+              px-6
+              rounded-2xl
+              shadow-md
+              hover:shadow-lg
+              transform
+              hover:-translate-y-0.5
+              active:translate-y-0
+              transition-all
+              duration-250
+              ease-in-out
+              border
+              border-red-100
+              dark:border-red-900/50
+              group
               ${bulkLoading ? 'opacity-70 cursor-wait' : ''}
             `}
             disabled={bulkLoading}
@@ -561,6 +618,7 @@ const Header: React.FC<ExtendedHeaderProps> = ({
           </Button>
         )}
 
+        {/* باقي الأزرار تبقى كما هي */}
         <Button 
           onClick={onToggleDeleted} 
           className={`
@@ -615,7 +673,7 @@ const Header: React.FC<ExtendedHeaderProps> = ({
         </Button>
 
         <Button
-         className={`
+          className={`
             relative
             overflow-hidden
             bg-gradient-to-r
@@ -648,13 +706,13 @@ const Header: React.FC<ExtendedHeaderProps> = ({
           `}
           onClick={onAddItem}
         >
-           <span className="flex items-center gap-3">
-              <>
-                <div className="bg-green-100 dark:bg-green-900/30 p-2 rounded-lg group-hover:scale-110 transition-transform duration-200">
-                  <i className="fas fa-arrow-left text-green-600 dark:text-green-400 text-sm"></i>
-                </div>
-                <span className="text-black dark:text-green-300">Add {title}</span>
-              </>
+          <span className="flex items-center gap-3">
+            <>
+              <div className="bg-green-100 dark:bg-green-900/30 p-2 rounded-lg group-hover:scale-110 transition-transform duration-200">
+                <i className="fas fa-plus text-green-600 dark:text-green-400 text-sm"></i>
+              </div>
+              <span className="text-black dark:text-green-300">Add {title}</span>
+            </>
           </span>
           
           {/* Shine effect */}
@@ -665,198 +723,212 @@ const Header: React.FC<ExtendedHeaderProps> = ({
   );
 };
 
-const DataTable: React.FC<DataTableProps & { 
-  showingDeleted?: boolean;
-  onRestore?: (id: number, itemName: string) => void;
-  onForceDelete?: (id: number, itemName: string) => void;
-  compactView?: boolean;
-}> = ({
-  title, data, columns, selectedItems, allSelected, someSelected,
-  orderBy, orderByDirection, pagination, onToggleSelectAll, onToggleSelectItem,
-  onSort, onEdit, onDelete, onRestore, onForceDelete, onToggleActive, deleteLoading, Checkbox, 
-  showingDeleted = false,
-  compactView = false
-}) => {
-  
-  // تحديد إذا كان هناك أي عمود صورة
-  const imageFieldKeys = ['image', 'avatar', 'photo', 'picture', 'profile_image', 'logo'];
-  const hasImageColumn = columns.some(col => imageFieldKeys.includes(col.key));
-  
-  // الحقول التي تظهر في العرض المدمج (فقط هذه)
-  const compactDisplayFields = ['name', 'company', 'email', 'phone'];
-  
-  // الحصول على مفتاح الصورة الفعلي المستخدم في البيانات
-  const getImageFieldKey = (item: Entity) => {
-    return imageFieldKeys.find(key => item[key]) || 'image';
-  };
-
-  // الحصول على الصورة من العنصر
-  const getItemImage = (item: Entity) => {
-    const imageKey = getImageFieldKey(item);
-    const imageValue = item[imageKey];
+  const DataTable: React.FC<DataTableProps & { 
+    showingDeleted?: boolean;
+    onRestore?: (id: number, itemName: string) => void;
+    onForceDelete?: (id: number, itemName: string) => void;
+    compactView?: boolean;
+  }> = ({
+    title, data, columns, selectedItems, allSelected, someSelected,
+    orderBy, orderByDirection, pagination, onToggleSelectAll, onToggleSelectItem,
+    onSort, onEdit, onDelete, onRestore, onForceDelete, onToggleActive, deleteLoading, Checkbox, 
+    showingDeleted = false,
+    compactView = false
+  }) => {
     
-    if (!imageValue) return null;
+    // تحديد إذا كان هناك أي عمود صورة
+    const imageFieldKeys = ['image', 'avatar', 'photo', 'picture', 'profile_image', 'logo'];
+    const hasImageColumn = columns.some(col => imageFieldKeys.includes(col.key));
     
-    if (typeof imageValue === 'string') {
-      return imageValue;
-    }
+    // الحقول التي تظهر في العرض المدمج (فقط هذه)
+    const compactDisplayFields = ['name', 'company', 'email', 'phone'];
     
-    if (typeof imageValue === 'object' && imageValue.url) {
-      return imageValue.url;
-    }
+    // الحصول على مفتاح الصورة الفعلي المستخدم في البيانات
+    const getImageFieldKey = (item: Entity) => {
+      return imageFieldKeys.find(key => item[key]) || 'image';
+    };
+
+    // الحصول على الصورة من العنصر
+    const getItemImage = (item: Entity) => {
+      const imageKey = getImageFieldKey(item);
+      const imageValue = item[imageKey];
+      
+      if (!imageValue) return null;
+      
+      if (typeof imageValue === 'string') {
+        return imageValue;
+      }
+      
+      if (typeof imageValue === 'object' && imageValue.url) {
+        return imageValue.url;
+      }
+      
+      return null;
+    };
+
+    // الحصول على بيانات العرض المدمج من العنصر (فقط الحقول المطلوبة)
+    const getCompactDisplayData = (item: Entity) => {
+      const displayData = [];
+
+      // الاسم (دائماً يظهر)
+      if (item.name || item.title) {
+        displayData.push({
+          field: 'name',
+          value: item.name || item.title,
+          isTitle: true
+        });
+      }
+
+      // الشركة (إذا كان object)
+      if (item.company?.name) {
+        displayData.push({
+          field: 'company',
+          value: item.company.name,
+          icon: 'building',
+          type: 'text'
+        });
+      } else if (item.company) {
+        displayData.push({
+          field: 'company',
+          value: item.company,
+          icon: 'building',
+          type: 'text'
+        });
+      }
+
+      // الإيميل
+      if (item.email) {
+        displayData.push({
+          field: 'email',
+          value: item.email,
+          icon: 'mail',
+          type: 'email'
+        });
+      }
+
+      // الهاتف الأرضي
+      if (item.phone) {
+        displayData.push({
+          field: 'phone',
+          value: item.phone,
+          icon: 'phone',
+          type: 'phone'
+        });
+      }
+
+      return displayData;
+    };
+
+    // الحصول على الحرف الأول للصورة البديلة
+    const getInitial = (item: Entity) => {
+      const name = item.name || item.title || 'Unknown';
+      return name.charAt(0).toUpperCase();
+    };
+
+    // الحصول على الأعمدة للعرض في الجدول (كل الحقول ما عدا المدمجة)
+    const getTableColumns = () => {
+      if (!compactView) return columns;
+      
+      return columns.filter(col => 
+        ![...imageFieldKeys, ...compactDisplayFields].includes(col.key)
+      );
+    };
+
+    // دالة للحصول على القيمة من الحقول المتداخلة
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const getNestedValue = (obj: any, path: string) => {
+      return path.split('.').reduce((current, key) => {
+        return current && current[key] !== undefined ? current[key] : null;
+      }, obj);
+    };
+
+    // مكون الأيقونة
+    const IconComponent = ({ icon, className }: { icon: string; className?: string }) => {
+      const iconProps = { className: className || "w-3 h-3 flex-shrink-0" };
+      
+      switch (icon) {
+        case 'mail': return <Mail {...iconProps} />;
+        case 'phone': return <Phone {...iconProps} />;
+        case 'smartphone': return <Smartphone {...iconProps} />;
+        case 'map-pin': return <MapPin {...iconProps} />;
+        case 'building': return <Building {...iconProps} />;
+        case 'users': return <Users {...iconProps} />;
+        case 'briefcase': return <Briefcase {...iconProps} />;
+        case 'globe': return <Globe {...iconProps} />;
+        case 'shield': return <Shield {...iconProps} />;
+        case 'landmark': return <Landmark {...iconProps} />;
+        case 'user': return <User {...iconProps} />;
+        default: return <Circle {...iconProps} />;
+      }
+    };
+
+    // دالة للتعامل مع الضغط المزدوج
+    const handleDoubleClick = (item: Entity) => {
+      onEdit(item);
+    };
+
+    return (
+      <div className="bg-white dark:bg-gray-800 dark:border-gray-700 overflow-x-auto">
+
+        {/* Table Header */}
+        <div className={`${showingDeleted 
+    ? 'bg-red-100 dark:bg-red-800 text-red-400 dark:text-red-100' 
+    : 'relative overflow-hidden bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/30 hover:from-green-100 hover:to-green-200 dark:hover:from-green-800/40 dark:hover:to-green-700/40 text-black dark:text-green-200  ransform hover:-translate-y-0.5 active:translate-y-0 transition-all duration-250 ease-in-out border border-green-100 dark:border-green-900/50'
+  } font-semibold text-lg px-6 py-1 rounded-t-2xl group`}>
+    {title} Management {showingDeleted && '(Deleted Items)'}
+  </div>
+
     
-    return null;
-  };
-
-  // الحصول على بيانات العرض المدمج من العنصر (فقط الحقول المطلوبة)
-  const getCompactDisplayData = (item: Entity) => {
-    const displayData = [];
-
-    // الاسم (دائماً يظهر)
-    if (item.name || item.title) {
-      displayData.push({
-        field: 'name',
-        value: item.name || item.title,
-        isTitle: true
-      });
-    }
-
-    // الشركة (إذا كان object)
-    if (item.company?.name) {
-      displayData.push({
-        field: 'company',
-        value: item.company.name,
-        icon: 'building',
-        type: 'text'
-      });
-    } else if (item.company) {
-      displayData.push({
-        field: 'company',
-        value: item.company,
-        icon: 'building',
-        type: 'text'
-      });
-    }
-
-    // الإيميل
-    if (item.email) {
-      displayData.push({
-        field: 'email',
-        value: item.email,
-        icon: 'mail',
-        type: 'email'
-      });
-    }
-
-    // الهاتف الأرضي
-    if (item.phone) {
-      displayData.push({
-        field: 'phone',
-        value: item.phone,
-        icon: 'phone',
-        type: 'phone'
-      });
-    }
-
-    return displayData;
-  };
-
-  // الحصول على الحرف الأول للصورة البديلة
-  const getInitial = (item: Entity) => {
-    const name = item.name || item.title || 'Unknown';
-    return name.charAt(0).toUpperCase();
-  };
-
-  // الحصول على الأعمدة للعرض في الجدول (كل الحقول ما عدا المدمجة)
-  const getTableColumns = () => {
-    if (!compactView) return columns;
-    
-    return columns.filter(col => 
-      ![...imageFieldKeys, ...compactDisplayFields].includes(col.key)
-    );
-  };
-
-  // دالة للحصول على القيمة من الحقول المتداخلة
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const getNestedValue = (obj: any, path: string) => {
-    return path.split('.').reduce((current, key) => {
-      return current && current[key] !== undefined ? current[key] : null;
-    }, obj);
-  };
-
-  // مكون الأيقونة
-  const IconComponent = ({ icon, className }: { icon: string; className?: string }) => {
-    const iconProps = { className: className || "w-3 h-3 flex-shrink-0" };
-    
-    switch (icon) {
-      case 'mail': return <Mail {...iconProps} />;
-      case 'phone': return <Phone {...iconProps} />;
-      case 'smartphone': return <Smartphone {...iconProps} />;
-      case 'map-pin': return <MapPin {...iconProps} />;
-      case 'building': return <Building {...iconProps} />;
-      case 'users': return <Users {...iconProps} />;
-      case 'briefcase': return <Briefcase {...iconProps} />;
-      case 'globe': return <Globe {...iconProps} />;
-      case 'shield': return <Shield {...iconProps} />;
-      case 'landmark': return <Landmark {...iconProps} />;
-      case 'user': return <User {...iconProps} />;
-      default: return <Circle {...iconProps} />;
-    }
-  };
-
-  // دالة للتعامل مع الضغط المزدوج
-  const handleDoubleClick = (item: Entity) => {
-    onEdit(item);
-  };
-
-  return (
-    <div className="bg-white dark:bg-gray-800 dark:border-gray-700 overflow-x-auto">
-
-      {/* Table Header */}
-      <div className={`${showingDeleted 
-  ? 'bg-red-100 dark:bg-red-800 text-red-400 dark:text-red-100' 
-  : 'relative overflow-hidden bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/30 hover:from-green-100 hover:to-green-200 dark:hover:from-green-800/40 dark:hover:to-green-700/40 text-black dark:text-green-200  ransform hover:-translate-y-0.5 active:translate-y-0 transition-all duration-250 ease-in-out border border-green-100 dark:border-green-900/50'
-} font-semibold text-lg px-6 py-1 rounded-t-2xl group`}>
-  {title} Management {showingDeleted && '(Deleted Items)'}
-</div>
-
-   
-      {/* Table Info Bar */}
-      <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between bg-white dark:bg-gray-800">
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-600 dark:text-gray-400">
-            Showing {data.length} of {pagination.total} items
-            {showingDeleted && <span className="text-red-500 ml-1">(Deleted)</span>}
-          </span>
+        {/* Table Info Bar */}
+        <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between bg-white dark:bg-gray-800">
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-600 dark:text-gray-400">
+              Showing {data.length} of {pagination.total} items
+              {showingDeleted && <span className="text-red-500 ml-1">(Deleted)</span>}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-600 dark:text-gray-400">Sorted by:</span>
+            <span className="text-sm font-medium text-indigo-600 dark:text-indigo-400">
+              {orderBy} ({orderByDirection})
+            </span>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-600 dark:text-gray-400">Sorted by:</span>
-          <span className="text-sm font-medium text-indigo-600 dark:text-indigo-400">
-            {orderBy} ({orderByDirection})
-          </span>
-        </div>
-      </div>
 
-      {/* Table Content */}
-      <table className="min-w-full divide-y text-center divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-800">
-        <thead className="bg-gray-50 text-center dark:bg-gray-700">
-          <tr>
-            <th className="px-6 py-3 text-center">
-              <Checkbox
-                checked={allSelected}
-                indeterminate={someSelected && !allSelected}
-                onChange={onToggleSelectAll}
-                className="h-4 w-4"
-              />
-            </th>
-            {compactView && hasImageColumn ? (
-              <>
-                {/* Compact Data Column */}
-                <th className="px-6 py-3 text-left text-gray-700 dark:text-gray-300 font-medium uppercase tracking-wider">
-                  Basic Info
-                </th>
-                {/* Regular Columns */}
-                {getTableColumns().map((column: ColumnDefinition) => (
+        {/* Table Content */}
+        <table className="min-w-full divide-y text-center divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-800">
+          <thead className="bg-gray-50 text-center dark:bg-gray-700">
+            <tr>
+              <th className="px-6 py-3 text-center">
+                <Checkbox
+                  checked={allSelected}
+                  indeterminate={someSelected && !allSelected}
+                  onChange={onToggleSelectAll}
+                  className="h-4 w-4"
+                />
+              </th>
+              {compactView && hasImageColumn ? (
+                <>
+                  {/* Compact Data Column */}
+                  <th className="px-6 py-3 text-left text-gray-700 dark:text-gray-300 font-medium uppercase tracking-wider">
+                    Basic Info
+                  </th>
+                  {/* Regular Columns */}
+                  {getTableColumns().map((column: ColumnDefinition) => (
+                    <th key={column.key} className="px-6 py-3 text-center text-gray-700 dark:text-gray-300 font-medium uppercase tracking-wider">
+                      <div 
+                        className="flex items-center justify-center gap-1 cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors duration-200"
+                        onClick={() => onSort(column)}
+                      >
+                        {column.label}
+                        {column.sortable !== false && <ArrowUpDown className="w-4 h-4" />}
+                      </div>
+                    </th>
+                  ))}
+                </>
+              ) : (
+                // Normal View
+                columns.map((column: ColumnDefinition) => (
                   <th key={column.key} className="px-6 py-3 text-center text-gray-700 dark:text-gray-300 font-medium uppercase tracking-wider">
                     <div 
                       className="flex items-center justify-center gap-1 cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors duration-200"
@@ -866,95 +938,93 @@ const DataTable: React.FC<DataTableProps & {
                       {column.sortable !== false && <ArrowUpDown className="w-4 h-4" />}
                     </div>
                   </th>
-                ))}
-              </>
-            ) : (
-              // Normal View
-              columns.map((column: ColumnDefinition) => (
-                <th key={column.key} className="px-6 py-3 text-center text-gray-700 dark:text-gray-300 font-medium uppercase tracking-wider">
-                  <div 
-                    className="flex items-center justify-center gap-1 cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors duration-200"
-                    onClick={() => onSort(column)}
-                  >
-                    {column.label}
-                    {column.sortable !== false && <ArrowUpDown className="w-4 h-4" />}
-                  </div>
-                </th>
-              ))
-            )}
-            <th className="px-6 py-3 text-center text-gray-700 dark:text-gray-300 font-medium uppercase tracking-wider">
-              Actions
-            </th>
-          </tr>
-        </thead>
-        <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-          {data.length ? (
-            data.map((item: Entity) => {
-              const itemImage = getItemImage(item);
-              const compactData = getCompactDisplayData(item);
-              const shouldUseCompactView = compactView && hasImageColumn;
-              const itemName = item.name || item.title || 'Unknown';
+                ))
+              )}
+              <th className="px-6 py-3 text-center text-gray-700 dark:text-gray-300 font-medium uppercase tracking-wider">
+                Actions
+              </th>
+            </tr>
+          </thead>
+          <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+            {data.length ? (
+              data.map((item: Entity) => {
+                const itemImage = getItemImage(item);
+                const compactData = getCompactDisplayData(item);
+                const shouldUseCompactView = compactView && hasImageColumn;
+                const itemName = item.name || item.title || 'Unknown';
 
-              return (
-                <tr 
-                  key={item.id} 
-                  className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200 cursor-pointer"
-                  onDoubleClick={() => handleDoubleClick(item)}
-                >
-                  <td className="px-6 py-4">
-                    <Checkbox
-                      checked={selectedItems.has(item.id)}
-                      onChange={() => onToggleSelectItem(item.id)}
-                      className="h-4 w-4"
-                    />
-                  </td>
-                  
-                  {shouldUseCompactView ? (
-                    <>
-                      {/* Compact Cell */}
-                      <td className="px-6 py-4">
-                        <div className="flex items-start gap-4">
-                          {/* Image */}
-                          <div className="flex-shrink-0">
-                            {itemImage ? (
-                              <img 
-                                src={itemImage}
-                                alt={itemName}
-                                className="w-16 h-16 rounded-lg object-cover border border-gray-200 dark:border-gray-600 shadow-sm"
-                              />
-                            ) : (
-                              <div className="w-16 h-16 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center border border-gray-200 dark:border-gray-600 shadow-sm">
-                                <span className="text-white font-bold text-xl">
-                                  {getInitial(item)}
-                                </span>
-                              </div>
-                            )}
-                          </div>
-                          
-                          {/* Basic Data */}
-                          <div className="flex-1 text-left min-w-0">
-                            <div className="space-y-2">
-                              {compactData.map((data, index) => (
-                                <div key={index}>
-                                  {data.isTitle ? (
-                                    <div className="font-bold text-gray-900 dark:text-gray-100 text-lg">
-                                      {data.value}
-                                    </div>
-                                  ) : (
-                                    <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                                      <IconComponent icon={data.icon || 'default-icon'} />
-                                      <span className="truncate">{data.value}</span>
-                                    </div>
-                                  )}
+                return (
+                  <tr 
+                    key={item.id} 
+                    className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200 cursor-pointer"
+                    onDoubleClick={() => handleDoubleClick(item)}
+                  >
+                    <td className="px-6 py-4">
+                      <Checkbox
+                        checked={selectedItems.has(item.id)}
+                        onChange={() => onToggleSelectItem(item.id)}
+                        className="h-4 w-4"
+                      />
+                    </td>
+                    
+                    {shouldUseCompactView ? (
+                      <>
+                        {/* Compact Cell */}
+                        <td className="px-6 py-4">
+                          <div className="flex items-start gap-4">
+                            {/* Image */}
+                            <div className="flex-shrink-0">
+                              {itemImage ? (
+                                <img 
+                                  src={itemImage}
+                                  alt={itemName}
+                                  className="w-16 h-16 rounded-lg object-cover border border-gray-200 dark:border-gray-600 shadow-sm"
+                                />
+                              ) : (
+                                <div className="w-16 h-16 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center border border-gray-200 dark:border-gray-600 shadow-sm">
+                                  <span className="text-white font-bold text-xl">
+                                    {getInitial(item)}
+                                  </span>
                                 </div>
-                              ))}
+                              )}
+                            </div>
+                            
+                            {/* Basic Data */}
+                            <div className="flex-1 text-left min-w-0">
+                              <div className="space-y-2">
+                                {compactData.map((data, index) => (
+                                  <div key={index}>
+                                    {data.isTitle ? (
+                                      <div className="font-bold text-gray-900 dark:text-gray-100 text-lg">
+                                        {data.value}
+                                      </div>
+                                    ) : (
+                                      <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                                        <IconComponent icon={data.icon || 'default-icon'} />
+                                        <span className="truncate">{data.value}</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </td>
-                      
-                      {/* Other Columns */}
-                      {getTableColumns().map((column: ColumnDefinition) => (
+                        </td>
+                        
+                        {/* Other Columns */}
+                        {getTableColumns().map((column: ColumnDefinition) => (
+                          <td 
+                            key={column.key} 
+                            className="px-6 py-4 text-gray-700 dark:text-gray-300"
+                            onDoubleClick={() => handleDoubleClick(item)}
+                          >
+                            {column.render ? column.render(item) : getNestedValue(item, column.key)}
+                          </td>
+                        ))}
+                      </>
+                    ) : (
+                      // Normal View
+                      columns.map((column: ColumnDefinition) => (
                         <td 
                           key={column.key} 
                           className="px-6 py-4 text-gray-700 dark:text-gray-300"
@@ -962,210 +1032,198 @@ const DataTable: React.FC<DataTableProps & {
                         >
                           {column.render ? column.render(item) : getNestedValue(item, column.key)}
                         </td>
-                      ))}
-                    </>
-                  ) : (
-                    // Normal View
-                    columns.map((column: ColumnDefinition) => (
-                      <td 
-                        key={column.key} 
-                        className="px-6 py-4 text-gray-700 dark:text-gray-300"
-                        onDoubleClick={() => handleDoubleClick(item)}
-                      >
-                        {column.render ? column.render(item) : getNestedValue(item, column.key)}
-                      </td>
-                    ))
-                  )}
-                  
-                  <td className="px-6 py-4">
-                    <div className="flex justify-center items-center gap-2">
-                      {showingDeleted ? (
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => onRestore?.(item.id, itemName)}
-className={`
-            relative
-            overflow-hidden
-            bg-gradient-to-r
-            from-green-50
-            to-green-100
-            text-black
+                      ))
+                    )}
+                    
+                    <td className="px-6 py-4">
+                      <div className="flex justify-center items-center gap-2">
+                        {showingDeleted ? (
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => onRestore?.(item.id, itemName)}
+  className={`
+              relative
+              overflow-hidden
+              bg-gradient-to-r
+              from-green-50
+              to-green-100
+              text-black
 
-            dark:from-green-900/30
-            dark:to-green-800/30
-            hover:from-green-100
-            hover:to-green-200
-            dark:hover:from-green-800/40
-            dark:hover:to-green-700/40
-            dark:text-green-200
-            font-semibold
-            py-3
-            px-6
-            rounded-2xl
-            shadow-md
-            hover:shadow-lg
-            transform
-            hover:-translate-y-0.5
-            active:translate-y-0
-            transition-all
-            duration-250
-            ease-in-out
-            border
-            border-green-100
-            dark:border-green-900/50
-            group
-          `}                                    >
-                            <i className="fas fa-rotate-left mr-2"></i>
-                            
-                            Restore
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => onForceDelete?.(item.id, itemName)}
-                            style={{color:'black'}}
-                            className=" bg-gradient-to-r
-            from-red-50  to-red-100 hover:bg-red-900 border-0 px-4 py-2 rounded-lg font-medium transition-colors duration-200 shadow-sm"
-                          >
-                            <i className="fas fa-trash mr-2"></i>
-                            Delete Permanently
-                          </Button>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-3">
-                          {/* Active Toggle */}
-                          {item.hasOwnProperty('active') && (
-                            <div className="flex items-center gap-2">
-                              <Switch
-                                checked={!!item.active}
-                                onChange={() => onToggleActive?.(item.id, itemName, !!item.active)}
-                              />
-                              <span className={`text-sm font-medium ${item.active ? 'text-green-600' : 'text-red-600'}`}>
-                                {item.active ? 'Active' : 'Inactive'}
-                              </span>
-                            </div>
-                          )}
-                          
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => onEdit(item)}
- className={`
-            relative
-            overflow-hidden
-            bg-gradient-to-r
-            from-green-50
-            to-green-100
-            text-black
-
-            dark:from-green-900/30
-            dark:to-green-800/30
-            hover:from-green-100
-            hover:to-green-200
-            dark:hover:from-green-800/40
-            dark:hover:to-green-700/40
-            dark:text-green-200
-            font-semibold
-            py-3
-            px-6
-            rounded-2xl
-            shadow-md
-            hover:shadow-lg
-            transform
-            hover:-translate-y-0.5
-            active:translate-y-0
-            transition-all
-            duration-250
-            ease-in-out
-            border
-            border-green-100
-            dark:border-green-900/50
-            group
-          `}                          >
-                            <i className="fas fa-edit mr-2"></i>
-                            Edit
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => onDelete(item.id, itemName)}
-                            disabled={deleteLoading}
-
-                                                        style={{color:'black'}}
-
-                         className={`
-            relative
-            overflow-hidden
-            bg-gradient-to-r
-            from-red-50
-            to-red-100
-            dark:from-red-900/30
-            dark:to-red-800/30
-            hover:from-red-100
-            hover:to-red-200
-            dark:hover:from-red-800/40
-            dark:hover:to-red-700/40
-            text-black
-            dark:text-red-200
-            font-semibold
-            py-3
-            px-6
-            rounded-2xl
-            shadow-md
-            hover:shadow-lg
-            transform
-            hover:-translate-y-0.5
-            active:translate-y-0
-            transition-all
-            duration-250
-            ease-in-out
-            border
-            border-red-100
-            dark:border-red-900/50
-            group
-          `}
-                          >
-                            {deleteLoading ? (
-                              <>
-                                <i className="fas fa-spinner fa-spin mr-2"></i>
-                                Deleting...
-                              </>
-                            ) : (
-                              <>
-                                <i className="fas fa-trash mr-2"></i>
-                                Delete
-                              </>
+              dark:from-green-900/30
+              dark:to-green-800/30
+              hover:from-green-100
+              hover:to-green-200
+              dark:hover:from-green-800/40
+              dark:hover:to-green-700/40
+              dark:text-green-200
+              font-semibold
+              py-3
+              px-6
+              rounded-2xl
+              shadow-md
+              hover:shadow-lg
+              transform
+              hover:-translate-y-0.5
+              active:translate-y-0
+              transition-all
+              duration-250
+              ease-in-out
+              border
+              border-green-100
+              dark:border-green-900/50
+              group
+            `}                                    >
+                              <i className="fas fa-rotate-left mr-2"></i>
+                              
+                              Restore
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => onForceDelete?.(item.id, itemName)}
+                              style={{color:'black'}}
+                              className=" bg-gradient-to-r
+              from-red-50  to-red-100 hover:bg-red-900 border-0 px-4 py-2 rounded-lg font-medium transition-colors duration-200 shadow-sm"
+                            >
+                              <i className="fas fa-trash mr-2"></i>
+                              Delete Permanently
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-3">
+                            {/* Active Toggle */}
+                            {item.hasOwnProperty('active') && (
+                              <div className="flex items-center gap-2">
+                                <Switch
+                                  checked={!!item.active}
+                                  onChange={() => onToggleActive?.(item.id, itemName, !!item.active)}
+                                />
+                                <span className={`text-sm font-medium ${item.active ? 'text-green-600' : 'text-red-600'}`}>
+                                  {item.active ? 'Active' : 'Inactive'}
+                                </span>
+                              </div>
                             )}
-                          </Button>
-                        </div>
-                      )}
+                            
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => onEdit(item)}
+  className={`
+              relative
+              overflow-hidden
+              bg-gradient-to-r
+              from-green-50
+              to-green-100
+              text-black
+
+              dark:from-green-900/30
+              dark:to-green-800/30
+              hover:from-green-100
+              hover:to-green-200
+              dark:hover:from-green-800/40
+              dark:hover:to-green-700/40
+              dark:text-green-200
+              font-semibold
+              py-3
+              px-6
+              rounded-2xl
+              shadow-md
+              hover:shadow-lg
+              transform
+              hover:-translate-y-0.5
+              active:translate-y-0
+              transition-all
+              duration-250
+              ease-in-out
+              border
+              border-green-100
+              dark:border-green-900/50
+              group
+            `}                          >
+                              <i className="fas fa-edit mr-2"></i>
+                              Edit
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => onDelete(item.id, itemName)}
+                              disabled={deleteLoading}
+
+                                                          style={{color:'black'}}
+
+                          className={`
+              relative
+              overflow-hidden
+              bg-gradient-to-r
+              from-red-50
+              to-red-100
+              dark:from-red-900/30
+              dark:to-red-800/30
+              hover:from-red-100
+              hover:to-red-200
+              dark:hover:from-red-800/40
+              dark:hover:to-red-700/40
+              text-black
+              dark:text-red-200
+              font-semibold
+              py-3
+              px-6
+              rounded-2xl
+              shadow-md
+              hover:shadow-lg
+              transform
+              hover:-translate-y-0.5
+              active:translate-y-0
+              transition-all
+              duration-250
+              ease-in-out
+              border
+              border-red-100
+              dark:border-red-900/50
+              group
+            `}
+                            >
+                              {deleteLoading ? (
+                                <>
+                                  <i className="fas fa-spinner fa-spin mr-2"></i>
+                                  Deleting...
+                                </>
+                              ) : (
+                                <>
+                                  <i className="fas fa-trash mr-2"></i>
+                                  Delete
+                                </>
+                              )}
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })
+            ) : (
+              <tr>
+                <td colSpan={columns.length + 2} className="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
+                  <div className="flex flex-col items-center justify-center py-8">
+                    <i className="fas fa-inbox text-4xl text-gray-300 dark:text-gray-600 mb-4"></i>
+                    <div className="text-lg font-medium text-gray-600 dark:text-gray-400">
+                      No {title.toLowerCase()} found
                     </div>
-                  </td>
-                </tr>
-              );
-            })
-          ) : (
-            <tr>
-              <td colSpan={columns.length + 2} className="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
-                <div className="flex flex-col items-center justify-center py-8">
-                  <i className="fas fa-inbox text-4xl text-gray-300 dark:text-gray-600 mb-4"></i>
-                  <div className="text-lg font-medium text-gray-600 dark:text-gray-400">
-                    No {title.toLowerCase()} found
+                    <div className="text-sm text-gray-400 dark:text-gray-500 mt-1">
+                      {showingDeleted ? 'No deleted items available' : 'Get started by adding a new item'}
+                    </div>
                   </div>
-                  <div className="text-sm text-gray-400 dark:text-gray-500 mt-1">
-                    {showingDeleted ? 'No deleted items available' : 'Get started by adding a new item'}
-                  </div>
-                </div>
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
-    </div>
-  );
-};
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    );
+  };
 
 
 
@@ -1225,7 +1283,7 @@ const FormModal: React.FC<FormModalProps & { compactLayout?: boolean }> = ({
     className="w-full bg-gradient-to-r from-green-50 to-green-100 text-black hover:bg-indigo-700 transition-all rounded-xl"
     disabled={saveLoading}
   >
-    {saveLoading ? "Saving..." : editingItem ? "Update" : "Create"}
+    {saveLoading ? "Saving..." : editingItem ? "Save" : "Save"}
   </Button>
 
 <Button
@@ -1238,7 +1296,7 @@ const FormModal: React.FC<FormModalProps & { compactLayout?: boolean }> = ({
     onSave(saveOptions);
   }}
 >
-  {saveLoading ? "Saving..." : editingItem ? "Update & Continue" : "Create & Continue"}
+  {saveLoading ? "Saving..." : editingItem ? "Save & new" : "Save & new"}
 </Button>
 </div>
 
