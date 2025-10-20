@@ -55,7 +55,7 @@ export function useGenericDataManager({
   const [showingDeleted, setShowingDeleted] = useState<boolean>(false);
   const [filters, setFilters] = useState<Record<string, string>>(defaultFilters);
   const [orderBy, setOrderBy] = useState<string>('id');
-  const [orderByDirection, setOrderByDirection] = useState<'asc' | 'desc'>('desc');
+  const [orderByDirection, setOrderByDirection] = useState<'asc' | 'desc'>('asc');
   const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set());
   const [formData, setFormData] = useState<Record<string, string | number>>({});
 

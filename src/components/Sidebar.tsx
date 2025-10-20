@@ -3,7 +3,7 @@
 import { 
   Home, Database,
   ChevronDown, ChevronRight, LucideIcon, ComputerIcon,
-  User as UserIcon
+  User as UserIcon,Gauge
 } from "lucide-react"
 import { useAuth } from '@/contexts/AuthContext'
 
@@ -29,6 +29,7 @@ type NavItem = {
 
 const navItems: NavItem[] = [
   { name: 'Dashboard', icon: Home, href: '/' ,roles: ['admin','help_desk']  },
+  { name: 'Analytics_IT', icon: Gauge, href: '/Analytics', roles: ['admin'] },
   { name: 'MasterData', icon: Database, href: '/MasterData', roles: ['admin','help_desk'] },
   { name: 'IT Module', icon: ComputerIcon, href: '/It_module',roles: ['admin','help_desk']  },
   { name: 'Profile', icon: UserIcon, href: '/Profile', roles: ['admin','help_desk']  },

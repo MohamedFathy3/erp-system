@@ -27,30 +27,43 @@ export const CardHeader = ({
 }: React.HTMLAttributes<HTMLDivElement>) => {
   return (
     <div
-      className={cn('p-5', className)}
+      className={cn('p-5 pb-3', className)}
       {...props}
     >
       {children}
     </div>
   )
 }
-
 
 export const CardTitle = ({
   className,
   children,
   ...props
-}: React.HTMLAttributes<HTMLDivElement>) => {
+}: React.HTMLAttributes<HTMLHeadingElement>) => {
   return (
-    <div
-      className={cn('p-5', className)}
+    <h3
+      className={cn('text-lg font-semibold text-gray-900 dark:text-white', className)}
       {...props}
     >
       {children}
-    </div>
+    </h3>
   )
 }
 
+export const CardDescription = ({
+  className,
+  children,
+  ...props
+}: React.HTMLAttributes<HTMLParagraphElement>) => {
+  return (
+    <p
+      className={cn('text-sm text-gray-600 dark:text-gray-400 mt-1', className)}
+      {...props}
+    >
+      {children}
+    </p>
+  )
+}
 
 export const CardContent = ({
   className,
@@ -59,14 +72,13 @@ export const CardContent = ({
 }: React.HTMLAttributes<HTMLDivElement>) => {
   return (
     <div
-      className={cn('p-5', className)}
+      className={cn('p-5 pt-0', className)}
       {...props}
     >
       {children}
     </div>
   )
 }
-
 
 export const CardFooter = ({
   className,
@@ -75,7 +87,7 @@ export const CardFooter = ({
 }: React.HTMLAttributes<HTMLDivElement>) => {
   return (
     <div
-      className={cn('p-5', className)}
+      className={cn('p-5 pt-0', className)}
       {...props}
     >
       {children}

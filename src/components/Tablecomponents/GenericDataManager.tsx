@@ -389,116 +389,106 @@ export default function GenericDataManager(props: GenericDataManagerProps): Reac
 
   return (
     <MainLayout>
-      <div className="space-y-6 p-6">
-        {/* Main Section - كل المكونات في سكشن واحد */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl  border border-gray-100 dark:border-gray-700 p-6">
-          
-          {/* Header داخل السكشن */}
-          <Header 
-            title={title}
-              dataLength={data.length} 
-            onDeleteAll={handleDeleteAll} 
-            currentPage={currentPage}
-            pagination={safePagination}
-            selectedItems={selectedItems}
-            showingDeleted={showingDeleted}
-            showFilter={showFilter}
-            searchTerm={filters.search}
-            onBulkAction={showingDeleted ? handleBulkRestore : handleBulkDelete}
-            onToggleFilter={handleToggleFilter}
-            onToggleDeleted={handleToggleDeleted}
-            onAddItem={handleAddItem}
-            bulkLoading={bulkDeleteMutation.isPending || bulkRestoreMutation.isPending}
-            showEditButton={showEditButton}
-            showDeleteButton={showDeleteButton}
-            showActiveToggle={showActiveToggle}
-                  showAddButton={showAddButton}
-            showBulkActions={showBulkActions}
-            showDeletedToggle={showDeletedToggle}
-          />
+    <div className="space-y-6 p-6">
+  {/* Main Section - كل المكونات في سكشن واحد */}
+  <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-6 relative overflow-hidden">
+    
+    {/* Gradient Background للـ Section كله */}
+    <div className="absolute top-0 left-0 right-0 h-[500px]
+        bg-[linear-gradient(180deg,#dbeafe_0%,#c8e1fd_25%,#bdf5d0_50%,#e8fdef_75%,transparent_100%)]
+        opacity-40 pointer-events-none z-0">
+    </div>
+    
+    {/* Header */}
+    <div className="relative z-10">
+      <Header 
+        title={title}
+        dataLength={data.length} 
+        onDeleteAll={handleDeleteAll} 
+        currentPage={currentPage}
+        pagination={safePagination}
+        selectedItems={selectedItems}
+        showingDeleted={showingDeleted}
+        showFilter={showFilter}
+        searchTerm={filters.search}
+        onBulkAction={showingDeleted ? handleBulkRestore : handleBulkDelete}
+        onToggleFilter={handleToggleFilter}
+        onToggleDeleted={handleToggleDeleted}
+        onAddItem={handleAddItem}
+        bulkLoading={bulkDeleteMutation.isPending || bulkRestoreMutation.isPending}
+        showEditButton={showEditButton}
+        showDeleteButton={showDeleteButton}
+        showActiveToggle={showActiveToggle}
+        showAddButton={showAddButton}
+        showBulkActions={showBulkActions}
+        showDeletedToggle={showDeletedToggle}
+      />
+    </div>
 
-          {/* Search & Filter داخل السكشن */}
-            {(showSearch || showFilter) && (
-          <div className="mt-6">
-            
-            <FilterSearch
-              search={search}
-              onSearchChange={setSearch}
-              onSearch={handleSearch}
-              filters={filters}
-              onFiltersChange={handleFiltersChange}
-              orderBy={orderBy}
-              onOrderByChange={handleOrderByChange}
-              orderByDirection={orderByDirection}
-              onOrderByDirectionChange={handleOrderByDirectionChange}
-              onApplyFilter={handleFilter}
-              onResetFilters={handleResetFilters}
-              showFilter={showFilter}
-              onToggleFilter={handleToggleFilter}
-              availableFilters={finalAvailableFilters}
-           
-            />
-          </div>
- )}
-
-          {/* Table داخل السكشن */}
-          <div className="mt-6">
-            <DataTable
-              title={title}
-              data={data}
-              columns={columns}
-              selectedItems={selectedItems}
-              allSelected={allSelected}
-              someSelected={someSelected}
-              orderBy={orderBy}
-              orderByDirection={orderByDirection}
-              pagination={safePagination}
-              onToggleSelectAll={toggleSelectAll}
-              onToggleSelectItem={toggleSelectItem}
-              onSort={handleSort}
-              onEdit={handleEditItem}
-              onDelete={handleDelete}
-              onToggleActive={handleItemToggleActive}
-              deleteLoading={deleteItemMutation.isPending}
-              Checkbox={Checkbox}
-              showingDeleted={showingDeleted}
-              onRestore={handleRestore} 
-              onForceDelete={handleForceDelete}
-              compactView={shouldUseCompactView}
-                showEditButton={showEditButton}
-              showDeleteButton={showDeleteButton}
-              showActiveToggle={showActiveToggle}
-            />
-          </div>
-
-          {/* Pagination داخل السكشن */}
-          <div className="mt-6">
-            <Pagination
-              currentPage={safePagination.current_page}
-              lastPage={safePagination.last_page}
-              total={safePagination.total}
-              perPage={safePagination.per_page}
-              onPageChange={setCurrentPage}
-            />
-          </div>
-        </div>
-
-        {/* Modal خارج السكشن الرئيسي */}
-        {(showAddButton || showEditButton) && open && (
-          <FormModal
-            title={title}
-            editingItem={editingItem}
-            formFields={formFields}
-            formData={formData}
-            additionalQueries={additionalQueries}
-            onFormDataChange={handleFormDataChange}
-            onSave={handleSave}
-            onClose={handleCloseModal}
-            saveLoading={saveItemMutation.isPending}
-            compactLayout={hasManyFields}
-          />
-        )}
+    {/* Search & Filter */}
+    {(showSearch || showFilter) && (
+      <div className="mt-6 relative z-10">
+        <FilterSearch
+          search={search}
+          onSearchChange={setSearch}
+          onSearch={handleSearch}
+          filters={filters}
+          onFiltersChange={handleFiltersChange}
+          orderBy={orderBy}
+          onOrderByChange={handleOrderByChange}
+          orderByDirection={orderByDirection}
+          onOrderByDirectionChange={handleOrderByDirectionChange}
+          onApplyFilter={handleFilter}
+          onResetFilters={handleResetFilters}
+          showFilter={showFilter}
+          onToggleFilter={handleToggleFilter}
+          availableFilters={finalAvailableFilters}
+        />
       </div>
+    )}
+
+    {/* Table */}
+    <div className="mt-6 relative z-10">
+      <DataTable
+        title={title}
+        data={data}
+        columns={columns}
+        selectedItems={selectedItems}
+        allSelected={allSelected}
+        someSelected={someSelected}
+        orderBy={orderBy}
+        orderByDirection={orderByDirection}
+        pagination={safePagination}
+        onToggleSelectAll={toggleSelectAll}
+        onToggleSelectItem={toggleSelectItem}
+        onSort={handleSort}
+        onEdit={handleEditItem}
+        onDelete={handleDelete}
+        onToggleActive={handleItemToggleActive}
+        deleteLoading={deleteItemMutation.isPending}
+        Checkbox={Checkbox}
+        showingDeleted={showingDeleted}
+        onRestore={handleRestore} 
+        onForceDelete={handleForceDelete}
+        compactView={shouldUseCompactView}
+        showEditButton={showEditButton}
+        showDeleteButton={showDeleteButton}
+        showActiveToggle={showActiveToggle}
+      />
+    </div>
+
+    {/* Pagination */}
+    <div className="mt-6 relative z-10">
+      <Pagination
+        currentPage={safePagination.current_page}
+        lastPage={safePagination.last_page}
+        total={safePagination.total}
+        perPage={safePagination.per_page}
+        onPageChange={setCurrentPage}
+      />
+    </div>
+  </div>
+</div>
     </MainLayout>
   );
 }
@@ -548,52 +538,7 @@ const Header: React.FC<ExtendedHeaderProps & {
      
       <div className="flex gap-3 flex-wrap">
         {/* Delete All Button - يظهر فقط لما يتم تحديد عناصر */}
-        {shouldShowDeleteAll &&  showDeleteButton &&(
-          <Button
-            variant="destructive"
-            onClick={onDeleteAll}
-            style={{color:'black'}}
-            className={`
-              relative
-              overflow-hidden
-              bg-gradient-to-r
-              from-red-50
-              to-red-100
-              dark:from-red-900/30
-              dark:to-red-800/30
-              hover:from-red-100
-              hover:to-red-200
-              dark:hover:from-red-800/40
-              dark:hover:to-red-700/40
-              text-black
-              dark:text-red-200
-              font-semibold
-              py-3
-              px-6
-              rounded-2xl
-              shadow-md
-              hover:shadow-lg
-              transform
-              hover:-translate-y-0.5
-              active:translate-y-0
-              transition-all
-              duration-250
-              ease-in-out
-              border
-              border-red-100
-              dark:border-red-900/50
-              group
-            `}
-          >
-            <span className="relative z-10 flex items-center gap-3">
-              <i className="fas fa-trash-can-arrow-up group-hover:scale-110 transition-transform duration-200"></i>
-              {showingDeleted ? 'Force Delete All' : 'Delete All'} ({selectedItems.size})
-            </span>
-            
-            {/* Shine effect */}
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
-          </Button>
-        )}
+       
 
         {/* Bulk Action Button - يظهر فقط لما يتم تحديد عناصر */}
         {selectedItems.size > 0 && showDeleteButton && showBulkActions && (
@@ -907,7 +852,7 @@ const Header: React.FC<ExtendedHeaderProps & {
     };
 
  return (
-      <div className="bg-white dark:bg-gray-800 dark:border-gray-700 overflow-x-auto">
+      <div className="bg-white dark:bg-gray-800 dark:border-gray-700 overflow-x-auto rounded-lg" style={{borderRadius:"21px"}}>
 
         {/* Table Header */}
         <div className={`${showingDeleted 

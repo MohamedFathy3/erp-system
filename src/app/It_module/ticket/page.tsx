@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from "react";
-import { useQueryClient } from '@tanstack/react-query';
+import { useState } from "react";
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from "@/lib/api";
 import MainLayout from "@/components/MainLayout";
 import { Button } from "@/components/ui/button";
@@ -48,9 +48,8 @@ interface CheckboxProps {
 
 export default function Page() {
   const router = useRouter();
-  const [data, setData] = useState<Ticket[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+  
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [showFilter] = useState(false);
@@ -59,30 +58,19 @@ export default function Page() {
   const [orderByDirection] = useState('asc');
   const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set());
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const queryClient = useQueryClient();
 
-  const [pagination, setPagination] = useState<PaginationMeta>({
-    current_page: 1,
-    last_page: 1,
-    per_page: 15,
-    total: 0,
-    links: []
-  });
-
-  useEffect(() => {
-    if (!showFilter) {
-      fetchTickets(currentPage);
-    }
-  }, [currentPage, showFilter]);
-
-  async function fetchTickets(page = 1) {
-    try {
-      setLoading(true);
-      setError(null);
+  // استخدام React Query لجلب البيانات
+  const {
+    data: apiResponse,
+    error,
+    isLoading,
+    isError,
+  } = useQuery({
+    queryKey: ['tickets', currentPage, perPage, orderBy, orderByDirection, showFilter],
+    queryFn: async (): Promise<ApiResponse> => {
+      console.log('🔄 Fetching tickets for page:', currentPage);
       
-      console.log('🔄 Fetching tickets for page:', page);
-      
-      const responseData = await apiFetch(`/ticket/index`, {
+      const response = await apiFetch(`/ticket/index`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -93,65 +81,70 @@ export default function Page() {
           orderByDirection: orderByDirection,
           perPage: perPage,
           paginate: true,           
-          page: page,                 
+          page: currentPage,                 
         }),
       });
 
-      console.log('✅ API Data received:', responseData);
+      console.log('✅ API Data received:', response);
       
-      if (responseData && responseData.data && Array.isArray(responseData.data)) {
-        setData(responseData.data);
-        console.log('📊 Tickets set:', responseData.data.length, 'items');
-      } else {
-        console.warn('⚠️ No data array in response:', responseData);
-        setData([]);
+      if (!response || !response.data || !Array.isArray(response.data)) {
+        throw new Error('Invalid response format');
       }
       
-      if (responseData && responseData.meta) {
-        setPagination(responseData.meta);
-      }
-    } catch (err) {
-      console.error('❌ Fetch error:', err);
-      const errorMessage = err instanceof Error ? err.message : "An error occurred";
-      setError(errorMessage);
-      toast.error(`Failed to fetch tickets: ${errorMessage}`);
-    } finally {
-      setLoading(false);
-    }
+      return response;
+    },
+    staleTime: 5 * 60 * 1000, // البيانات تظل "طازجة" لمدة 5 دقائق
+    gcTime: 10 * 60 * 1000, // وقت التخزين المؤقت 10 دقائق
+    retry: 2, // عدد المحاولات في حالة الفشل
+  });
+
+  const data = apiResponse?.data || [];
+  const pagination = apiResponse?.meta || {
+    current_page: 1,
+    last_page: 1,
+    per_page: 15,
+    total: 0,
+    links: []
+  };
+
+  // معالجة الأخطاء
+  if (isError) {
+    const errorMessage = error instanceof Error ? error.message : "An error occurred";
+    toast.error(`Failed to fetch tickets: ${errorMessage}`);
   }
 
   const handleTicketAdded = () => {
+    // إبطال جميع الاستعلامات المتعلقة بالتذاكر وإعادة جلبها
     queryClient.invalidateQueries({ queryKey: ['tickets'] });
-    fetchTickets(currentPage);
+    toast.success('Ticket added successfully!');
   };
 
-  // دالة جديدة لمعالجة الضغط على View
- const handleViewTicket = async (ticketId: number) => {
-  try {
-    console.log(`🔄 Fetching ticket details for ID: ${ticketId}`);
-    
-    // إرسال طلبات متعددة في نفس الوقت
-    const [ticketData, additionalData] = await Promise.all([
-      // الطلب الأول: بيانات التذكرة
-      apiFetch(`/ticket/${ticketId}`),
+  // دالة لمعالجة الضغط على View مع React Query
+  const handleViewTicket = async (ticketId: number) => {
+    try {
+      console.log(`🔄 Fetching ticket details for ID: ${ticketId}`);
       
-      apiFetch(`/ticket/${ticketId}`), 
-    ]);
-    
-    console.log('✅ Ticket details received:', ticketData);
-    console.log('✅ Additional data received:', additionalData);
-    
-    // إذا نجحت الـ requests، انتقل إلى صفحة التذكرة
-    router.push(`/It_module/ticket/${ticketId}`);
-    
-  } catch (err) {
-    console.error('❌ Error fetching ticket details:', err);
-    const errorMessage = err instanceof Error ? err.message : "Failed to fetch ticket details";
-    toast.error(errorMessage);
-  }
-};
+      // استخدام React Query للبيانات المسبقة (prefetching)
+      await queryClient.prefetchQuery({
+        queryKey: ['ticket', ticketId],
+        queryFn: async () => {
+          const ticketData = await apiFetch(`/ticket/${ticketId}`);
+          return ticketData;
+        },
+        staleTime: 2 * 60 * 1000, // 2 دقائق
+      });
 
-  // دالة لتغيير الحالة (إذا كنت تحتاجها لشيء آخر)
+      // الانتقال إلى صفحة التذكرة
+      router.push(`/It_module/ticket/${ticketId}`);
+      
+    } catch (err) {
+      console.error('❌ Error fetching ticket details:', err);
+      const errorMessage = err instanceof Error ? err.message : "Failed to fetch ticket details";
+      toast.error(errorMessage);
+    }
+  };
+
+  // دالة لتغيير الحالة مع تحديث cache
   const handleChangeStatus = async (id: number, newStatus: string) => {
     try {
       const responseData = await apiFetch(`/ticket/${id}/status`, {
@@ -163,16 +156,27 @@ export default function Page() {
       });
 
       console.log('✅ Status change response:', responseData);
-      toast.success(`Status changed successfully to ${newStatus}!`);
       
-      // إعادة تحميل البيانات
-      fetchTickets(currentPage);
+      // تحديث الـ cache يدوياً
+      queryClient.setQueryData(['tickets', currentPage], (oldData: ApiResponse | undefined) => {
+        if (!oldData) return oldData;
+        
+        return {
+          ...oldData,
+          data: oldData.data.map(ticket => 
+            ticket.id === id 
+              ? { ...ticket, status: newStatus }
+              : ticket
+          )
+        };
+      });
+
+      toast.success(`Status changed successfully to ${newStatus}!`);
       
     } catch (err) {
       console.error('❌ Error changing status:', err);
       const message = err instanceof Error ? err.message : 'An unknown error occurred';
       toast.error(`Failed to change ticket status: ${message}`);
-      setError(message);
     }
   };
 
@@ -255,15 +259,15 @@ export default function Page() {
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Tickets</h1>
             <p className="text-gray-600 dark:text-gray-400 mt-1">
-              {loading ? 'Loading...' : `Showing ${filteredData.length} tickets`}
+              {isLoading ? 'Loading...' : `Showing ${filteredData.length} tickets`}
             </p>
           </div>
         </div>
 
         {/* Debug Info */}
-        {error && (
+        {isError && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-            Error: {error}
+            Error: {error instanceof Error ? error.message : 'Unknown error'}
           </div>
         )}
 
@@ -276,7 +280,7 @@ export default function Page() {
         />
 
         {/* Table */}
-        {!loading && (
+        {!isLoading && (
           <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-md border border-gray-100 dark:border-gray-700 overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
               <thead className="bg-gray-50 dark:bg-gray-800">
@@ -321,22 +325,22 @@ export default function Page() {
                         </span>
                       </td>
                      
-                  <td className="px-6 py-4 flex justify-center gap-2">
-  <Button
-    variant="outline"
-    size="sm"
-    onClick={() => handleViewTicket(item.id)}
-    className="flex items-center gap-2 relative"
-  >
-    {/* تأثير الـ Ping */}
-    {item.dailyStatus === true && (
-      <span className="animate-ping absolute inline-flex h-6 w-6 rounded-full bg-red-400 opacity-75 -top-1 -left-1"></span>
-    )}
-    
-    <Eye className="w-4 h-4 relative z-10" />
-    View
-  </Button>
-</td>
+                      <td className="px-6 py-4 flex justify-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleViewTicket(item.id)}
+                          className="flex items-center gap-2 relative"
+                        >
+                          {/* تأثير الـ Ping */}
+                          {item.dailyStatus === true && (
+                            <span className="animate-ping absolute inline-flex h-6 w-6 rounded-full bg-red-400 opacity-75 -top-1 -left-1"></span>
+                          )}
+                          
+                          <Eye className="w-4 h-4 relative z-10" />
+                          View
+                        </Button>
+                      </td>
                     </tr>
                   ))
                 ) : (
@@ -351,8 +355,15 @@ export default function Page() {
           </div>
         )}
 
+        {/* Loading State */}
+        {isLoading && (
+          <div className="flex justify-center items-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+          </div>
+        )}
+
         {/* Pagination Controls */}
-        {!loading && filteredData.length > 0 && (
+        {!isLoading && filteredData.length > 0 && (
           <div className="flex flex-col md:flex-row justify-between items-center gap-4 mt-6">
             <div className="text-sm text-gray-600 dark:text-gray-400">
               Page {pagination.current_page} of {pagination.last_page} • Total {pagination.total} tickets
