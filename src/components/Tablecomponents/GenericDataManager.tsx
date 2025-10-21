@@ -20,7 +20,6 @@ import {
   HeaderProps,
   DataTableProps,
   FormModalProps,
-  FormFieldProps,
   ColumnDefinition,
   Entity,
   SelectOption,
@@ -389,106 +388,122 @@ export default function GenericDataManager(props: GenericDataManagerProps): Reac
 
   return (
     <MainLayout>
-    <div className="space-y-6 p-6">
-  {/* Main Section - كل المكونات في سكشن واحد */}
-  <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-6 relative overflow-hidden">
-    
-    {/* Gradient Background للـ Section كله */}
-    <div className="absolute top-0 left-0 right-0 h-[500px]
-        bg-[linear-gradient(180deg,#dbeafe_0%,#c8e1fd_25%,#bdf5d0_50%,#e8fdef_75%,transparent_100%)]
-        opacity-40 pointer-events-none z-0">
-    </div>
-    
-    {/* Header */}
-    <div className="relative z-10">
-      <Header 
-        title={title}
-        dataLength={data.length} 
-        onDeleteAll={handleDeleteAll} 
-        currentPage={currentPage}
-        pagination={safePagination}
-        selectedItems={selectedItems}
-        showingDeleted={showingDeleted}
-        showFilter={showFilter}
-        searchTerm={filters.search}
-        onBulkAction={showingDeleted ? handleBulkRestore : handleBulkDelete}
-        onToggleFilter={handleToggleFilter}
-        onToggleDeleted={handleToggleDeleted}
-        onAddItem={handleAddItem}
-        bulkLoading={bulkDeleteMutation.isPending || bulkRestoreMutation.isPending}
-        showEditButton={showEditButton}
-        showDeleteButton={showDeleteButton}
-        showActiveToggle={showActiveToggle}
-        showAddButton={showAddButton}
-        showBulkActions={showBulkActions}
-        showDeletedToggle={showDeletedToggle}
-      />
-    </div>
+      <div className="space-y-6 p-6 border-black rounded-lg">
+        {/* Main Section - كل المكونات في سكشن واحد */}
+        <div  className="space-y-6 p-6 "
+     style={{
+    height: "70vh",
+    background: "linear-gradient(180deg, #dbeafe 0%, #c8e1fd 15%, #bdf5d0 30%, #e8fdef 45%, rgba(232, 253, 239, 0.3) 70%, transparent 100%)",
+    zIndex: 0,
+  }}
+  >
+          
+          {/* Header داخل السكشن */}
+          <Header 
+            title={title}
+              dataLength={data.length} 
+            onDeleteAll={handleDeleteAll} 
+            currentPage={currentPage}
+            pagination={safePagination}
+            selectedItems={selectedItems}
+            showingDeleted={showingDeleted}
+            showFilter={showFilter}
+            searchTerm={filters.search}
+            onBulkAction={showingDeleted ? handleBulkRestore : handleBulkDelete}
+            onToggleFilter={handleToggleFilter}
+            onToggleDeleted={handleToggleDeleted}
+            onAddItem={handleAddItem}
+            bulkLoading={bulkDeleteMutation.isPending || bulkRestoreMutation.isPending}
+            showEditButton={showEditButton}
+            showDeleteButton={showDeleteButton}
+            showActiveToggle={showActiveToggle}
+                  showAddButton={showAddButton}
+            showBulkActions={showBulkActions}
+            showDeletedToggle={showDeletedToggle}
+          />
 
-    {/* Search & Filter */}
-    {(showSearch || showFilter) && (
-      <div className="mt-6 relative z-10">
-        <FilterSearch
-          search={search}
-          onSearchChange={setSearch}
-          onSearch={handleSearch}
-          filters={filters}
-          onFiltersChange={handleFiltersChange}
-          orderBy={orderBy}
-          onOrderByChange={handleOrderByChange}
-          orderByDirection={orderByDirection}
-          onOrderByDirectionChange={handleOrderByDirectionChange}
-          onApplyFilter={handleFilter}
-          onResetFilters={handleResetFilters}
-          showFilter={showFilter}
-          onToggleFilter={handleToggleFilter}
-          availableFilters={finalAvailableFilters}
-        />
+          {/* Search & Filter داخل السكشن */}
+            {(showSearch || showFilter) && (
+          <div className="mt-6">
+            
+            <FilterSearch
+              search={search}
+              onSearchChange={setSearch}
+              onSearch={handleSearch}
+              filters={filters}
+              onFiltersChange={handleFiltersChange}
+              orderBy={orderBy}
+              onOrderByChange={handleOrderByChange}
+              orderByDirection={orderByDirection}
+              onOrderByDirectionChange={handleOrderByDirectionChange}
+              onApplyFilter={handleFilter}
+              onResetFilters={handleResetFilters}
+              showFilter={showFilter}
+              onToggleFilter={handleToggleFilter}
+              availableFilters={finalAvailableFilters}
+           
+            />
+          </div>
+ )}
+
+          {/* Table داخل السكشن */}
+          <div className="mt-6">
+            <DataTable
+              title={title}
+              data={data}
+              columns={columns}
+              selectedItems={selectedItems}
+              allSelected={allSelected}
+              someSelected={someSelected}
+              orderBy={orderBy}
+              orderByDirection={orderByDirection}
+              pagination={safePagination}
+              onToggleSelectAll={toggleSelectAll}
+              onToggleSelectItem={toggleSelectItem}
+              onSort={handleSort}
+              onEdit={handleEditItem}
+              onDelete={handleDelete}
+              onToggleActive={handleItemToggleActive}
+              deleteLoading={deleteItemMutation.isPending}
+              Checkbox={Checkbox}
+              showingDeleted={showingDeleted}
+              onRestore={handleRestore} 
+              onForceDelete={handleForceDelete}
+              compactView={shouldUseCompactView}
+                showEditButton={showEditButton}
+              showDeleteButton={showDeleteButton}
+              showActiveToggle={showActiveToggle}
+            />
+          </div>
+
+          {/* Pagination داخل السكشن */}
+          <div className="mt-6">
+            <Pagination
+              currentPage={safePagination.current_page}
+              lastPage={safePagination.last_page}
+              total={safePagination.total}
+              perPage={safePagination.per_page}
+              onPageChange={setCurrentPage}
+            />
+          </div>
+        </div>
+
+        {/* Modal خارج السكشن الرئيسي */}
+        {(showAddButton || showEditButton) && open && (
+          <FormModal
+            title={title}
+            editingItem={editingItem}
+            formFields={formFields}
+            formData={formData}
+            additionalQueries={additionalQueries}
+            onFormDataChange={handleFormDataChange}
+            onSave={handleSave}
+            onClose={handleCloseModal}
+            saveLoading={saveItemMutation.isPending}
+            compactLayout={hasManyFields}
+          />
+        )}
       </div>
-    )}
-
-    {/* Table */}
-    <div className="mt-6 relative z-10">
-      <DataTable
-        title={title}
-        data={data}
-        columns={columns}
-        selectedItems={selectedItems}
-        allSelected={allSelected}
-        someSelected={someSelected}
-        orderBy={orderBy}
-        orderByDirection={orderByDirection}
-        pagination={safePagination}
-        onToggleSelectAll={toggleSelectAll}
-        onToggleSelectItem={toggleSelectItem}
-        onSort={handleSort}
-        onEdit={handleEditItem}
-        onDelete={handleDelete}
-        onToggleActive={handleItemToggleActive}
-        deleteLoading={deleteItemMutation.isPending}
-        Checkbox={Checkbox}
-        showingDeleted={showingDeleted}
-        onRestore={handleRestore} 
-        onForceDelete={handleForceDelete}
-        compactView={shouldUseCompactView}
-        showEditButton={showEditButton}
-        showDeleteButton={showDeleteButton}
-        showActiveToggle={showActiveToggle}
-      />
-    </div>
-
-    {/* Pagination */}
-    <div className="mt-6 relative z-10">
-      <Pagination
-        currentPage={safePagination.current_page}
-        lastPage={safePagination.last_page}
-        total={safePagination.total}
-        perPage={safePagination.per_page}
-        onPageChange={setCurrentPage}
-      />
-    </div>
-  </div>
-</div>
     </MainLayout>
   );
 }
@@ -524,6 +539,7 @@ const Header: React.FC<ExtendedHeaderProps & {
 
   return (
     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      
       <div>
         <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">{title}</h1>
         <p className="text-gray-600 dark:text-gray-400 mt-1">
@@ -538,7 +554,7 @@ const Header: React.FC<ExtendedHeaderProps & {
      
       <div className="flex gap-3 flex-wrap">
         {/* Delete All Button - يظهر فقط لما يتم تحديد عناصر */}
-       
+  
 
         {/* Bulk Action Button - يظهر فقط لما يتم تحديد عناصر */}
         {selectedItems.size > 0 && showDeleteButton && showBulkActions && (
@@ -852,7 +868,7 @@ const Header: React.FC<ExtendedHeaderProps & {
     };
 
  return (
-      <div className="bg-white dark:bg-gray-800 dark:border-gray-700 overflow-x-auto rounded-lg" style={{borderRadius:"21px"}}>
+      <div className="bg-white  dark:bg-gray-800 dark:border-gray-700 overflow-x-auto rounded-2xl">
 
         {/* Table Header */}
         <div className={`${showingDeleted 
@@ -863,7 +879,7 @@ const Header: React.FC<ExtendedHeaderProps & {
         </div>
 
         {/* Table Info Bar */}
-        <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between bg-white dark:bg-gray-800">
+        <div className="p-4 border-b  dark:border-gray-700 flex items-center justify-between bg-white dark:bg-gray-800">
           <div className="flex items-center gap-2">
             <span className="text-sm text-gray-600 dark:text-gray-400">
               Showing {data.length} of {pagination.total} items
@@ -879,7 +895,10 @@ const Header: React.FC<ExtendedHeaderProps & {
         </div>
 
         {/* Table Content */}
-        <table className="min-w-full divide-y text-center divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-800">
+<table
+  className="min-w-full divide-y text-center divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-800"
+  style={{ borderLeft: "1px solid #e5e7eb", borderRight: "1px solid #e5e7eb" }}
+>
           <thead className="bg-gray-50 text-center dark:bg-gray-700">
             <tr>
               <th className="px-6 py-3 text-center">
@@ -1310,21 +1329,61 @@ const FormModal: React.FC<FormModalProps & { compactLayout?: boolean }> = ({
 
 
 
-const FormFieldComponent: React.FC<FormFieldProps & { compact?: boolean }> = ({ 
-  field, value, onChange, additionalQueries, formData = {}, compact = false 
+import { SelectField } from "./SelectField";
+
+interface FormFieldProps {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  field: any;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  value: any;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  onChange: (val: any) => void;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  additionalQueries?: any;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  formData?: any;
+  compact?: boolean;
+}
+
+export const FormFieldComponent: React.FC<FormFieldProps> = ({
+  field,
+  value,
+  onChange,
+  additionalQueries,
+  formData = {},
+  compact = false,
 }) => {
-  // أنواع الحقول التي تعتبر صور
-  const imageFieldTypes = ['image', 'avatar', 'photo', 'picture', 'profile_image', 'logo'];
-  
+  const imageFieldTypes = [
+    "image",
+    "avatar",
+    "photo",
+    "picture",
+    "profile_image",
+    "logo",
+  ];
+
+  // ✅ معالجة حقل التحديد (select)
+  if (field.type === "select") {
+    return (
+      <SelectField
+        field={field}
+        value={value}
+        onChange={onChange}
+        additionalQueries={additionalQueries}
+      />
+    );
+  }
+
+  // ✅ معالجة الصور
   if (imageFieldTypes.includes(field.type)) {
     return (
-      <div className={`space-y-2 ${compact ? 'col-span-2' : ''}`}>
+      <div className={`space-y-2 ${compact ? "col-span-2" : ""}`}>
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
           {field.label}
         </label>
         <ImageUpload
           onImageChange={(file) => onChange(file)}
-          currentImage={typeof value === 'string' ? value : value?.url}
+          currentImage={typeof value === "string" ? value : value?.url}
           multiple={field.multiple}
           accept={field.accept}
         />
@@ -1332,32 +1391,33 @@ const FormFieldComponent: React.FC<FormFieldProps & { compact?: boolean }> = ({
     );
   }
 
-  // معالجة حقل التبديل
+  // ✅ معالجة الـ Switch
   if (field.type === "switch") {
     return (
-      <div className={`flex items-center justify-between ${compact ? '' : 'col-span-2'}`}>
+      <div
+        className={`flex items-center justify-between ${
+          compact ? "" : "col-span-2"
+        }`}
+      >
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
           {field.label}
         </label>
-        <Switch
-          checked={!!value}
-          onChange={onChange}
-        />
+        <Switch checked={!!value} onChange={onChange} />
       </div>
     );
   }
 
-  // معالجة حقل النص الطويل
+  // ✅ textarea
   if (field.type === "textarea") {
     return (
-      <div className={`space-y-2 ${compact ? 'col-span-2' : ''}`}>
+      <div className={`space-y-2 ${compact ? "col-span-2" : ""}`}>
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
           {field.label}
         </label>
         <textarea
           name={field.name}
           value={value?.toString() || ""}
-          onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => onChange(e.target.value)}
+          onChange={(e) => onChange(e.target.value)}
           required={field.required}
           rows={field.rows || 4}
           className="w-full p-3 rounded-xl dark:bg-gray-800 dark:text-gray-100 border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-vertical"
@@ -1367,47 +1427,7 @@ const FormFieldComponent: React.FC<FormFieldProps & { compact?: boolean }> = ({
     );
   }
 
-  // معالجة حقل التحديد
-  if (field.type === "select") {
-    let options: SelectOption[] = [];
-
-    if (field.optionsKey && additionalQueries) {
-const queryData = (additionalQueries as Record<string, { data?: unknown[] }>)?.[field.optionsKey]?.data;
-      options = Array.isArray(queryData)
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ? queryData.map((opt: any) => ({
-            value: opt.id,
-            label: opt.name || opt.title || `Item ${opt.id}`,
-          }))
-        : [];
-    } else if (field.options) {
-      options = field.options;
-    }
-
-    return (
-      <div className="space-y-2">
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-          {field.label}
-        </label>
-        <select
-          name={field.name}
-          value={value?.toString() || ""}
-          onChange={(e: React.ChangeEvent<HTMLSelectElement>) => onChange(e.target.value)}
-          className="w-full p-3 rounded-xl dark:bg-gray-800 dark:text-gray-100 border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-          required={field.required}
-        >
-          <option value="">Select {field.label}</option>
-          {options.map((option: SelectOption) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-      </div>
-    );
-  }
-
-  // معالجة حقل الملف (غير الصورة)
+  // ✅ file input
   if (field.type === "file") {
     return (
       <div className="space-y-2">
@@ -1429,21 +1449,23 @@ const queryData = (additionalQueries as Record<string, { data?: unknown[] }>)?.[
     );
   }
 
-  // معالجة باقي أنواع الحقول
+  // ✅ باقي الحقول العادية
   return (
     <div className="space-y-2">
       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
         {field.label}
+        {field.required && <span className="text-red-500 ml-1">*</span>}
       </label>
       <Input
         name={field.name}
         type={field.type}
         placeholder={field.placeholder || field.label}
         value={value?.toString() || ""}
-        onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChange(e.target.value)}
+        onChange={(e) => onChange(e.target.value)}
         required={field.required}
         className="rounded-xl dark:bg-gray-800 dark:text-gray-100"
       />
     </div>
   );
 };
+
