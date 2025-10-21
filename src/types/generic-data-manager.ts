@@ -196,6 +196,8 @@ export interface GenericDataManagerHandlers {
   handleRestore: (id: number, itemName: string) => void;
   handleForceDelete: (id: number, itemName: string) => void;
   handleToggleActive?: (id: number, itemName: string, currentActive: boolean) => void;
+  handleToggleDeleted: () => void;
+
 }
 
 export interface FormFieldProps {

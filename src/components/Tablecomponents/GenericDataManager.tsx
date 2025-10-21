@@ -388,15 +388,9 @@ export default function GenericDataManager(props: GenericDataManagerProps): Reac
 
   return (
     <MainLayout>
-      <div className="space-y-6 p-6 border-black rounded-lg">
+      <div className="space-y-6 p-6 border-black rounded-lg h-[900px]">
         {/* Main Section - كل المكونات في سكشن واحد */}
-        <div  className="space-y-6 p-6 "
-     style={{
-    height: "70vh",
-    background: "linear-gradient(180deg, #dbeafe 0%, #c8e1fd 15%, #bdf5d0 30%, #e8fdef 45%, rgba(232, 253, 239, 0.3) 70%, transparent 100%)",
-    zIndex: 0,
-  }}
-  >
+     
           
           {/* Header داخل السكشن */}
           <Header 
@@ -503,10 +497,10 @@ export default function GenericDataManager(props: GenericDataManagerProps): Reac
             compactLayout={hasManyFields}
           />
         )}
-      </div>
     </MainLayout>
   );
 }
+
 
 // Sub-components
 const Header: React.FC<ExtendedHeaderProps & { 

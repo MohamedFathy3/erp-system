@@ -59,6 +59,22 @@ export function useGenericDataManager({
   const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set());
   const [formData, setFormData] = useState<Record<string, string | number>>({});
 
+
+
+
+  const handleToggleDeleted = (): void => {
+  // صفّر العناصر المحددة
+  setSelectedItems(new Set());
+
+  // بدّل بين الوضعين
+  setShowingDeleted(prev => !prev);
+
+  // رجّع أول صفحة (اختياري)
+  setCurrentPage(1);
+
+  toast.success("View toggled successfully!");
+};
+
 const additionalQueriesArray = useQueries({
   queries: additionalData.map(data => ({
     queryKey: [data.key, data.filters],
@@ -720,6 +736,7 @@ const handleSave = async (e: SaveOptions): Promise<void> => {
   // Return all state and functions
   return {
     // State
+    handleToggleDeleted,
     search,
     setSearch,
     open,

@@ -479,6 +479,13 @@ const managementCards = [
     icon: LineChart,
     category: 'HR',
   },
+   {
+    id: 'service-scoop',
+    title: 'Service Scoop',
+    description: 'Manage service scoop settings.',
+    icon: FileText,
+    category: 'Logistics',
+  },
   {
     id: 'container-type',
     title: 'Container Type',
@@ -493,18 +500,19 @@ const managementCards = [
     icon: Package,
     category: 'Logistics',
   },
-  {
-    id: 'service-scoop',
-    title: 'Service Scoop',
-    description: 'Manage service scoop settings.',
-    icon: FileText,
-    category: 'Logistics',
-  },
+ 
   {
     id: 'vessels',
     title: 'Vessels',
     description: 'Manage vessels settings.',
     icon: Ship,
+    category: 'Logistics',
+  },
+   {
+    id: 'network',
+    title: 'Network',
+    description: 'Manage network settings.',
+    icon: Router,
     category: 'Logistics',
   },
   {
@@ -528,13 +536,7 @@ const managementCards = [
     icon: MapPin,
     category: 'Logistics',
   },
-  {
-    id: 'network',
-    title: 'Network',
-    description: 'Manage network settings.',
-    icon: Router,
-    category: 'Logistics',
-  },
+ 
 ]
 
 const filters = [
@@ -552,6 +554,7 @@ const filters = [
     color: 'text-green-500',
     border_olor: 'green-500'
   },
+  
   {
     label: 'Partners',
     icon: Users,
@@ -559,14 +562,15 @@ const filters = [
     color: 'text-purple-500',
     border_olor: 'purple-500'
   },
-  {
-    label: 'Finance',
-    icon: DollarSign,
-    count: managementCards.filter(item => item.category === 'Finance').length,
-    color: 'text-yellow-500',
-    border_olor: 'yellow-500'
-  },
-  {
+ 
+  
+    {
+    label: 'Logistics',
+    icon: Truck,
+    count: managementCards.filter(item => item.category === 'Logistics').length,
+    color: 'text-indigo-500',
+    border_olor: 'indigo-500'
+  },{
     label: 'Third Party',
     icon: Building,
     count: managementCards.filter(item => item.category === 'Third Party').length,
@@ -580,6 +584,14 @@ const filters = [
     color: 'text-red-500',
     border_olor: 'red-500'
   },
+   {
+    label: 'Finance',
+    icon: DollarSign,
+    count: managementCards.filter(item => item.category === 'Finance').length,
+    color: 'text-yellow-500',
+    border_olor: 'yellow-500'
+  }
+  ,
   {
     label: 'HR',
     icon: UserCog,
@@ -587,13 +599,7 @@ const filters = [
     color: 'text-pink-500',
     border_olor: 'pink-500'
   },
-  {
-    label: 'Logistics',
-    icon: Truck,
-    count: managementCards.filter(item => item.category === 'Logistics').length,
-    color: 'text-indigo-500',
-    border_olor: 'indigo-500'
-  },
+
 ]
 
 export default function MasterDataPage() {
