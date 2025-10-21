@@ -665,53 +665,29 @@ const Header: React.FC<ExtendedHeaderProps & {
             )}
           </span>
         </Button>
- {showAddButton && (
-        <Button
-          className={`
-            relative
-            overflow-hidden
-            bg-gradient-to-r
-            from-green-50
-            to-green-100
-            dark:from-green-900/30
-            dark:to-green-800/30
-            hover:from-green-100
-            hover:to-green-200
-            dark:hover:from-green-800/40
-            dark:hover:to-green-700/40
-            text-black
-            dark:text-green-200
-            font-semibold
-            py-3
-            px-6
-            rounded-2xl
-            shadow-md
-            hover:shadow-lg
-            transform
-            hover:-translate-y-0.5
-            active:translate-y-0
-            transition-all
-            duration-250
-            ease-in-out
-            border
-            border-green-100
-            dark:border-green-900/50
-            group
-          `}
-          onClick={onAddItem}
-        >
-          <span className="flex items-center gap-3">
-            <>
-              <div className="bg-green-100 dark:bg-green-900/30 p-2 rounded-lg group-hover:scale-110 transition-transform duration-200">
-                <i className="fas fa-plus text-green-600 dark:text-green-400 text-sm"></i>
-              </div>
-              <span className="text-black dark:text-green-300">Add {title}</span>
-            </>
-          </span>
-          
-          {/* Shine effect */}
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
-        </Button>)}
+{showAddButton &&
+  !(selectedItems.size > 0 && showDeleteButton && showBulkActions) &&
+  !showingDeleted && ( // 👈 أضفنا الشرط ده
+    <Button
+      className={`
+        relative overflow-hidden bg-gradient-to-r from-green-50 to-green-100
+        dark:from-green-900/30 dark:to-green-800/30 hover:from-green-100 hover:to-green-200
+        dark:hover:from-green-800/40 dark:hover:to-green-700/40 text-black dark:text-green-200
+        font-semibold py-3 px-6 rounded-2xl shadow-md hover:shadow-lg transform hover:-translate-y-0.5
+        active:translate-y-0 transition-all duration-250 ease-in-out border border-green-100 dark:border-green-900/50 group
+      `}
+      onClick={onAddItem}
+    >
+      <span className="flex items-center gap-3">
+        <div className="bg-green-100 dark:bg-green-900/30 p-2 rounded-lg group-hover:scale-110 transition-transform duration-200">
+          <i className="fas fa-plus text-green-600 dark:text-green-400 text-sm"></i>
+        </div>
+        <span className="text-black dark:text-green-300">Add {title}</span>
+      </span>
+      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+    </Button>
+)}
+
       </div>
     </div>
   );
@@ -868,37 +844,84 @@ const Header: React.FC<ExtendedHeaderProps & {
     };
 
  return (
-      <div className="bg-white  dark:bg-gray-800 dark:border-gray-700 overflow-x-auto rounded-2xl">
-
-        {/* Table Header */}
-        <div className={`${showingDeleted 
-          ? 'bg-red-100 dark:bg-red-800 text-red-400 dark:text-red-100' 
-          : 'relative overflow-hidden bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/30 hover:from-green-100 hover:to-green-200 dark:hover:from-green-800/40 dark:hover:to-green-700/40 text-black dark:text-green-200  ransform hover:-translate-y-0.5 active:translate-y-0 transition-all duration-250 ease-in-out border border-green-100 dark:border-green-900/50'
-        } font-semibold text-lg px-6 py-1 rounded-t-2xl group`}>
-          {title} Management {showingDeleted && '(Deleted Items)'}
-        </div>
-
-        {/* Table Info Bar */}
-        <div className="p-4 border-b  dark:border-gray-700 flex items-center justify-between bg-white dark:bg-gray-800">
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-600 dark:text-gray-400">
-              Showing {data.length} of {pagination.total} items
-              {showingDeleted && <span className="text-red-500 ml-1">(Deleted)</span>}
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-600 dark:text-gray-400">Sorted by:</span>
-            <span className="text-sm font-medium text-indigo-600 dark:text-indigo-400">
-              {orderBy} ({orderByDirection})
-            </span>
-          </div>
-        </div>
-
-        {/* Table Content */}
-<table
-  className="min-w-full divide-y text-center divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-800"
-  style={{ borderLeft: "1px solid #e5e7eb", borderRight: "1px solid #e5e7eb" }}
+ <div
+  className="bg-white dark:bg-gray-800 dark:border-gray-700 overflow-x-auto rounded-2xl"
+  style={{
+    borderColor: showingDeleted ? "#feebeb" : "#48ea80", // 🔴 أحمر للمحذوفات، 🟢 أخضر للعادي
+  }}
 >
+  <div
+    className="relative overflow-hidden border-2 bg-white dark:bg-gray-800 shadow-lg"
+    style={{
+      borderImage: showingDeleted
+        ? "linear-gradient(to right bottom, rgb(253 176 176), rgb(248, 113, 113)) 1 / 1 / 0 stretch;" // 🔴 تدرج أحمر
+        : "linear-gradient(to bottom right, #3be589, #4cc9f0) 1", // 🟢 تدرج أخضر
+      borderRadius: "0px",
+    }}
+  >
+    {/* Table Header */}
+    <div
+      className={`${
+        showingDeleted
+          ? "bg-red-100 dark:bg-red-800 text-red-400 dark:text-red-100 border border-red-200 dark:border-red-700"
+          : "relative overflow-hidden bg-gradient-to-r from-green-200 to-green-300 dark:from-green-900/30 dark:to-green-800/30 hover:from-green-100 hover:to-green-200 dark:hover:from-green-800/40 dark:hover:to-green-700/40 text-black dark:text-green-200 transform hover:-translate-y-0.5 active:translate-y-0 transition-all duration-250 ease-in-out border border-green-100 dark:border-green-900/50"
+      } font-semibold text-lg px-6 py-1 rounded-t-l group`}
+    >
+      {title} Management {showingDeleted && "(Deleted Items)"}
+    </div>
+
+    {/* Table Info Bar */}
+    <div
+      className={`p-4 dark:border-gray-700 flex items-center justify-between ${
+        showingDeleted ? "bg-red-50 dark:bg-red-900/20" : "bg-white dark:bg-gray-800"
+      }`}
+    >
+      <div className="flex items-center gap-2">
+        <span
+          className={`text-sm ${
+            showingDeleted ? "text-red-600 dark:text-red-300" : "text-gray-600 dark:text-gray-400"
+          }`}
+        >
+          Showing {data.length} of {pagination.total} items
+          {showingDeleted && (
+            <span className="text-red-500 ml-1">(Deleted)</span>
+          )}
+        </span>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <span
+          className={`text-sm ${
+            showingDeleted ? "text-red-600 dark:text-red-300" : "text-gray-600 dark:text-gray-400"
+          }`}
+        >
+          Sorted by:
+        </span>
+        <span
+          className={`text-sm font-medium ${
+            showingDeleted ? "text-red-700 dark:text-red-400" : "text-indigo-600 dark:text-indigo-400"
+          }`}
+        >
+          {orderBy} ({orderByDirection})
+        </span>
+      </div>
+    </div>
+
+    {/* Table Content */}
+    <div
+      className={`border-2 overflow-hidden ${
+        showingDeleted
+          ? "bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800"
+          : "bg-black dark:bg-gray-900  dark:border-gray-700"
+      }`}
+    >
+      <table
+        className={`min-w-full divide-y text-center ${
+          showingDeleted
+            ? "divide-red-300 dark:divide-red-700 bg-red-50 dark:bg-red-950/30"
+            : "divide-gray-800 dark:divide-gray-700 bg-black dark:bg-gray-900"
+        }`}
+      >
           <thead className="bg-gray-50 text-center dark:bg-gray-700">
             <tr>
               <th className="px-6 py-3 text-center">
@@ -1242,6 +1265,8 @@ const Header: React.FC<ExtendedHeaderProps & {
             )}
           </tbody>
         </table>
+      </div>
+      </div>
       </div>
     );
   };

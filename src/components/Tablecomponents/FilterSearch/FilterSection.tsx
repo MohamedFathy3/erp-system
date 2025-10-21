@@ -2,7 +2,7 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Filter } from "lucide-react";
+import { Filter, RotateCcw } from "lucide-react";
 import { FilterField } from '@/types/generic-data-manager';
 
 interface FilterSectionProps {
@@ -30,7 +30,7 @@ const FilterSection: React.FC<FilterSectionProps> = ({
   availableFilters = [],
   className = ""
 }) => {
-  // إذا availableFilters فاضي، ما نعرضش أي فلترز
+  // If availableFilters is empty, don't show any filters
   const filterFields = availableFilters.length > 0 ? availableFilters : [];
 
   const handleFilterChange = (key: string, value: string): void => {
@@ -107,7 +107,7 @@ const FilterSection: React.FC<FilterSectionProps> = ({
 
   return (
     <div className={`w-full bg-gray-100 dark:bg-gray-700 p-6 rounded-md space-y-6 ${className}`}>
-      {/* حقول الفلترة الديناميكية - تظهر فقط إذا كان في فلترز */}
+      {/* Dynamic Filter Fields - Only show if there are filters */}
       {filterFields.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filterFields.map((field) => (
@@ -121,7 +121,7 @@ const FilterSection: React.FC<FilterSectionProps> = ({
         </div>
       )}
 
-      {/* خيارات الترتيب */}
+      {/* Sorting Options */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -154,12 +154,12 @@ const FilterSection: React.FC<FilterSectionProps> = ({
         </div>
       </div>
 
-      {/* أزرار التحكم */}
+      {/* Control Buttons */}
       <div className="flex flex-col md:flex-row gap-4 pt-4">
         <Button
           variant="default"
           onClick={onApplyFilter}
-          className="w-full text-white transition-all rounded-md px-5 h-12 text-lg flex items-center justify-center gap-2 dark:bg-blue-600 dark:hover:bg-blue-500"
+          className="w-full text-white transition-all rounded-md px-5 h-12 text-lg flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600"
         >
           <Filter className="w-5 h-5" />
           Apply Filters
@@ -169,7 +169,7 @@ const FilterSection: React.FC<FilterSectionProps> = ({
           onClick={onResetFilters}
           className="w-full bg-gray-500 text-white hover:bg-gray-600 transition-all rounded-md px-5 h-12 text-lg flex items-center justify-center gap-2 dark:bg-gray-600 dark:hover:bg-gray-500"
         >
-          <Filter className="w-5 h-5" />
+          <RotateCcw className="w-5 h-5" />
           Reset Filters
         </Button>
       </div>

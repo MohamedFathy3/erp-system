@@ -603,60 +603,68 @@ export default function MasterDataPage() {
 
   return (
     <div className="mt-8">
-      <div className="mt-10 flex flex-wrap justify-center items-center gap-6">
-        {filters.map(({ label, icon: Icon, color, border_olor }) => {
-          const isActive = activeFilter === label;
-          
-          const getColorClasses = (type: 'border' | 'icon') => {
-            const baseClass = type === 'border' ? 'border-' : 'text-';
-            switch(border_olor) {
-              case 'blue-500': return `${baseClass}blue-500`;
-              case 'green-500': return `${baseClass}green-500`;
-              case 'yellow-500': return `${baseClass}yellow-500`;
-              case 'red-500': return `${baseClass}red-500`;
-              case 'purple-500': return `${baseClass}purple-500`;
-              case 'pink-500': return `${baseClass}pink-500`;
-              case 'orange-500': return `${baseClass}orange-500`;
-              case 'indigo-500': return `${baseClass}indigo-500`;
-              default: return `${baseClass}gray-500`;
-            }
-          };
+    <div className="mt-10 flex flex-wrap justify-center items-center gap-6">
+  {filters.map(({ label, icon: Icon, color, border_olor }) => {
+    const isActive = activeFilter === label;
+    
+    const getColorClasses = (type: 'border' | 'icon') => {
+      switch(border_olor) {
+        case 'blue-500': 
+          return type === 'border' ? 'border-blue-500' : 'text-blue-500';
+        case 'green-500': 
+          return type === 'border' ? 'border-green-500' : 'text-green-500';
+        case 'yellow-500': 
+          return type === 'border' ? 'border-yellow-500' : 'text-yellow-500';
+        case 'red-500': 
+          return type === 'border' ? 'border-red-500' : 'text-red-500';
+        case 'purple-500': 
+          return type === 'border' ? 'border-purple-500' : 'text-purple-500';
+        case 'pink-500': 
+          return type === 'border' ? 'border-pink-500' : 'text-pink-500';
+        case 'orange-500': 
+          return type === 'border' ? 'border-orange-500' : 'text-orange-500';
+        case 'indigo-500': 
+          return type === 'border' ? 'border-indigo-500' : 'text-indigo-500';
+        default: 
+          return type === 'border' ? 'border-gray-500' : 'text-gray-500';
+      }
+    };
 
-          const borderClass = getColorClasses('border');
-          const iconClass = getColorClasses('icon');
+    const borderClass = getColorClasses('border');
+    const iconClass = getColorClasses('icon');
 
-          return (
-            <button
-              key={label}
-              onClick={() => setActiveFilter(label)}
-              className={`
-                group relative flex flex-col items-center justify-center w-16 h-16 rounded-full
-                transition-all duration-300 border-2
-                ${isActive
-                  ? 'bg-blue-100 dark:bg-blue-900 border-blue-500 shadow-md'
-                  : `bg-white dark:bg-gray-800 ${borderClass} hover:border-blue-400 hover:shadow`
-                }
-              `}
-            >
-              <Icon
-                className={`
-                  w-6 h-6 transition-transform duration-1000 ease-in-out
-                  group-hover:rotate-[360deg]
-                  ${isActive ? color : iconClass}
-                `}
-              />
-              <span
-                className={`
-                  absolute bottom-[-1.5rem] text-xs opacity-0 group-hover:opacity-100 transition-opacity
-                  ${isActive ? 'text-black dark:text-white' : 'text-gray-400'}
-                `}
-              >
-                {label}
-              </span>
-            </button>
-          );
-        })}
-      </div>
+    return (
+      <button
+        key={label}
+        onClick={() => setActiveFilter(label)}
+        className={`
+          group relative flex flex-col items-center justify-center w-16 h-16 rounded-full
+          transition-all duration-300 border-2
+          ${isActive
+            ? 'bg-blue-100 dark:bg-blue-900 border-blue-500 shadow-md'
+            : `bg-white dark:bg-gray-800 ${borderClass} hover:border-blue-400 hover:shadow`
+          }
+        `}
+      >
+        <Icon
+          className={`
+            w-6 h-6 transition-transform duration-1000 ease-in-out
+            group-hover:rotate-[360deg]
+            ${isActive ? color : iconClass}
+          `}
+        />
+        <span
+          className={`
+            absolute bottom-[-1.5rem] text-xs opacity-0 group-hover:opacity-100 transition-opacity
+            ${isActive ? 'text-black dark:text-white' : 'text-gray-400'}
+          `}
+        >
+          {label}
+        </span>
+      </button>
+    );
+  })}
+</div>
 
       <div className="mt-8"></div>
       <div className="mt-8 mb-40 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
