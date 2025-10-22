@@ -483,12 +483,15 @@ useEffect(() => {
       }
     });
     if (editingItem?.id) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (itemData as any).id = editingItem.id;
     }
   } else {
     itemData = { ...formData, ...initialData };
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
     keepOpen = (e as any).keepOpen || false; // ✅ خلي keepOpen من الـ options
     if (editingItem?.id) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (itemData as any).id = editingItem.id;
     }
     hasFiles = Object.values(itemData).some(v => v instanceof File);
