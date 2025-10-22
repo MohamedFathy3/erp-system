@@ -80,23 +80,50 @@ export default function TicketETAPage() {
             </div>
           )
         },
-        { 
-          key: 'time', 
-          label: 'Time', 
-          sortable: true,
-          render: (item) => {
-            if (!item.time) return "";
-            const parts = item.time.split(':');
-            return (
-              <div className="text-center text-xs">
-                <span className="font-semibold text-gray-900">
-                  {`${parts[0]}:${parts[1]}`}
-                </span>
-                <div className="text-gray-500 mt-1">Time</div>
-              </div>
-            );
-          }
-        },
+    {
+  key: 'time',
+  label: 'Time',
+  sortable: true,
+  render: (item) => {
+    if (!item.time) return "";
+
+    const [h = '00', m = '00', s = '00'] = item.time.split(':');
+    const hours = parseInt(h, 10);
+    const minutes = parseInt(m, 10);
+
+    // تحويل الوقت لأيام وساعات ودقايق
+    const totalMinutes = hours * 60 + minutes;
+    const days = Math.floor(totalMinutes / (24 * 60));
+    const remainingMinutes = totalMinutes % (24 * 60);
+    const displayHours = Math.floor(remainingMinutes / 60);
+    const displayMinutes = remainingMinutes % 60;
+
+    const parts = [];
+    if (days > 0) parts.push(`${days} day${days > 1 ? 's' : ''}`);
+    if (displayHours > 0) parts.push(`${displayHours} hour${displayHours > 1 ? 's' : ''}`);
+    if (displayMinutes > 0) parts.push(`${displayMinutes} minute${displayMinutes > 1 ? 's' : ''}`);
+
+    return (
+      <div className="text-center text-xs space-y-1">
+        {/* الوقت المفصل */}
+        <div className="text-gray-900 font-semibold">
+          {parts.length > 0 ? parts.join(', ') : '0 minutes'}
+        </div>
+
+        {/* الوقت الأصلي */}
+        <div className="text-gray-500">
+          Raw: {`${h.padStart(2, '0')}:${m.padStart(2, '0')}`}
+        </div>
+
+        {/* المجموع الإجمالي بالساعات */}
+        <div className="text-gray-400 text-[10px] italic">
+          Total: {(totalMinutes / 60).toFixed(2)} hrs
+        </div>
+      </div>
+    );
+  }
+}
+,
       ]}
       additionalData={[
         { 
