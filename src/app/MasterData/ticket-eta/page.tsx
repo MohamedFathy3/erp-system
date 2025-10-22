@@ -113,17 +113,17 @@ export default function TicketETAPage() {
           ],
           placeholder: "Select priority level"
         },
-        { 
-          name: 'time', 
-          label: 'Time (HH:MM)', 
-          type: 'text', 
-          required: true,
-          placeholder: '00:00'
-        },
+      { 
+  name: 'time', 
+  label: 'Time', 
+  type: 'custom-time', // ✅ غير النوع لـ time
+  required: true,
+  placeholder: 'HH:MM'
+},
         { 
           name: 'short_description', 
           label: 'Short Description', 
-          type: 'text',
+          type: 'textarea',
           rows: 3,
           required: false,
           placeholder: 'Enter short description'

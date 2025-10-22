@@ -194,6 +194,36 @@ export function useGenericDataManager({
     links: []
   };
 
+  // في useGenericDataManager.ts - قبل الـ return
+const handleForceDeleteSelected = async (): Promise<void> => {
+  if (selectedItems.size === 0) return;
+  
+  const selectedIds = Array.from(selectedItems);
+  const itemNames = data
+    .filter(item => selectedItems.has(item.id))
+    .map(item => item.name || item.title || `Item ${item.id}`)
+    .join(', ');
+
+  const message = `⚠️ Are you sure you want to PERMANENTLY delete ${selectedIds.length} selected item(s)?\n\n${itemNames}\n\nThis action cannot be undone!`;
+
+  if (!confirm(message)) return;
+
+  try {
+    // إرسال طلب واحد لحذف كل العناصر المحددة
+    await apiFetch(`/${endpoint}/forceDelete`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ items: selectedIds }), // إرسال array كاملة
+    });
+
+    queryClient.invalidateQueries({ queryKey: [endpoint] });
+    setSelectedItems(new Set()); // تنظيف التحديد بعد الحذف
+    toast.success(`All ${selectedIds.length} items permanently deleted!`);
+  } catch (error) {
+    console.error("Error force deleting selected items:", error);
+    toast.error("Error permanently deleting items");
+  }
+};
   // Handlers
   const handleFilter = (): void => {
     setCurrentPage(1);
@@ -542,7 +572,7 @@ const handleForceDelete = async (id: number, title: string): Promise<void> => {
     isLoading,
     error,
     additionalQueries,
-
+handleForceDeleteSelected,
     handleSave,
     handleDelete: (id: number, title: string) => deleteItemMutation.mutate({ id, title }),
     handleBulkDelete: () => bulkDeleteMutation.mutate(Array.from(selectedItems)),

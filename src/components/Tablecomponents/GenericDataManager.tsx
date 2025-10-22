@@ -267,6 +267,8 @@ export default function GenericDataManager(props: GenericDataManagerProps): Reac
     deleteItemMutation,
     bulkDeleteMutation,
     bulkRestoreMutation,
+      handleForceDeleteSelected,
+
   } = useGenericDataManager(props);
 
   const { 
@@ -408,6 +410,7 @@ export default function GenericDataManager(props: GenericDataManagerProps): Reac
             selectedItems={selectedItems}
             showingDeleted={showingDeleted}
             showFilter={showFilter}
+  onForceDeleteSelected={handleForceDeleteSelected}
             searchTerm={filters.search}
             onBulkAction={showingDeleted ? handleBulkRestore : handleBulkDelete}
             onToggleFilter={handleToggleFilter}
@@ -528,7 +531,9 @@ const Header: React.FC<ExtendedHeaderProps & {
   showDeleteButton = true,
   showActiveToggle = true,
   showBulkActions = true,
-  showDeletedToggle = true
+  showDeletedToggle = true,
+    onForceDeleteSelected,
+
 }) => {
   const startItem = ((currentPage - 1) * pagination.per_page) + 1;
   const endItem = Math.min(currentPage * pagination.per_page, pagination.total);
@@ -611,7 +616,24 @@ const Header: React.FC<ExtendedHeaderProps & {
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
           </Button>
         )}
-
+{showingDeleted && selectedItems.size > 0 && (
+  <Button
+  style={{color:"#b91c1c"}}
+    variant="destructive"
+onClick={onForceDeleteSelected}
+    className={`
+    bg-gradient-to-r from-red-50 to-red-100 dark:bg-red-900/30 p-2 rounded-lg group-hover:scale-110 transition-transform duration-200
+    `}
+  >
+    <span className="relative z-10 flex items-center gap-3">
+      <i className="fas fa-fire text-red-600 group-hover:scale-110 transition-transform duration-200"></i>
+      Force Delete Selected ({selectedItems.size})
+    </span>
+    
+    {/* Shine effect */}
+    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+  </Button>
+)}
         {/* باقي الأزرار تبقى كما هي */}
         <Button 
           onClick={onToggleDeleted} 
@@ -1425,6 +1447,71 @@ export const FormFieldComponent: React.FC<FormFieldProps> = ({
     );
   }
 
+  // في FormFieldComponent - أضف هذا الشرط بعد الـ switch مباشرة
+if (field.type === "custom-time") {
+  const timeValue = value || '00:00';
+  const [hours = '00', minutes = '00'] = timeValue.split(':');
+  
+  return (
+    <div className="space-y-2">
+      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+        {field.label}
+        {field.required && <span className="text-red-500 ml-1">*</span>}
+      </label>
+      
+      <div className="flex gap-3 items-center justify-center">
+        {/* الساعات */}
+        <div className="flex-1">
+          <label className="block text-xs text-gray-500 mb-1 text-center">Hours</label>
+          <select
+            value={hours}
+            onChange={(e) => {
+              const newTime = `${e.target.value}:${minutes}`;
+              onChange(newTime);
+            }}
+            className="w-full p-3 rounded-xl dark:bg-gray-800 dark:text-gray-100 border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-center"
+          >
+            {Array.from({ length: 24 }, (_, i) => (
+              <option key={i} value={i.toString().padStart(2, '0')}>
+                {i.toString().padStart(2, '0')}
+              </option>
+            ))}
+          </select>
+        </div>
+        
+        <div className="flex flex-col items-center justify-center pt-4">
+          <span className="text-xl font-bold text-gray-400">:</span>
+        </div>
+        
+        {/* الدقائق */}
+        <div className="flex-1">
+          <label className="block text-xs text-gray-500 mb-1 text-center">Minutes</label>
+          <select
+            value={minutes}
+            onChange={(e) => {
+              const newTime = `${hours}:${e.target.value}`;
+              onChange(newTime);
+            }}
+            className="w-full p-3 rounded-xl dark:bg-gray-800 dark:text-gray-100 border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-center"
+          >
+            {Array.from({ length: 60 }, (_, i) => (
+              <option key={i} value={i.toString().padStart(2, '0')}>
+                {i.toString().padStart(2, '0')}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+      
+      {/* عرض الوقت المختار */}
+      <div className="text-center mt-2">
+        <span className="text-sm text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded-lg">
+          Selected: <span className="font-mono font-bold">{hours}:{minutes}</span>
+        </span>
+      </div>
+    </div>
+  );
+}
   // ✅ textarea
   if (field.type === "textarea") {
     return (
