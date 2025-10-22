@@ -336,7 +336,9 @@ useEffect(() => {
       }
     } else {
       const clean = sendData as Entity;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
       if ((clean as any).id) {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return apiFetch(`/${endpoint}/${(clean as any).id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
