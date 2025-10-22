@@ -77,7 +77,7 @@ export function useGenericDataManager({
 
 const additionalQueriesArray = useQueries({
   queries: additionalData.map(data => ({
-    queryKey: [data.key, data.filters],
+queryKey: [data.key, data.filters, 'static'],
     queryFn: async (): Promise<unknown[]> => {
       try {
         let json;
@@ -125,8 +125,8 @@ const additionalQueriesArray = useQueries({
         return [];
       }
     },
-    staleTime: 10 * 60 * 1000,
-    enabled: open,
+     staleTime: 30 * 60 * 1000, // زيادة من 10 إلى 30 دقيقة
+    cacheTime: 60 * 60 * 1000, // إضافة cache time
   }))
 });
   // تحويل الـ array إلى object
@@ -457,7 +457,7 @@ const saveItemMutation = useMutation<unknown, Error, {
     try {
       await apiToggleActive(id, !currentActive);
       queryClient.invalidateQueries({ queryKey: [endpoint] });
-      toast.success(`Device ${currentActive ? 'deactivated' : 'activated'} successfully!`);
+      toast.success(` ${currentActive ? 'deactivated' : 'activated'} successfully!`);
     } catch (error) {
       console.error('Error toggling device active status:', error);
       toast.error('Error updating device status');
@@ -524,7 +524,6 @@ const handleSave = async (e: SaveOptions): Promise<void> => {
     });
   }
 
-  // ... باقي الكود بدون تغيير
   // إعداد البيانات للإرسال
   let dataToSend: Entity | FormData;
   let isFormData = false;
@@ -626,8 +625,7 @@ const handleSave = async (e: SaveOptions): Promise<void> => {
 
   const handleFilter = (): void => {
     setCurrentPage(1);
-    setShowFilter(false);
-    toast.success('Filter applied successfully!');
+    // setShowFilter(false);
   };
 
   const handleResetFilters = (): void => {
@@ -636,7 +634,6 @@ const handleSave = async (e: SaveOptions): Promise<void> => {
     setOrderByDirection('desc');
     setCurrentPage(1);
     setShowFilter(false);
-    toast.success('Filters reset successfully!');
   };
 
   const handleSearch = useCallback((): void => {

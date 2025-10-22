@@ -352,10 +352,16 @@ export default function GenericDataManager(props: GenericDataManagerProps): Reac
   const handleOrderByDirectionChange = (newDirection: 'asc' | 'desc'): void => {
     setOrderByDirection(newDirection);
   };
+
+  
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleFormDataChange = (newFormData: Record<string, any>): void => {
     setFormData(newFormData);
   };
+
+
+
+
 
   const handleCloseModal = (): void => {
     setOpen(false);
@@ -388,7 +394,7 @@ export default function GenericDataManager(props: GenericDataManagerProps): Reac
 
   return (
     <MainLayout>
-      <div className="space-y-6 p-6 border-black rounded-lg h-[900px]">
+<div className="space-y-6 p-6 pb-16 border-black rounded-lg h-[1125px]">
         {/* Main Section - كل المكونات في سكشن واحد */}
      
           
@@ -840,18 +846,11 @@ const Header: React.FC<ExtendedHeaderProps & {
  return (
  <div
   className="bg-white dark:bg-gray-800 dark:border-gray-700 overflow-x-auto rounded-2xl"
-  style={{
-    borderColor: showingDeleted ? "#feebeb" : "#48ea80", // 🔴 أحمر للمحذوفات، 🟢 أخضر للعادي
-  }}
+
 >
   <div
-    className="relative overflow-hidden border-2 bg-white dark:bg-gray-800 shadow-lg"
-    style={{
-      borderImage: showingDeleted
-        ? "linear-gradient(to right bottom, rgb(253 176 176), rgb(248, 113, 113)) 1 / 1 / 0 stretch;" // 🔴 تدرج أحمر
-        : "linear-gradient(to bottom right, #3be589, #4cc9f0) 1", // 🟢 تدرج أخضر
-      borderRadius: "0px",
-    }}
+    className="relative overflow-hidden  bg-white dark:bg-gray-800 "
+  
   >
     {/* Table Header */}
     <div
@@ -903,7 +902,7 @@ const Header: React.FC<ExtendedHeaderProps & {
 
     {/* Table Content */}
     <div
-      className={`border-2 overflow-hidden ${
+      className={` overflow-hidden ${
         showingDeleted
           ? "bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800"
           : "bg-black dark:bg-gray-900  dark:border-gray-700"
