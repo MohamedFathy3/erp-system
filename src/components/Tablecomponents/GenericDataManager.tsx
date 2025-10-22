@@ -1339,7 +1339,6 @@ const FormModal: React.FC<FormModalProps & { compactLayout?: boolean }> = ({
 <div className="flex space-x-4 mt-6">
   <Button
     style={{color:'black'}}
-
     type="submit"
     className="w-full bg-gradient-to-r from-green-50 to-green-100 text-black hover:bg-indigo-700 transition-all rounded-xl"
     disabled={saveLoading}
@@ -1347,18 +1346,29 @@ const FormModal: React.FC<FormModalProps & { compactLayout?: boolean }> = ({
     {saveLoading ? "Saving..." : editingItem ? "Save" : "Save"}
   </Button>
 
-<Button
-  style={{color:'black'}}
-  type="button"
-  className="w-full bg-gradient-to-r from-green-50 to-green-100 text-black hover:bg-green-200 transition-all rounded-xl"
-  disabled={saveLoading}
-  onClick={() => {
-    const saveOptions: SaveOptions = { keepOpen: true };
-    onSave(saveOptions);
-  }}
->
-  {saveLoading ? "Saving..." : editingItem ? "Save & new" : "Save & new"}
-</Button>
+  <Button
+    style={{color:'black'}}
+    type="button"
+    className="w-full bg-gradient-to-r from-green-50 to-green-100 text-black hover:bg-green-200 transition-all rounded-xl"
+    disabled={saveLoading}
+    onClick={() => {
+      const saveOptions: SaveOptions = { keepOpen: true };
+      onSave(saveOptions);
+    }}
+  >
+    {saveLoading ? "Saving..." : editingItem ? "Save & new" : "Save & new"}
+  </Button>
+
+  {/* زر Close */}
+  <Button
+    type="button"
+    style={{background:"#fee4e4",color:'black'}}
+    className="w-full bg-gradient-to-r from-gray-50 to-gray-100 text-gray-700 hover:bg-gray-200 transition-all rounded-xl border-none"
+    onClick={onClose}
+    disabled={saveLoading}
+  >
+    Close
+  </Button>
 </div>
 
         </form>
