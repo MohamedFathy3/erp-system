@@ -313,52 +313,70 @@ useEffect(() => {
   };
 
   // Save / Delete / Bulk logic (unchanged)
-  const saveItemMutation = useMutation<unknown, Error, { data: Entity | FormData; isFormData?: boolean }>({
-    mutationFn: async ({ data: sendData, isFormData = false }) => {
-      if (isFormData) {
-        const formDataObj = sendData as FormData;
-        if (editingItem?.id) {
-          formDataObj.append('_method', 'PUT');
-          return apiFetch(`/${endpoint}/${editingItem.id}`, {
-            method: "POST",
-            body: formDataObj,
-          });
-        } else {
-          return apiFetch(`/${endpoint}`, {
-            method: "POST",
-            body: formDataObj,
-          });
-        }
+ const saveItemMutation = useMutation<unknown, Error, { 
+  data: Entity | FormData; 
+  isFormData?: boolean;
+  keepOpen?: boolean; // ✅ أضف هذا
+}>({
+  mutationFn: async ({ data: sendData, isFormData = false }) => {
+    // ... الكود الحالي بدون تغيير
+    if (isFormData) {
+      const formDataObj = sendData as FormData;
+      if (editingItem?.id) {
+        formDataObj.append('_method', 'PUT');
+        return apiFetch(`/${endpoint}/${editingItem.id}`, {
+          method: "POST",
+          body: formDataObj,
+        });
       } else {
-        const clean = sendData as Entity;
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        if ((clean as any).id) {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          return apiFetch(`/${endpoint}/${(clean as any).id}`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(clean),
-          });
-        } else {
-          return apiFetch(`/${endpoint}`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ ...initialData, ...clean }),
-          });
-        }
+        return apiFetch(`/${endpoint}`, {
+          method: "POST",
+          body: formDataObj,
+        });
       }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [endpoint] });
+    } else {
+      const clean = sendData as Entity;
+      if ((clean as any).id) {
+        return apiFetch(`/${endpoint}/${(clean as any).id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(clean),
+        });
+      } else {
+        return apiFetch(`/${endpoint}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...initialData, ...clean }),
+        });
+      }
+    }
+  },
+  onSuccess: (data, variables) => { // ✅ أضف variables هنا
+    queryClient.invalidateQueries({ queryKey: [endpoint] });
+    
+    if (variables.keepOpen) {
+      // إذا كان keepOpen = true، نظف الفورم بس فضل المودال مفتوح
+      setFormData({});
+      setEditingItem(null);
       toast.success(editingItem ? "Updated successfully!" : "Created successfully!");
+      
+      // تركيز على أول حقل بعد الحفظ
+      setTimeout(() => {
+        const firstInput = document.querySelector('input, select, textarea') as HTMLElement;
+        firstInput?.focus();
+      }, 100);
+    } else {
+      // إذا كان keepOpen = false، اقفل المودال
       setEditingItem(null);
       setFormData({});
       setOpen(false);
-    },
-    onError: (error: Error) => {
-      toast.error(error.message || "Error saving item");
+      toast.success(editingItem ? "Updated successfully!" : "Created successfully!");
     }
-  });
+  },
+  onError: (error: Error) => {
+    toast.error(error.message || "Error saving item");
+  }
+});
 
   const deleteItemMutation = useMutation<unknown, Error, { id: number; title: string }>({
     mutationFn: async ({ id }) => {
@@ -436,76 +454,78 @@ useEffect(() => {
     return typeof (e as any)?.preventDefault === 'function';
   };
 
-  const handleSave = async (e: SaveOptions): Promise<void> => {
-    let itemData: Record<string, string | number | File | null> = {};
-    let keepOpen = false;
-    let hasFiles = false;
+ const handleSave = async (e: SaveOptions): Promise<void> => {
+  let itemData: Record<string, string | number | File | null> = {};
+  let keepOpen = false;
+  let hasFiles = false;
 
-    if (isFormEvent(e)) {
-      e.preventDefault();
-      const formObj = new FormData(e.currentTarget);
-      itemData = { ...initialData };
-      formFields.forEach(field => {
-        const value = formObj.get(field.name);
-        if (value !== null && value !== undefined) {
-          if (value instanceof File) {
-            if (value.size > 0) {
-              itemData[field.name] = value;
-              hasFiles = true;
-            } else {
-              itemData[field.name] = null;
-            }
-          } else if (field.type === 'number') {
-            itemData[field.name] = Number(value);
-          } else if (field.type === 'checkbox') {
-            itemData[field.name] = (value === 'on' ? 1 : 0);
-          } else {
-            itemData[field.name] = value as string;
-          }
-        }
-      });
-      if (editingItem?.id) {
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (itemData as any).id = editingItem.id;
-      }
-    } else {
-      itemData = { ...formData, ...initialData };
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      keepOpen = (e as any).keepOpen || false;
-      if (editingItem?.id) {
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (itemData as any).id = editingItem.id;
-      }
-      hasFiles = Object.values(itemData).some(v => v instanceof File);
-    }
-
-    let dataToSend: Entity | FormData;
-    let isFormData = false;
-
-    if (hasFiles) {
-      const formDataObj = new FormData();
-      Object.entries(itemData).forEach(([key, value]) => {
+  if (isFormEvent(e)) {
+    e.preventDefault();
+    const formObj = new FormData(e.currentTarget);
+    itemData = { ...initialData };
+    formFields.forEach(field => {
+      const value = formObj.get(field.name);
+      if (value !== null && value !== undefined) {
         if (value instanceof File) {
-          formDataObj.append(key, value);
-        } else if (value !== null && value !== undefined && value !== '') {
-          formDataObj.append(key, String(value));
+          if (value.size > 0) {
+            itemData[field.name] = value;
+            hasFiles = true;
+          } else {
+            itemData[field.name] = null;
+          }
+        } else if (field.type === 'number') {
+          itemData[field.name] = Number(value);
+        } else if (field.type === 'checkbox') {
+          itemData[field.name] = (value === 'on' ? 1 : 0);
+        } else {
+          itemData[field.name] = value as string;
         }
-      });
-      dataToSend = formDataObj;
-      isFormData = true;
-    } else {
-      const clean: Record<string, unknown> = {};
-      Object.entries(itemData).forEach(([key, value]) => {
-        if (value !== null && value !== undefined && value !== '') {
-          clean[key] = value;
-        }
-      });
-      dataToSend = clean as Entity;
-      isFormData = false;
+      }
+    });
+    if (editingItem?.id) {
+      (itemData as any).id = editingItem.id;
     }
+  } else {
+    itemData = { ...formData, ...initialData };
+    keepOpen = (e as any).keepOpen || false; // ✅ خلي keepOpen من الـ options
+    if (editingItem?.id) {
+      (itemData as any).id = editingItem.id;
+    }
+    hasFiles = Object.values(itemData).some(v => v instanceof File);
+  }
 
-    saveItemMutation.mutate({ data: dataToSend, isFormData });
-  };
+  let dataToSend: Entity | FormData;
+  let isFormData = false;
+
+  if (hasFiles) {
+    const formDataObj = new FormData();
+    Object.entries(itemData).forEach(([key, value]) => {
+      if (value instanceof File) {
+        formDataObj.append(key, value);
+      } else if (value !== null && value !== undefined && value !== '') {
+        formDataObj.append(key, String(value));
+      }
+    });
+    dataToSend = formDataObj;
+    isFormData = true;
+  } else {
+    const clean: Record<string, unknown> = {};
+    Object.entries(itemData).forEach(([key, value]) => {
+      if (value !== null && value !== undefined && value !== '') {
+        clean[key] = value;
+      }
+    });
+    dataToSend = clean as Entity;
+    isFormData = false;
+  }
+
+  // ✅ أرسل keepOpen مع البيانات
+  saveItemMutation.mutate({ 
+    data: dataToSend, 
+    isFormData, 
+    keepOpen 
+  });
+};
 const handleRestore = async (id: number, title: string): Promise<void> => {
   if (!confirm(`Are you sure you want to restore "${title}"?`)) return;
 

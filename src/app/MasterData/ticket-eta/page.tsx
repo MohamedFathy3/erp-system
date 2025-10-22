@@ -14,35 +14,69 @@ export default function TicketETAPage() {
           label: 'Code', 
           sortable: false
         },
-        { 
-          key: 'name', 
-          label: 'Name', 
-          sortable: true,
-          render: (item) => (
-            <div className="flex flex-col">
-              <span className="font-medium text-gray-900">{item.name}</span>
-              <span className="text-sm text-gray-500 mt-1">
-                {item.type?.name || item.typeName}
-              </span>
-              <div className="mt-1">
-                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                  item.priority === 'Low' ? 'bg-green-100 text-green-800' :
-                  item.priority === 'Medium' ? 'bg-yellow-100 text-yellow-800' :
-                  item.priority === 'High' ? 'bg-orange-100 text-orange-800' :
-                  item.priority === 'Critical' ? 'bg-red-100 text-red-800' :
-                  'bg-gray-100 text-gray-800'
-                }`}>
-                  {item.priority}
-                </span>
-              </div>
-            </div>
-          )
-        },
-        { 
-          key: 'short_description', 
-          label: 'Description', 
-          sortable: false,
-        },
+       { 
+  key: 'name', 
+  label: 'Name', 
+  sortable: true,
+  render: (item) => (
+    <div className="flex items-center gap-3">
+      {/* الاسم */}
+      <span className="font-medium text-gray-900">{item.name}</span>
+      
+      {/* النوع */}
+      {item.type?.name || item.typeName ? (
+        <span className="text-sm text-gray-500 border-l border-gray-300 pl-3">
+          {item.type?.name || item.typeName}
+        </span>
+      ) : null}
+      
+      {/* الأولوية */}
+      {item.priority ? (
+        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+          item.priority === 'Low' ? 'bg-green-100 text-green-800' :
+          item.priority === 'Medium' ? 'bg-yellow-100 text-yellow-800' :
+          item.priority === 'High' ? 'bg-orange-100 text-orange-800' :
+          item.priority === 'Critical' ? 'bg-red-100 text-red-800' :
+          'bg-gray-100 text-gray-800'
+        }`}>
+          {item.priority}
+        </span>
+      ) : null}
+    </div>
+  )
+},
+       { 
+  key: 'short_description', 
+  label: 'Description', 
+  sortable: false,
+  render: (item) => (
+    <div className="text-left min-w-[250px] max-w-[500px]">
+      {item.short_description ? (
+        <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+          <p className="text-gray-700 text-sm leading-relaxed line-clamp-3"> {/* يظهر 3 أسطر فقط */}
+            {item.short_description}
+          </p>
+          {item.short_description.length > 100 && (
+            <button 
+              className="text-blue-600 text-xs mt-2 hover:text-blue-800"
+              onClick={(e) => {
+                e.stopPropagation();
+                // إظهار الوصف كامل في modal أو tooltip
+                alert(item.short_description);
+              }}
+            >
+              Show more
+            </button>
+          )}
+        </div>
+      ) : (
+        <div className="text-gray-400 text-sm italic bg-gray-50 rounded-lg p-3 text-center">
+          No description available
+        </div>
+      )}
+    </div>
+  )
+},
         { 
           key: 'time', 
           label: 'Time', 
