@@ -1449,27 +1449,51 @@ export const FormFieldComponent: React.FC<FormFieldProps> = ({
 
   // في FormFieldComponent - أضف هذا الشرط بعد الـ switch مباشرة
 if (field.type === "custom-time") {
-  const timeValue = value || '00:00';
-  const [hours = '00', minutes = '00'] = timeValue.split(':');
-  
+  const timeValue = value || '00:00:00';
+  const [rawHours = '00', minutes = '00', seconds = '00'] = timeValue.split(':');
+
+  // احسب الأيام من الساعات لو الساعات فوق 24
+  const totalHours = parseInt(rawHours);
+  const days = Math.floor(totalHours / 24);
+  const hours = (totalHours % 24).toString().padStart(2, '0');
+
+  const handleChange = (newDays: string, newHours: string, newMinutes: string, newSeconds: string) => {
+    const totalHours = (parseInt(newDays) * 24 + parseInt(newHours)).toString().padStart(2, '0');
+    const finalTime = `${totalHours}:${newMinutes}:${newSeconds}`;
+    onChange(finalTime);
+  };
+
   return (
     <div className="space-y-2">
       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
         {field.label}
         {field.required && <span className="text-red-500 ml-1">*</span>}
       </label>
-      
-      <div className="flex gap-3 items-center justify-center">
-        {/* الساعات */}
-        <div className="flex-1">
+
+      <div className="grid grid-cols-4 gap-3">
+        {/* Days */}
+        <div>
+          <label className="block text-xs text-gray-500 mb-1 text-center">Days</label>
+          <select
+            value={days.toString()}
+            onChange={(e) => handleChange(e.target.value, hours, minutes, seconds)}
+            className="w-full p-3 rounded-xl dark:bg-gray-800 dark:text-gray-100 border border-gray-300 dark:border-gray-600 text-center"
+          >
+            {Array.from({ length: 31 }, (_, i) => (
+              <option key={i} value={i.toString()}>
+                {i}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Hours */}
+        <div>
           <label className="block text-xs text-gray-500 mb-1 text-center">Hours</label>
           <select
             value={hours}
-            onChange={(e) => {
-              const newTime = `${e.target.value}:${minutes}`;
-              onChange(newTime);
-            }}
-            className="w-full p-3 rounded-xl dark:bg-gray-800 dark:text-gray-100 border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-center"
+            onChange={(e) => handleChange(days.toString(), e.target.value, minutes, seconds)}
+            className="w-full p-3 rounded-xl dark:bg-gray-800 dark:text-gray-100 border border-gray-300 dark:border-gray-600 text-center"
           >
             {Array.from({ length: 24 }, (_, i) => (
               <option key={i} value={i.toString().padStart(2, '0')}>
@@ -1478,21 +1502,14 @@ if (field.type === "custom-time") {
             ))}
           </select>
         </div>
-        
-        <div className="flex flex-col items-center justify-center pt-4">
-          <span className="text-xl font-bold text-gray-400">:</span>
-        </div>
-        
-        {/* الدقائق */}
-        <div className="flex-1">
+
+        {/* Minutes */}
+        <div>
           <label className="block text-xs text-gray-500 mb-1 text-center">Minutes</label>
           <select
             value={minutes}
-            onChange={(e) => {
-              const newTime = `${hours}:${e.target.value}`;
-              onChange(newTime);
-            }}
-            className="w-full p-3 rounded-xl dark:bg-gray-800 dark:text-gray-100 border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-center"
+            onChange={(e) => handleChange(days.toString(), hours, e.target.value, seconds)}
+            className="w-full p-3 rounded-xl dark:bg-gray-800 dark:text-gray-100 border border-gray-300 dark:border-gray-600 text-center"
           >
             {Array.from({ length: 60 }, (_, i) => (
               <option key={i} value={i.toString().padStart(2, '0')}>
@@ -1501,17 +1518,24 @@ if (field.type === "custom-time") {
             ))}
           </select>
         </div>
-      </div>
+
+        {/* Seconds */}
       
-      {/* عرض الوقت المختار */}
+      </div>
+
+      {/* عرض الوقت النهائي */}
       <div className="text-center mt-2">
         <span className="text-sm text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded-lg">
-          Selected: <span className="font-mono font-bold">{hours}:{minutes}</span>
+          Selected:{" "}
+          <span className="font-mono font-bold">
+            {String(days)} day(s), {hours}:{minutes}
+          </span>
         </span>
       </div>
     </div>
   );
 }
+
   // ✅ textarea
   if (field.type === "textarea") {
     return (
