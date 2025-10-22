@@ -22,7 +22,7 @@ export default function TicketETAPage() {
             <div className="flex flex-col">
               <span className="font-medium text-gray-900">{item.name}</span>
               <span className="text-sm text-gray-500 mt-1">
-                {item.type?.name || item.type_id}
+                {item.type?.name || item.typeName}
               </span>
               <div className="mt-1">
                 <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
