@@ -87,6 +87,7 @@ export interface GenericDataManagerProps {
   showFilter?: boolean;
   showBulkActions?: boolean;
   showDeletedToggle?: boolean;
+   initialPerPage?: number
   
 }
 
@@ -172,6 +173,7 @@ export interface GenericDataManagerState {
   setSelectedItems: React.Dispatch<React.SetStateAction<Set<number>>>;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
   setFormData: React.Dispatch<React.SetStateAction<Record<string, any>>>;
+  setPerPage: (perPage: number) => void;
 }
 
 export type SaveOptions = 
@@ -311,7 +313,9 @@ export interface DataTableProps {
   orderBy: string;
   orderByDirection: 'asc' | 'desc';
   pagination: PaginationMeta;
-  
+  onPerPageChange?: (perPage: number) => void;
+      perPage?: number; // إضافة
+
   onToggleSelectAll: () => void;
   onToggleSelectItem: (id: number) => void;
   onSort: (column: ColumnDefinition) => void;

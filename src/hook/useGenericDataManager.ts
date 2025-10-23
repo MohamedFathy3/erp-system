@@ -1,5 +1,5 @@
 // hooks/useGenericDataManager.ts
-import { useState, FormEvent, useCallback,useEffect } from "react";
+import { useState, FormEvent, useCallback, useEffect } from "react";
 import { useQuery, useQueries, useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { apiFetch } from "@/lib/api";
@@ -14,8 +14,6 @@ import {
   SaveOptions,
 } from "@/types/generic-data-manager";
 
-const PER_PAGE = 10;
-
 interface AdditionalQueryResult {
   data?: unknown[];
   isLoading: boolean;
@@ -27,7 +25,8 @@ export function useGenericDataManager({
   additionalData = [],
   formFields = [],
   initialData = {},
-  defaultFilters = {}
+  defaultFilters = {},
+  initialPerPage = 5
 }: GenericDataManagerProps): GenericDataManagerState & GenericDataManagerHandlers & {
   data: Entity[];
   pagination: PaginationMeta;
@@ -40,6 +39,8 @@ export function useGenericDataManager({
   bulkRestoreMutation: UseMutationResult<unknown, Error, number[]>;
   handleClearSearch: () => void;
   handleDeleteAll: () => void;
+  perPage: number;
+  setPerPage: (perPage: number) => void;
 } {
   const queryClient = useQueryClient();
 
@@ -54,8 +55,15 @@ export function useGenericDataManager({
   const [orderByDirection, setOrderByDirection] = useState<'asc' | 'desc'>('asc');
   const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set());
   const [formData, setFormData] = useState<Record<string, string | number>>({});
+  const [perPage, setPerPageState] = useState<number>(initialPerPage);
 
-  // Additional queries section (unchanged)
+  // دالة لتغيير عدد العناصر المعروضة
+  const handlePerPageChange = (newPerPage: number) => {
+    setPerPageState(newPerPage);
+    setCurrentPage(1); // الرجوع للصفحة الأولى عند تغيير عدد العناصر
+  };
+
+  // Additional queries section
   const additionalQueriesArray = useQueries({
     queries: additionalData.map(data => ({
       queryKey: [data.key, data.filters, 'static'],
@@ -79,17 +87,17 @@ export function useGenericDataManager({
           } else {
             json = await apiFetch(data.endpoint);
           }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           if (json && Array.isArray((json as any).data)) {
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             return (json as any).data;
           }
           if (Array.isArray(json)) {
             return json;
           }
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           if ((json as any).items && Array.isArray((json as any).items)) {
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             return (json as any).items;
           }
           return [];
@@ -102,6 +110,7 @@ export function useGenericDataManager({
       cacheTime: 60 * 60 * 1000,
     }))
   });
+
   const additionalQueries = additionalData.reduce((acc, data, idx) => {
     acc[data.key] = additionalQueriesArray[idx];
     return acc;
@@ -109,13 +118,13 @@ export function useGenericDataManager({
 
   // Main data query (pagination + server-side filters)
   const { data: itemsData, isLoading, error } = useQuery<ApiResponse>({
-    queryKey: [endpoint, currentPage, showingDeleted, orderBy, orderByDirection, filters, defaultFilters],
+    queryKey: [endpoint, currentPage, showingDeleted, orderBy, orderByDirection, filters, defaultFilters, perPage],
     queryFn: async (): Promise<ApiResponse> => {
       const payload: FilterPayload = {
         filters: { ...defaultFilters, ...filters },
         orderBy,
         orderByDirection,
-        perPage: PER_PAGE,
+        perPage: perPage,
         page: currentPage,
         paginate: true,
         ...(showingDeleted && { deleted: true }),
@@ -126,17 +135,18 @@ export function useGenericDataManager({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
+
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       if ((responseData as any).data && Array.isArray((responseData as any).data)) {
         return {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           data: (responseData as any).data,
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           meta: (responseData as any).meta || {
             current_page: 1,
             last_page: 1,
-            per_page: PER_PAGE,
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            per_page: perPage,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             total: (responseData as any).data.length,
             links: []
           }
@@ -147,22 +157,22 @@ export function useGenericDataManager({
           meta: {
             current_page: 1,
             last_page: 1,
-            per_page: PER_PAGE,
+            per_page: perPage,
             total: responseData.length,
             links: []
           }
         };
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } else if ((responseData as any).items && Array.isArray((responseData as any).items)) {
         return {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           data: (responseData as any).items,
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           meta: (responseData as any).meta || (responseData as any).pagination || {
             current_page: 1,
             last_page: 1,
-            per_page: PER_PAGE,
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            per_page: perPage,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             total: (responseData as any).items.length,
             links: []
           }
@@ -174,7 +184,7 @@ export function useGenericDataManager({
           meta: {
             current_page: 1,
             last_page: 1,
-            per_page: PER_PAGE,
+            per_page: perPage,
             total: 0,
             links: []
           }
@@ -189,46 +199,42 @@ export function useGenericDataManager({
   const pagination: PaginationMeta = itemsData?.meta || {
     current_page: 1,
     last_page: 1,
-    per_page: PER_PAGE,
+    per_page: perPage,
     total: 0,
     links: []
-    
   };
 
-  // في useGenericDataManager.ts - قبل الـ return
-const handleForceDeleteSelected = async (): Promise<void> => {
-  if (selectedItems.size === 0) return;
-  
-  const selectedIds = Array.from(selectedItems);
-  const itemNames = data
-    .filter(item => selectedItems.has(item.id))
-    .map(item => item.name || item.title || `Item ${item.id}`)
-    .join(', ');
+  const handleForceDeleteSelected = async (): Promise<void> => {
+    if (selectedItems.size === 0) return;
+    
+    const selectedIds = Array.from(selectedItems);
+    const itemNames = data
+      .filter(item => selectedItems.has(item.id))
+      .map(item => item.name || item.title || `Item ${item.id}`)
+      .join(', ');
 
-  const message = `⚠️ Are you sure you want to PERMANENTLY delete ${selectedIds.length} selected item(s)?\n\n${itemNames}\n\nThis action cannot be undone!`;
+    const message = `⚠️ Are you sure you want to PERMANENTLY delete ${selectedIds.length} selected item(s)?\n\n${itemNames}\n\nThis action cannot be undone!`;
 
-  if (!confirm(message)) return;
+    if (!confirm(message)) return;
 
-  try {
-    // إرسال طلب واحد لحذف كل العناصر المحددة
-    await apiFetch(`/${endpoint}/forceDelete`, {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ items: selectedIds }), // إرسال array كاملة
-    });
+    try {
+      await apiFetch(`/${endpoint}/forceDelete`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items: selectedIds }),
+      });
 
-    queryClient.invalidateQueries({ queryKey: [endpoint] });
-    setSelectedItems(new Set()); // تنظيف التحديد بعد الحذف
-    toast.success(`All ${selectedIds.length} items permanently deleted!`);
-  } catch (error) {
-    console.error("Error force deleting selected items:", error);
-    toast.error("Error permanently deleting items");
-  }
-};
-  // Handlers
+      queryClient.invalidateQueries({ queryKey: [endpoint] });
+      setSelectedItems(new Set());
+      toast.success(`All ${selectedIds.length} items permanently deleted!`);
+    } catch (error) {
+      console.error("Error force deleting selected items:", error);
+      toast.error("Error permanently deleting items");
+    }
+  };
+
   const handleFilter = (): void => {
     setCurrentPage(1);
-    // optionally toggle showFilter here or keep it open
   };
 
   const handleResetFilters = (): void => {
@@ -256,29 +262,20 @@ const handleForceDeleteSelected = async (): Promise<void> => {
     setCurrentPage(1);
   };
 
-  // في GenericDataManager.tsx
-const handleToggleDeleted = (): void => {
-  console.log('🎯 TOGGLE DELETED - Clearing selections');
-  
-  // تنظيف فوري
-  setSelectedItems(new Set());
-  
-  // تبديل الحالة
-  setShowingDeleted(prev => !prev);
-  
-  // الرجوع للصفحة الأولى
-  setCurrentPage(1);
-  
-  toast.success("View toggled successfully!");
-};
-
-// وأضف الـ useEffect كنسخة احتياطية
-useEffect(() => {
-  if (selectedItems.size > 0) {
-    console.log('🔄 AUTO-CLEAR on view change');
+  const handleToggleDeleted = (): void => {
+    console.log('🎯 TOGGLE DELETED - Clearing selections');
     setSelectedItems(new Set());
-  }
-}, [showingDeleted]);
+    setShowingDeleted(prev => !prev);
+    setCurrentPage(1);
+    toast.success("View toggled successfully!");
+  };
+
+  useEffect(() => {
+    if (selectedItems.size > 0) {
+      console.log('🔄 AUTO-CLEAR on view change');
+      setSelectedItems(new Set());
+    }
+  }, [showingDeleted]);
 
   const handleDeleteAll = (): void => {
     if (data.length === 0) return;
@@ -308,78 +305,73 @@ useEffect(() => {
         });
     } else {
       // use bulk delete mutation
-      // Note: could reuse bulkDeleteMutation
-      alert("Bulk delete logic not shown here");
+      bulkDeleteMutation.mutate(allIds);
     }
   };
 
-  // Save / Delete / Bulk logic (unchanged)
- const saveItemMutation = useMutation<unknown, Error, { 
-  data: Entity | FormData; 
-  isFormData?: boolean;
-  keepOpen?: boolean; // ✅ أضف هذا
-}>({
-  mutationFn: async ({ data: sendData, isFormData = false }) => {
-    // ... الكود الحالي بدون تغيير
-    if (isFormData) {
-      const formDataObj = sendData as FormData;
-      if (editingItem?.id) {
-        formDataObj.append('_method', 'PUT');
-        return apiFetch(`/${endpoint}/${editingItem.id}`, {
-          method: "POST",
-          body: formDataObj,
-        });
+  // Save Mutation
+  const saveItemMutation = useMutation<unknown, Error, { 
+    data: Entity | FormData; 
+    isFormData?: boolean;
+    keepOpen?: boolean;
+  }>({
+    mutationFn: async ({ data: sendData, isFormData = false }) => {
+      if (isFormData) {
+        const formDataObj = sendData as FormData;
+        if (editingItem?.id) {
+          formDataObj.append('_method', 'PUT');
+          return apiFetch(`/${endpoint}/${editingItem.id}`, {
+            method: "POST",
+            body: formDataObj,
+          });
+        } else {
+          return apiFetch(`/${endpoint}`, {
+            method: "POST",
+            body: formDataObj,
+          });
+        }
       } else {
-        return apiFetch(`/${endpoint}`, {
-          method: "POST",
-          body: formDataObj,
-        });
+        const clean = sendData as Entity;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        if ((clean as any).id) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          return apiFetch(`/${endpoint}/${(clean as any).id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(clean),
+          });
+        } else {
+          return apiFetch(`/${endpoint}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ...initialData, ...clean }),
+          });
+        }
       }
-    } else {
-      const clean = sendData as Entity;
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      if ((clean as any).id) {
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return apiFetch(`/${endpoint}/${(clean as any).id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(clean),
-        });
-      } else {
-        return apiFetch(`/${endpoint}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...initialData, ...clean }),
-        });
-      }
-    }
-  },
-  onSuccess: (data, variables) => { // ✅ أضف variables هنا
-    queryClient.invalidateQueries({ queryKey: [endpoint] });
-    
-    if (variables.keepOpen) {
-      // إذا كان keepOpen = true، نظف الفورم بس فضل المودال مفتوح
-      setFormData({});
-      setEditingItem(null);
-      toast.success(editingItem ? "Updated successfully!" : "Created successfully!");
+    },
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: [endpoint] });
       
-      // تركيز على أول حقل بعد الحفظ
-      setTimeout(() => {
-        const firstInput = document.querySelector('input, select, textarea') as HTMLElement;
-        firstInput?.focus();
-      }, 100);
-    } else {
-      // إذا كان keepOpen = false، اقفل المودال
-      setEditingItem(null);
-      setFormData({});
-      setOpen(false);
-      toast.success(editingItem ? "Updated successfully!" : "Created successfully!");
+      if (variables.keepOpen) {
+        setFormData({});
+        setEditingItem(null);
+        toast.success(editingItem ? "Updated successfully!" : "Created successfully!");
+        
+        setTimeout(() => {
+          const firstInput = document.querySelector('input, select, textarea') as HTMLElement;
+          firstInput?.focus();
+        }, 100);
+      } else {
+        setEditingItem(null);
+        setFormData({});
+        setOpen(false);
+        toast.success(editingItem ? "Updated successfully!" : "Created successfully!");
+      }
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Error saving item");
     }
-  },
-  onError: (error: Error) => {
-    toast.error(error.message || "Error saving item");
-  }
-});
+  });
 
   const deleteItemMutation = useMutation<unknown, Error, { id: number; title: string }>({
     mutationFn: async ({ id }) => {
@@ -452,131 +444,99 @@ useEffect(() => {
     }
   };
 
-const isFormEvent = (e: SaveOptions): e is FormEvent<HTMLFormElement> => {
-  const event = e as FormEvent<HTMLFormElement>;
-  return !!event?.preventDefault && typeof event.preventDefault === 'function';
-};
+  const isFormEvent = (e: SaveOptions): e is FormEvent<HTMLFormElement> => {
+    const event = e as FormEvent<HTMLFormElement>;
+    return !!event?.preventDefault && typeof event.preventDefault === 'function';
+  };
 
-const handleSave = async (e: SaveOptions | React.FormEvent): Promise<void> => {
+  const handleSave = async (e: SaveOptions): Promise<void> => {
+    let itemData: Record<string, string | number | File | null> = {};
+    let keepOpen = false;
+    let hasFiles = false;
 
-  let itemData: Record<string, string | number | File | null> = {};
-  let keepOpen = false;
-  let hasFiles = false;
-
-  // 👇 استخدم نفس data من الـ state مهما كانت الحالة (Save أو Save & New)
-if (isFormEvent(e)) {
-    e.preventDefault();
-    keepOpen = false;
-  } else {
-    keepOpen = (e as { keepOpen?: boolean }).keepOpen || false;
-  }
-
-  // 👇 خُد البيانات من formData مباشرة بدل FormData(event)
-  itemData = { ...formData, ...initialData };
-
-  if (editingItem?.id) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (itemData as any).id = editingItem.id;
-  }
-
-  hasFiles = Object.values(itemData).some(v => v instanceof File);
-
-  console.log("🧩 [Stage 1] itemData built:", itemData);
-  console.log("📦 [Stage 1] hasFiles:", hasFiles, "| keepOpen:", keepOpen);
-
-  let dataToSend: Entity | FormData;
-  let isFormData = false;
-
-  if (hasFiles) {
-    const formDataObj = new FormData();
-    Object.entries(itemData).forEach(([key, value]) => {
-      if (value instanceof File) {
-        formDataObj.append(key, value);
-      } else if (value !== null && value !== undefined && value !== '') {
-        formDataObj.append(key, String(value));
-      }
-    });
-    dataToSend = formDataObj;
-    isFormData = true;
-  } else {
-    const clean: Record<string, unknown> = {};
-    Object.entries(itemData).forEach(([key, value]) => {
-      if (value !== null && value !== undefined && value !== '') {
-        clean[key] = value;
-      }
-    });
-    dataToSend = clean as Entity;
-  }
-
-  console.log("🚀 [Stage 2] Prepared data to send:", dataToSend);
-  console.log("📤 [Stage 2] isFormData:", isFormData);
-
-  if (!isFormData) {
-    console.log("🧾 [JSON Data]:", JSON.stringify(dataToSend, null, 2));
-  } else {
-    console.log("📎 [FormData Entries]:");
-    for (const [key, val] of (dataToSend as FormData).entries()) {
-      console.log(`   ${key}:`, val);
+    if (isFormEvent(e)) {
+      e.preventDefault();
+      keepOpen = false;
+    } else {
+      keepOpen = (e as { keepOpen?: boolean }).keepOpen || false;
     }
-  }
 
-  console.log("🔁 [Stage 3] Sending data to API via saveItemMutation...");
-  saveItemMutation.mutate({ 
-    data: dataToSend, 
-    isFormData, 
-    keepOpen 
-  }, {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    onSuccess: (res: any) => {
-      console.log("✅ [SUCCESS] API response:", res);
-    },
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    onError: (err: any) => {
-      console.error("❌ [ERROR] API returned an error:", err);
+    itemData = { ...formData, ...initialData };
+
+    if (editingItem?.id) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (itemData as any).id = editingItem.id;
     }
-  });
-};
 
+    hasFiles = Object.values(itemData).some(v => v instanceof File);
 
+    let dataToSend: Entity | FormData;
+    let isFormData = false;
 
-const handleRestore = async (id: number, title: string): Promise<void> => {
-  if (!confirm(`Are you sure you want to restore "${title}"?`)) return;
+    if (hasFiles) {
+      const formDataObj = new FormData();
+      Object.entries(itemData).forEach(([key, value]) => {
+        if (value instanceof File) {
+          formDataObj.append(key, value);
+        } else if (value !== null && value !== undefined && value !== '') {
+          formDataObj.append(key, String(value));
+        }
+      });
+      dataToSend = formDataObj;
+      isFormData = true;
+    } else {
+      const clean: Record<string, unknown> = {};
+      Object.entries(itemData).forEach(([key, value]) => {
+        if (value !== null && value !== undefined && value !== '') {
+          clean[key] = value;
+        }
+      });
+      dataToSend = clean as Entity;
+    }
 
-  try {
-    await apiFetch(`/${endpoint}/restore`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ items: [id] }),
+    saveItemMutation.mutate({ 
+      data: dataToSend, 
+      isFormData, 
+      keepOpen 
     });
-    queryClient.invalidateQueries({ queryKey: [endpoint] });
-    toast.success(`"${title}" has been successfully restored!`);
-  } catch (error) {
-    console.error(error);
-    toast.error("An error occurred while restoring the item.");
-  }
-};
+  };
 
+  const handleRestore = async (id: number, title: string): Promise<void> => {
+    if (!confirm(`Are you sure you want to restore "${title}"?`)) return;
 
-const handleForceDelete = async (id: number, title: string): Promise<void> => {
-  if (!confirm(`⚠️ Are you sure you want to permanently delete "${title}"? This action cannot be undone!`)) return;
+    try {
+      await apiFetch(`/${endpoint}/restore`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items: [id] }),
+      });
+      queryClient.invalidateQueries({ queryKey: [endpoint] });
+      toast.success(`"${title}" has been successfully restored!`);
+    } catch (error) {
+      console.error(error);
+      toast.error("An error occurred while restoring the item.");
+    }
+  };
 
-  try {
-    await apiFetch(`/${endpoint}/forceDelete`, {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ items: [id] }),
-    });
-    queryClient.invalidateQueries({ queryKey: [endpoint] });
-    toast.success(`"${title}" has been permanently deleted!`);
-  } catch (error) {
-    console.error(error);
-    toast.error("An error occurred while permanently deleting the item.");
-  }
-};
+  const handleForceDelete = async (id: number, title: string): Promise<void> => {
+    if (!confirm(`⚠️ Are you sure you want to permanently delete "${title}"? This action cannot be undone!`)) return;
 
+    try {
+      await apiFetch(`/${endpoint}/forceDelete`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items: [id] }),
+      });
+      queryClient.invalidateQueries({ queryKey: [endpoint] });
+      toast.success(`"${title}" has been permanently deleted!`);
+    } catch (error) {
+      console.error(error);
+      toast.error("An error occurred while permanently deleting the item.");
+    }
+  };
 
   return {
-    handleToggleDeleted,
+    // State
     search,
     setSearch,
     open,
@@ -599,13 +559,18 @@ const handleForceDelete = async (id: number, title: string): Promise<void> => {
     setSelectedItems,
     formData,
     setFormData,
+    perPage,
+    setPerPage: handlePerPageChange,
 
+    // Data
     data,
     pagination,
     isLoading,
     error,
     additionalQueries,
-handleForceDeleteSelected,
+
+    // Handlers
+    handleForceDeleteSelected,
     handleSave,
     handleDelete: (id: number, title: string) => deleteItemMutation.mutate({ id, title }),
     handleBulkDelete: () => bulkDeleteMutation.mutate(Array.from(selectedItems)),
@@ -637,6 +602,8 @@ handleForceDeleteSelected,
     handleRestore,
     handleForceDelete,
     handleToggleActive,
+
+    // Mutations
     saveItemMutation,
     deleteItemMutation,
     bulkDeleteMutation,

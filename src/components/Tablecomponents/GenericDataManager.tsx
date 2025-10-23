@@ -247,7 +247,7 @@ export default function GenericDataManager(props: GenericDataManagerProps): Reac
     pagination,
     isLoading,
     additionalQueries,
-    
+    perPage, setPerPage,
     // Actions
     handleSave,
     handleDelete,
@@ -284,7 +284,8 @@ export default function GenericDataManager(props: GenericDataManagerProps): Reac
     showActiveToggle = true,
     showSearch = true,
     showBulkActions = true,
-    showDeletedToggle = true
+    showDeletedToggle = true,
+ 
   } = props;
 
   // استخدام pagination آمن مع قيمة افتراضية
@@ -470,6 +471,8 @@ export default function GenericDataManager(props: GenericDataManagerProps): Reac
               showEditButton={showEditButton}
               showDeleteButton={showDeleteButton}
               showActiveToggle={showActiveToggle}
+              perPage={perPage} // تمرير
+            onPerPageChange={setPerPage} 
             />
           </div>
 
@@ -479,7 +482,7 @@ export default function GenericDataManager(props: GenericDataManagerProps): Reac
               currentPage={safePagination.current_page}
               lastPage={safePagination.last_page}
               total={safePagination.total}
-              perPage={safePagination.per_page}
+              perPage={perPage}
               onPageChange={setCurrentPage}
             />
           </div>
@@ -713,6 +716,8 @@ const DataTable: React.FC<DataTableProps & {
   showEditButton?: boolean;
   showDeleteButton?: boolean;
   showActiveToggle?: boolean;
+  prePage?: number;
+  onPerPageChange?: (perPage: number) => void;
 }> = ({
   title, data, columns, selectedItems, allSelected, someSelected,
   orderBy, orderByDirection, pagination, onToggleSelectAll, onToggleSelectItem,
@@ -721,7 +726,9 @@ const DataTable: React.FC<DataTableProps & {
   compactView = false,  
   showEditButton = true,
   showDeleteButton = true,
-  showActiveToggle = true
+  showActiveToggle = true,
+   perPage = 5,
+  onPerPageChange,
 }) => {
   
   // تحديد إذا كان هناك أي عمود صورة
@@ -861,13 +868,62 @@ const DataTable: React.FC<DataTableProps & {
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
         
         {/* Table Header */}
-        <div className={`${
+       <div className={`${
           showingDeleted
           ? "bg-red-100 dark:bg-red-800 text-red-400 dark:text-red-100 border-b border-red-200 dark:border-red-700"
           : "bg-gradient-to-r from-green-200 to-green-300 dark:from-green-900/30 dark:to-green-800/30 text-black dark:text-green-200 border-b border-green-100 dark:border-green-900/50"
         } font-semibold text-lg px-6 py-4`}>
           {title} Management {showingDeleted && "(Deleted Items)"}
         </div>
+
+        {/* Table Info Bar */}
+        <div className={`p-4 flex items-center justify-between ${
+          showingDeleted ? "bg-red-50 dark:bg-red-900/20" : "bg-white dark:bg-gray-800"
+        }`}>
+          <div className="flex items-center gap-4">
+            <span className={`text-sm ${
+              showingDeleted ? "text-red-600 dark:text-red-300" : "text-gray-600 dark:text-gray-400"
+            }`}>
+              Showing {data.length} of {pagination.total} items
+              {showingDeleted && (
+                <span className="text-red-500 ml-1">(Deleted)</span>
+              )}
+            </span>
+            
+            {/* Dropdown لتحديد عدد العناصر المعروضة - تم التحديث */}
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-600 dark:text-gray-400">Show:</span>
+              <select 
+                value={perPage}
+                onChange={(e) => onPerPageChange?.(Number(e.target.value))}
+                className="text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-1 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              >
+                <option value="5">5</option>
+                <option value="10">10</option>
+                <option value="20">20</option>
+                <option value="30">30</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+              </select>
+              <span className="text-sm text-gray-600 dark:text-gray-400">entries</span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className={`text-sm ${
+              showingDeleted ? "text-red-600 dark:text-red-300" : "text-gray-600 dark:text-gray-400"
+            }`}>
+              Sorted by:
+            </span>
+            <span className={`text-sm font-medium ${
+              showingDeleted ? "text-red-700 dark:text-red-400" : "text-indigo-600 dark:text-indigo-400"
+            }`}>
+              {orderBy} ({orderByDirection})
+            </span>
+          </div>
+        </div>
+
+        
 
         {/* Table Container مع ارتفاع ثابت */}
         <div className="overflow-hidden">
