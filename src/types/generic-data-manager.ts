@@ -174,13 +174,14 @@ export interface GenericDataManagerState {
   setFormData: React.Dispatch<React.SetStateAction<Record<string, any>>>;
 }
 
-export type SaveOptions = FormEvent<HTMLFormElement> | { keepOpen?: boolean };
+export type SaveOptions = 
+  | { keepOpen?: boolean }
+  | FormEvent;
 
-// عدل تعريف الـ saveItemMutation
-export interface SaveMutationVariables {
-  data: Entity | FormData;
-  isFormData?: boolean;
-}
+// دالة مساعدة محسنة للتحقق من النوع
+export const isFormEvent = (e: SaveOptions): e is FormEvent => {
+  return !!(e as FormEvent)?.preventDefault;
+};
 
 export interface GenericDataManagerHandlers {
   handleSave: (e: SaveOptions) => Promise<void>;

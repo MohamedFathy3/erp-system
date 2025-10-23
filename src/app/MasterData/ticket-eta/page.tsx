@@ -1,7 +1,6 @@
 // app/ticket-eta/page.tsx
 'use client';
 import GenericDataManager from "@/components/Tablecomponents/GenericDataManager";
-import { smartTranslate } from '@/utils/translations';
 
 export default function TicketETAPage() {
   return (

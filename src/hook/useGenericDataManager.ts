@@ -192,6 +192,7 @@ export function useGenericDataManager({
     per_page: PER_PAGE,
     total: 0,
     links: []
+    
   };
 
   // في useGenericDataManager.ts - قبل الـ return
@@ -451,53 +452,37 @@ useEffect(() => {
     }
   };
 
-  const isFormEvent = (e: SaveOptions | FormEvent<HTMLFormElement>): e is FormEvent<HTMLFormElement> => {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return typeof (e as any)?.preventDefault === 'function';
-  };
+const isFormEvent = (e: SaveOptions): e is FormEvent<HTMLFormElement> => {
+  const event = e as FormEvent<HTMLFormElement>;
+  return !!event?.preventDefault && typeof event.preventDefault === 'function';
+};
 
- const handleSave = async (e: SaveOptions): Promise<void> => {
+const handleSave = async (e: SaveOptions | React.FormEvent): Promise<void> => {
+
   let itemData: Record<string, string | number | File | null> = {};
   let keepOpen = false;
   let hasFiles = false;
 
-  if (isFormEvent(e)) {
+  // 👇 استخدم نفس data من الـ state مهما كانت الحالة (Save أو Save & New)
+if (isFormEvent(e)) {
     e.preventDefault();
-    const formObj = new FormData(e.currentTarget);
-    itemData = { ...initialData };
-    formFields.forEach(field => {
-      const value = formObj.get(field.name);
-      if (value !== null && value !== undefined) {
-        if (value instanceof File) {
-          if (value.size > 0) {
-            itemData[field.name] = value;
-            hasFiles = true;
-          } else {
-            itemData[field.name] = null;
-          }
-        } else if (field.type === 'number') {
-          itemData[field.name] = Number(value);
-        } else if (field.type === 'checkbox') {
-          itemData[field.name] = (value === 'on' ? 1 : 0);
-        } else {
-          itemData[field.name] = value as string;
-        }
-      }
-    });
-    if (editingItem?.id) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (itemData as any).id = editingItem.id;
-    }
+    keepOpen = false;
   } else {
-    itemData = { ...formData, ...initialData };
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    keepOpen = (e as any).keepOpen || false; // ✅ خلي keepOpen من الـ options
-    if (editingItem?.id) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (itemData as any).id = editingItem.id;
-    }
-    hasFiles = Object.values(itemData).some(v => v instanceof File);
+    keepOpen = (e as { keepOpen?: boolean }).keepOpen || false;
   }
+
+  // 👇 خُد البيانات من formData مباشرة بدل FormData(event)
+  itemData = { ...formData, ...initialData };
+
+  if (editingItem?.id) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (itemData as any).id = editingItem.id;
+  }
+
+  hasFiles = Object.values(itemData).some(v => v instanceof File);
+
+  console.log("🧩 [Stage 1] itemData built:", itemData);
+  console.log("📦 [Stage 1] hasFiles:", hasFiles, "| keepOpen:", keepOpen);
 
   let dataToSend: Entity | FormData;
   let isFormData = false;
@@ -521,16 +506,39 @@ useEffect(() => {
       }
     });
     dataToSend = clean as Entity;
-    isFormData = false;
   }
 
-  // ✅ أرسل keepOpen مع البيانات
+  console.log("🚀 [Stage 2] Prepared data to send:", dataToSend);
+  console.log("📤 [Stage 2] isFormData:", isFormData);
+
+  if (!isFormData) {
+    console.log("🧾 [JSON Data]:", JSON.stringify(dataToSend, null, 2));
+  } else {
+    console.log("📎 [FormData Entries]:");
+    for (const [key, val] of (dataToSend as FormData).entries()) {
+      console.log(`   ${key}:`, val);
+    }
+  }
+
+  console.log("🔁 [Stage 3] Sending data to API via saveItemMutation...");
   saveItemMutation.mutate({ 
     data: dataToSend, 
     isFormData, 
     keepOpen 
+  }, {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    onSuccess: (res: any) => {
+      console.log("✅ [SUCCESS] API response:", res);
+    },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    onError: (err: any) => {
+      console.error("❌ [ERROR] API returned an error:", err);
+    }
   });
 };
+
+
+
 const handleRestore = async (id: number, title: string): Promise<void> => {
   if (!confirm(`Are you sure you want to restore "${title}"?`)) return;
 
