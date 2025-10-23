@@ -361,10 +361,6 @@ export default function GenericDataManager(props: GenericDataManagerProps): Reac
     setFormData(newFormData);
   };
 
-
-
-
-
   const handleCloseModal = (): void => {
     setOpen(false);
     setEditingItem(null);
@@ -396,21 +392,21 @@ export default function GenericDataManager(props: GenericDataManagerProps): Reac
 
   return (
     <MainLayout>
-<div className="space-y-6 p-6 pb-16 border-black rounded-lg h-[1125px]">
+      <div className="space-y-6 p-6 pb-16 border-black rounded-lg min-h-screen">
         {/* Main Section - كل المكونات في سكشن واحد */}
      
           
           {/* Header داخل السكشن */}
           <Header 
             title={title}
-              dataLength={data.length} 
+            dataLength={data.length} 
             onDeleteAll={handleDeleteAll} 
             currentPage={currentPage}
             pagination={safePagination}
             selectedItems={selectedItems}
             showingDeleted={showingDeleted}
             showFilter={showFilter}
-  onForceDeleteSelected={handleForceDeleteSelected}
+            onForceDeleteSelected={handleForceDeleteSelected}
             searchTerm={filters.search}
             onBulkAction={showingDeleted ? handleBulkRestore : handleBulkDelete}
             onToggleFilter={handleToggleFilter}
@@ -420,34 +416,32 @@ export default function GenericDataManager(props: GenericDataManagerProps): Reac
             showEditButton={showEditButton}
             showDeleteButton={showDeleteButton}
             showActiveToggle={showActiveToggle}
-                  showAddButton={showAddButton}
+            showAddButton={showAddButton}
             showBulkActions={showBulkActions}
             showDeletedToggle={showDeletedToggle}
           />
 
           {/* Search & Filter داخل السكشن */}
-            {(showSearch || showFilter) && (
-          <div className="mt-6">
-            
-            <FilterSearch
-              search={search}
-              onSearchChange={setSearch}
-              onSearch={handleSearch}
-              filters={filters}
-              onFiltersChange={handleFiltersChange}
-              orderBy={orderBy}
-              onOrderByChange={handleOrderByChange}
-              orderByDirection={orderByDirection}
-              onOrderByDirectionChange={handleOrderByDirectionChange}
-              onApplyFilter={handleFilter}
-              onResetFilters={handleResetFilters}
-              showFilter={showFilter}
-              onToggleFilter={handleToggleFilter}
-              availableFilters={finalAvailableFilters}
-           
-            />
-          </div>
- )}
+          {(showSearch || showFilter) && (
+            <div className="mt-6">
+              <FilterSearch
+                search={search}
+                onSearchChange={setSearch}
+                onSearch={handleSearch}
+                filters={filters}
+                onFiltersChange={handleFiltersChange}
+                orderBy={orderBy}
+                onOrderByChange={handleOrderByChange}
+                orderByDirection={orderByDirection}
+                onOrderByDirectionChange={handleOrderByDirectionChange}
+                onApplyFilter={handleFilter}
+                onResetFilters={handleResetFilters}
+                showFilter={showFilter}
+                onToggleFilter={handleToggleFilter}
+                availableFilters={finalAvailableFilters}
+              />
+            </div>
+          )}
 
           {/* Table داخل السكشن */}
           <div className="mt-6">
@@ -473,7 +467,7 @@ export default function GenericDataManager(props: GenericDataManagerProps): Reac
               onRestore={handleRestore} 
               onForceDelete={handleForceDelete}
               compactView={shouldUseCompactView}
-                showEditButton={showEditButton}
+              showEditButton={showEditButton}
               showDeleteButton={showDeleteButton}
               showActiveToggle={showActiveToggle}
             />
@@ -513,9 +507,8 @@ export default function GenericDataManager(props: GenericDataManagerProps): Reac
 
 // Sub-components
 const Header: React.FC<ExtendedHeaderProps & { 
- onDeleteAll?: () => void; 
+  onDeleteAll?: () => void; 
   dataLength: number;
-  
   showAddButton?: boolean;
   showEditButton?: boolean;
   showDeleteButton?: boolean;
@@ -532,15 +525,11 @@ const Header: React.FC<ExtendedHeaderProps & {
   showActiveToggle = true,
   showBulkActions = true,
   showDeletedToggle = true,
-    onForceDeleteSelected,
-
+  onForceDeleteSelected,
 }) => {
   const startItem = ((currentPage - 1) * pagination.per_page) + 1;
   const endItem = Math.min(currentPage * pagination.per_page, pagination.total);
   const totalItems = pagination.total;
-
-  // إظهار زر Delete All فقط إذا تم تحديد عناصر
-  const shouldShowDeleteAll = selectedItems.size > 0 && onDeleteAll && showDeleteButton && showBulkActions;
 
   return (
     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -558,9 +547,6 @@ const Header: React.FC<ExtendedHeaderProps & {
       </div>
      
       <div className="flex gap-3 flex-wrap">
-        {/* Delete All Button - يظهر فقط لما يتم تحديد عناصر */}
-  
-
         {/* Bulk Action Button - يظهر فقط لما يتم تحديد عناصر */}
         {selectedItems.size > 0 && showDeleteButton && showBulkActions && (
           <Button
@@ -616,676 +602,538 @@ const Header: React.FC<ExtendedHeaderProps & {
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
           </Button>
         )}
-{showingDeleted && selectedItems.size > 0 && (
-  <Button
-  style={{color:"#b91c1c"}}
-    variant="destructive"
-onClick={onForceDeleteSelected}
-    className={`
-    bg-gradient-to-r from-red-50 to-red-100 dark:bg-red-900/30 p-2 rounded-lg group-hover:scale-110 transition-transform duration-200
-    `}
-  >
-    <span className="relative z-10 flex items-center gap-3">
-      <i className="fas fa-fire text-red-600 group-hover:scale-110 transition-transform duration-200"></i>
-      Force Delete Selected ({selectedItems.size})
-    </span>
-    
-    {/* Shine effect */}
-    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
-  </Button>
-)}
-        {/* باقي الأزرار تبقى كما هي */}
-        <Button 
-          onClick={onToggleDeleted} 
-          className={`
-            relative
-            overflow-hidden
-            bg-gradient-to-r
-            from-red-50
-            to-red-100
-            dark:from-red-900/30
-            dark:to-red-800/30
-            hover:from-red-100
-            hover:to-red-200
-            dark:hover:from-red-800/40
-            dark:hover:to-red-700/40
-            text-black
-            dark:text-red-200
-            font-semibold
-            py-3
-            px-6
-            rounded-2xl
-            shadow-md
-            hover:shadow-lg
-            transform
-            hover:-translate-y-0.5
-            active:translate-y-0
-            transition-all
-            duration-250
-            ease-in-out
-            border
-            border-red-100
-            dark:border-red-900/50
-            group
-          `}
-        >
-          <span className="flex items-center gap-3">
-            {showingDeleted ? (
-              <>
-                <div className="bg-red-100 dark:bg-red-900/30 p-2 rounded-lg group-hover:scale-110 transition-transform duration-200">
-                  <i className="fas fa-arrow-left text-red-600 dark:text-red-400 text-sm"></i>
-                </div>
-                <span className="text-red-700 dark:text-red-300">Back to Active Items</span>
-              </>
-            ) : (
-              <>
-                <div className="bg-gradient-to-r from-red-50 to-red-100 dark:bg-red-900/30 p-2 rounded-lg group-hover:scale-110 transition-transform duration-200">
-                  <i className="fas fa-trash-can text-red-600 dark:text-red-400 text-sm"></i>
-                </div>
-                <span className="text-black dark:text-red-300">Show Deleted Items</span>
-              </>
-            )}
-          </span>
-        </Button>
-{showAddButton &&
-  !(selectedItems.size > 0 && showDeleteButton && showBulkActions) &&
-  !showingDeleted && ( // 👈 أضفنا الشرط ده
-    <Button
-      className={`
-        relative overflow-hidden bg-gradient-to-r from-green-50 to-green-100
-        dark:from-green-900/30 dark:to-green-800/30 hover:from-green-100 hover:to-green-200
-        dark:hover:from-green-800/40 dark:hover:to-green-700/40 text-black dark:text-green-200
-        font-semibold py-3 px-6 rounded-2xl shadow-md hover:shadow-lg transform hover:-translate-y-0.5
-        active:translate-y-0 transition-all duration-250 ease-in-out border border-green-100 dark:border-green-900/50 group
-      `}
-      onClick={onAddItem}
-    >
-      <span className="flex items-center gap-3">
-        <div className="bg-green-100 dark:bg-green-900/30 p-2 rounded-lg group-hover:scale-110 transition-transform duration-200">
-          <i className="fas fa-plus text-green-600 dark:text-green-400 text-sm"></i>
-        </div>
-        <span className="text-black dark:text-green-300">Add {title}</span>
-      </span>
-      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
-    </Button>
-)}
 
+        {/* Force Delete Button */}
+        {showingDeleted && selectedItems.size > 0 && (
+          <Button
+            style={{color:"#b91c1c"}}
+            variant="destructive"
+            onClick={onForceDeleteSelected}
+            className={`
+              bg-gradient-to-r from-red-50 to-red-100 dark:bg-red-900/30 p-2 rounded-lg group-hover:scale-110 transition-transform duration-200
+            `}
+          >
+            <span className="relative z-10 flex items-center gap-3">
+              <i className="fas fa-fire text-red-600 group-hover:scale-110 transition-transform duration-200"></i>
+              Force Delete Selected ({selectedItems.size})
+            </span>
+            
+            {/* Shine effect */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+          </Button>
+        )}
+
+        {/* Toggle Deleted Button */}
+        {showDeletedToggle && (
+          <Button 
+            onClick={onToggleDeleted} 
+            className={`
+              relative
+              overflow-hidden
+              bg-gradient-to-r
+              from-red-50
+              to-red-100
+              dark:from-red-900/30
+              dark:to-red-800/30
+              hover:from-red-100
+              hover:to-red-200
+              dark:hover:from-red-800/40
+              dark:hover:to-red-700/40
+              text-black
+              dark:text-red-200
+              font-semibold
+              py-3
+              px-6
+              rounded-2xl
+              shadow-md
+              hover:shadow-lg
+              transform
+              hover:-translate-y-0.5
+              active:translate-y-0
+              transition-all
+              duration-250
+              ease-in-out
+              border
+              border-red-100
+              dark:border-red-900/50
+              group
+            `}
+          >
+            <span className="flex items-center gap-3">
+              {showingDeleted ? (
+                <>
+                  <div className="bg-red-100 dark:bg-red-900/30 p-2 rounded-lg group-hover:scale-110 transition-transform duration-200">
+                    <i className="fas fa-arrow-left text-red-600 dark:text-red-400 text-sm"></i>
+                  </div>
+                  <span className="text-red-700 dark:text-red-300">Back to Active Items</span>
+                </>
+              ) : (
+                <>
+                  <div className="bg-gradient-to-r from-red-50 to-red-100 dark:bg-red-900/30 p-2 rounded-lg group-hover:scale-110 transition-transform duration-200">
+                    <i className="fas fa-trash-can text-red-600 dark:text-red-400 text-sm"></i>
+                  </div>
+                  <span className="text-black dark:text-red-300">Show Deleted Items</span>
+                </>
+              )}
+            </span>
+          </Button>
+        )}
+
+        {/* Add Button */}
+        {showAddButton && !showingDeleted && (
+          <Button
+            className={`
+              relative overflow-hidden bg-gradient-to-r from-green-50 to-green-100
+              dark:from-green-900/30 dark:to-green-800/30 hover:from-green-100 hover:to-green-200
+              dark:hover:from-green-800/40 dark:hover:to-green-700/40 text-black dark:text-green-200
+              font-semibold py-3 px-6 rounded-2xl shadow-md hover:shadow-lg transform hover:-translate-y-0.5
+              active:translate-y-0 transition-all duration-250 ease-in-out border border-green-100 dark:border-green-900/50 group
+            `}
+            onClick={onAddItem}
+          >
+            <span className="flex items-center gap-3">
+              <div className="bg-green-100 dark:bg-green-900/30 p-2 rounded-lg group-hover:scale-110 transition-transform duration-200">
+                <i className="fas fa-plus text-green-600 dark:text-green-400 text-sm"></i>
+              </div>
+              <span className="text-black dark:text-green-300">Add {title}</span>
+            </span>
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+          </Button>
+        )}
       </div>
     </div>
   );
 };
 
-  const DataTable: React.FC<DataTableProps & { 
-    showingDeleted?: boolean;
-    onRestore?: (id: number, itemName: string) => void;
-    onForceDelete?: (id: number, itemName: string) => void;
-    compactView?: boolean;
-       showEditButton?:boolean,
-  showDeleteButton?:boolean,
-  showActiveToggle?:boolean
-  }> = ({
-    title, data, columns, selectedItems, allSelected, someSelected,
-    orderBy, orderByDirection, pagination, onToggleSelectAll, onToggleSelectItem,
-    onSort, onEdit, onDelete, onRestore, onForceDelete, onToggleActive, deleteLoading, Checkbox, 
-    showingDeleted = false,
-    compactView = false,  
-     showEditButton = true,
+const DataTable: React.FC<DataTableProps & { 
+  showingDeleted?: boolean;
+  onRestore?: (id: number, itemName: string) => void;
+  onForceDelete?: (id: number, itemName: string) => void;
+  compactView?: boolean;
+  showEditButton?: boolean;
+  showDeleteButton?: boolean;
+  showActiveToggle?: boolean;
+}> = ({
+  title, data, columns, selectedItems, allSelected, someSelected,
+  orderBy, orderByDirection, pagination, onToggleSelectAll, onToggleSelectItem,
+  onSort, onEdit, onDelete, onRestore, onForceDelete, onToggleActive, deleteLoading, Checkbox, 
+  showingDeleted = false,
+  compactView = false,  
+  showEditButton = true,
   showDeleteButton = true,
   showActiveToggle = true
-  }) => {
-    
-    // تحديد إذا كان هناك أي عمود صورة
-    const imageFieldKeys = ['image', 'avatar', 'photo', 'picture', 'profile_image', 'logo'];
-    const hasImageColumn = columns.some(col => imageFieldKeys.includes(col.key));
-    
-    // الحقول التي تظهر في العرض المدمج (فقط هذه)
-    const compactDisplayFields = ['name', 'company', 'email', 'phone'];
-    
-    // الحصول على مفتاح الصورة الفعلي المستخدم في البيانات
-    const getImageFieldKey = (item: Entity) => {
-      return imageFieldKeys.find(key => item[key]) || 'image';
-    };
-
-    // الحصول على الصورة من العنصر
-    const getItemImage = (item: Entity) => {
-      const imageKey = getImageFieldKey(item);
-      const imageValue = item[imageKey];
-      
-      if (!imageValue) return null;
-      
-      if (typeof imageValue === 'string') {
-        return imageValue;
-      }
-      
-      if (typeof imageValue === 'object' && imageValue.url) {
-        return imageValue.url;
-      }
-      
-      return null;
-    };
-
-    // الحصول على بيانات العرض المدمج من العنصر (فقط الحقول المطلوبة)
-    const getCompactDisplayData = (item: Entity) => {
-      const displayData = [];
-
-      // الاسم (دائماً يظهر)
-      if (item.name || item.title) {
-        displayData.push({
-          field: 'name',
-          value: item.name || item.title,
-          isTitle: true
-        });
-      }
-
-      // الشركة (إذا كان object)
-      if (item.company?.name) {
-        displayData.push({
-          field: 'company',
-          value: item.company.name,
-          icon: 'building',
-          type: 'text'
-        });
-      } else if (item.company) {
-        displayData.push({
-          field: 'company',
-          value: item.company,
-          icon: 'building',
-          type: 'text'
-        });
-      }
-
-      // الإيميل
-      if (item.email) {
-        displayData.push({
-          field: 'email',
-          value: item.email,
-          icon: 'mail',
-          type: 'email'
-        });
-      }
-
-      // الهاتف الأرضي
-      if (item.phone) {
-        displayData.push({
-          field: 'phone',
-          value: item.phone,
-          icon: 'phone',
-          type: 'phone'
-        });
-      }
-
-      return displayData;
-    };
-
-    // الحصول على الحرف الأول للصورة البديلة
-    const getInitial = (item: Entity) => {
-      const name = item.name || item.title || 'Unknown';
-      return name.charAt(0).toUpperCase();
-    };
-
-    // الحصول على الأعمدة للعرض في الجدول (كل الحقول ما عدا المدمجة)
-    const getTableColumns = () => {
-      if (!compactView) return columns;
-      
-      return columns.filter(col => 
-        ![...imageFieldKeys, ...compactDisplayFields].includes(col.key)
-      );
-    };
-
-    // دالة للحصول على القيمة من الحقول المتداخلة
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const getNestedValue = (obj: any, path: string) => {
-      return path.split('.').reduce((current, key) => {
-        return current && current[key] !== undefined ? current[key] : null;
-      }, obj);
-    };
-
-    // مكون الأيقونة
-    const IconComponent = ({ icon, className }: { icon: string; className?: string }) => {
-      const iconProps = { className: className || "w-3 h-3 flex-shrink-0" };
-      
-      switch (icon) {
-        case 'mail': return <Mail {...iconProps} />;
-        case 'phone': return <Phone {...iconProps} />;
-        case 'smartphone': return <Smartphone {...iconProps} />;
-        case 'map-pin': return <MapPin {...iconProps} />;
-        case 'building': return <Building {...iconProps} />;
-        case 'users': return <Users {...iconProps} />;
-        case 'briefcase': return <Briefcase {...iconProps} />;
-        case 'globe': return <Globe {...iconProps} />;
-        case 'shield': return <Shield {...iconProps} />;
-        case 'landmark': return <Landmark {...iconProps} />;
-        case 'user': return <User {...iconProps} />;
-        default: return <Circle {...iconProps} />;
-      }
-    };
-
-    // دالة للتعامل مع الضغط المزدوج
-    const handleDoubleClick = (item: Entity) => {
-      onEdit(item);
-    };
-
- return (
- <div
-  className="bg-white dark:bg-gray-800 dark:border-gray-700 overflow-x-auto rounded-2xl"
-
->
-  <div
-    className="relative overflow-hidden  bg-white dark:bg-gray-800 "
+}) => {
   
-  >
-    {/* Table Header */}
-    <div
-      className={`${
-        showingDeleted
-          ? "bg-red-100 dark:bg-red-800 text-red-400 dark:text-red-100 border border-red-200 dark:border-red-700"
-          : "relative overflow-hidden bg-gradient-to-r from-green-200 to-green-300 dark:from-green-900/30 dark:to-green-800/30 hover:from-green-100 hover:to-green-200 dark:hover:from-green-800/40 dark:hover:to-green-700/40 text-black dark:text-green-200 transform hover:-translate-y-0.5 active:translate-y-0 transition-all duration-250 ease-in-out border border-green-100 dark:border-green-900/50"
-      } font-semibold text-lg px-6 py-1 rounded-t-l group`}
-    >
-      {title} Management {showingDeleted && "(Deleted Items)"}
-    </div>
+  // تحديد إذا كان هناك أي عمود صورة
+  const imageFieldKeys = ['image', 'avatar', 'photo', 'picture', 'profile_image', 'logo'];
+  const hasImageColumn = columns.some(col => imageFieldKeys.includes(col.key));
+  
+  // الحقول التي تظهر في العرض المدمج (فقط هذه)
+  const compactDisplayFields = ['name', 'company', 'email', 'phone'];
+  
+  // الحصول على مفتاح الصورة الفعلي المستخدم في البيانات
+  const getImageFieldKey = (item: Entity) => {
+    return imageFieldKeys.find(key => item[key]) || 'image';
+  };
 
-    {/* Table Info Bar */}
-    <div
-      className={`p-4 dark:border-gray-700 flex items-center justify-between ${
-        showingDeleted ? "bg-red-50 dark:bg-red-900/20" : "bg-white dark:bg-gray-800"
-      }`}
-    >
-      <div className="flex items-center gap-2">
-        <span
-          className={`text-sm ${
-            showingDeleted ? "text-red-600 dark:text-red-300" : "text-gray-600 dark:text-gray-400"
-          }`}
-        >
-          Showing {data.length} of {pagination.total} items
-          {showingDeleted && (
-            <span className="text-red-500 ml-1">(Deleted)</span>
-          )}
-        </span>
-      </div>
+  // الحصول على الصورة من العنصر
+  const getItemImage = (item: Entity) => {
+    const imageKey = getImageFieldKey(item);
+    const imageValue = item[imageKey];
+    
+    if (!imageValue) return null;
+    
+    if (typeof imageValue === 'string') {
+      return imageValue;
+    }
+    
+    if (typeof imageValue === 'object' && imageValue.url) {
+      return imageValue.url;
+    }
+    
+    return null;
+  };
 
-      <div className="flex items-center gap-2">
-        <span
-          className={`text-sm ${
-            showingDeleted ? "text-red-600 dark:text-red-300" : "text-gray-600 dark:text-gray-400"
-          }`}
-        >
-          Sorted by:
-        </span>
-        <span
-          className={`text-sm font-medium ${
-            showingDeleted ? "text-red-700 dark:text-red-400" : "text-indigo-600 dark:text-indigo-400"
-          }`}
-        >
-          {orderBy} ({orderByDirection})
-        </span>
-      </div>
-    </div>
+  // الحصول على بيانات العرض المدمج من العنصر (فقط الحقول المطلوبة)
+  const getCompactDisplayData = (item: Entity) => {
+    const displayData = [];
 
-    {/* Table Content */}
-    <div
-      className={` overflow-hidden ${
-        showingDeleted
-          ? "bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800"
-          : "bg-black dark:bg-gray-900  dark:border-gray-700"
-      }`}
-    >
-      <table
-        className={`min-w-full divide-y text-center ${
-          showingDeleted
-            ? "divide-red-300 dark:divide-red-700 bg-red-50 dark:bg-red-950/30"
-            : "divide-gray-800 dark:divide-gray-700 bg-black dark:bg-gray-900"
-        }`}
-      >
-          <thead className="bg-gray-50 text-center dark:bg-gray-700">
-            <tr>
-              <th className="px-6 py-3 text-center">
-                <Checkbox
-                  checked={allSelected}
-                  indeterminate={someSelected && !allSelected}
-                  onChange={onToggleSelectAll}
-                  className="h-4 w-4"
-                />
-              </th>
-              {compactView && hasImageColumn ? (
-                <>
-                  {/* Compact Data Column */}
-                  <th className="px-6 py-3 text-left text-gray-700 dark:text-gray-300 font-medium uppercase tracking-wider">
-                    Basic Info
-                  </th>
-                  {/* Regular Columns */}
-                  {getTableColumns().map((column: ColumnDefinition) => (
-                    <th key={column.key} className="px-6 py-3 text-center text-gray-700 dark:text-gray-300 font-medium uppercase tracking-wider">
-                      <div 
-                        className="flex items-center justify-center gap-1 cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors duration-200"
-                        onClick={() => onSort(column)}
-                      >
-                        {column.label}
-                        {column.sortable !== false && <ArrowUpDown className="w-4 h-4" />}
-                      </div>
-                    </th>
-                  ))}
-                </>
-              ) : (
-                // Normal View
-                columns.map((column: ColumnDefinition) => (
-                  <th key={column.key} className="px-6 py-3 text-center text-gray-700 dark:text-gray-300 font-medium uppercase tracking-wider">
-                    <div 
-                      className="flex items-center justify-center gap-1 cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors duration-200"
-                      onClick={() => onSort(column)}
-                    >
-                      {column.label}
-                      {column.sortable !== false && <ArrowUpDown className="w-4 h-4" />}
-                    </div>
-                  </th>
-                ))
-              )}
-              {/* إخفاء عمود الإجراءات إذا لم يكن هناك أي أزرار مسموح بها */}
-              {(showEditButton || showDeleteButton || showActiveToggle) && (
-                <th className="px-6 py-3 text-center text-gray-700 dark:text-gray-300 font-medium uppercase tracking-wider">
-                  Actions
-                </th>
-              )}
-            </tr>
-          </thead>
-          <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-            {data.length ? (
-              data.map((item: Entity) => {
-                const itemImage = getItemImage(item);
-                const compactData = getCompactDisplayData(item);
-                const shouldUseCompactView = compactView && hasImageColumn;
-                const itemName = item.name || item.title || 'Unknown';
+    // الاسم (دائماً يظهر)
+    if (item.name || item.title) {
+      displayData.push({
+        field: 'name',
+        value: item.name || item.title,
+        isTitle: true
+      });
+    }
 
-                return (
-                  <tr 
-                    key={item.id} 
-                    className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200 cursor-pointer"
-                    onDoubleClick={() => showEditButton && handleDoubleClick(item)}
-                  >
-                    <td className="px-6 py-4">
-                      <Checkbox
-                        checked={selectedItems.has(item.id)}
-                        onChange={() => onToggleSelectItem(item.id)}
-                        className="h-4 w-4"
-                      />
-                    </td>
-                    
-                    {shouldUseCompactView ? (
-                      <>
-                        {/* Compact Cell */}
-                        <td className="px-6 py-4">
-                          <div className="flex items-start gap-4">
-                            {/* Image */}
-                            <div className="flex-shrink-0">
-                              {itemImage ? (
-                                <img 
-                                  src={itemImage}
-                                  alt={itemName}
-                                  className="w-16 h-16 rounded-lg object-cover border border-gray-200 dark:border-gray-600 shadow-sm"
-                                />
-                              ) : (
-                                <div className="w-16 h-16 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center border border-gray-200 dark:border-gray-600 shadow-sm">
-                                  <span className="text-white font-bold text-xl">
-                                    {getInitial(item)}
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-                            
-                            {/* Basic Data */}
-                            <div className="flex-1 text-left min-w-0">
-                              <div className="space-y-2">
-                                {compactData.map((data, index) => (
-                                  <div key={index}>
-                                    {data.isTitle ? (
-                                      <div className="font-bold text-gray-900 dark:text-gray-100 text-lg">
-                                        {data.value}
-                                      </div>
-                                    ) : (
-                                      <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                                        <IconComponent icon={data.icon || 'default-icon'} />
-                                        <span className="truncate">{data.value}</span>
-                                      </div>
-                                    )}
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-                        </td>
-                        
-                        {/* Other Columns */}
-                        {getTableColumns().map((column: ColumnDefinition) => (
-                          <td 
-                            key={column.key} 
-                            className="px-6 py-4 text-gray-700 dark:text-gray-300"
-                            onDoubleClick={() => showEditButton && handleDoubleClick(item)}
-                          >
-                            {column.render ? column.render(item) : getNestedValue(item, column.key)}
-                          </td>
-                        ))}
-                      </>
-                    ) : (
-                      // Normal View
-                      columns.map((column: ColumnDefinition) => (
-                        <td 
-                          key={column.key} 
-                          className="px-6 py-4 text-gray-700 dark:text-gray-300"
-                          onDoubleClick={() => showEditButton && handleDoubleClick(item)}
-                        >
-                          {column.render ? column.render(item) : getNestedValue(item, column.key)}
-                        </td>
-                      ))
-                    )}
-                    
-                    {/* إخفاء خلية الإجراءات إذا لم يكن هناك أي أزرار مسموح بها */}
-                    {(showEditButton || showDeleteButton || showActiveToggle) && (
-                      <td className="px-6 py-4">
-                        <div className="flex justify-center items-center gap-2">
-                          {showingDeleted ? (
-                            <div className="flex gap-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => onRestore?.(item.id, itemName)}
-                                className={`
-                                  relative
-                                  overflow-hidden
-                                  bg-gradient-to-r
-                                  from-green-50
-                                  to-green-100
-                                  text-black
-                                  dark:from-green-900/30
-                                  dark:to-green-800/30
-                                  hover:from-green-100
-                                  hover:to-green-200
-                                  dark:hover:from-green-800/40
-                                  dark:hover:to-green-700/40
-                                  dark:text-green-200
-                                  font-semibold
-                                  py-3
-                                  px-6
-                                  rounded-2xl
-                                  shadow-md
-                                  hover:shadow-lg
-                                  transform
-                                  hover:-translate-y-0.5
-                                  active:translate-y-0
-                                  transition-all
-                                  duration-250
-                                  ease-in-out
-                                  border
-                                  border-green-100
-                                  dark:border-green-900/50
-                                  group
-                                `}
-                              >
-                                <i className="fas fa-rotate-left mr-2"></i>
-                                Restore
-                              </Button>
-                              {/* زر الحذف الدائم - يظهر فقط إذا كان مسموحاً بالحذف */}
-                              {showDeleteButton && (
-                                <Button
-                                  variant="destructive"
-                                  size="sm"
-                                  onClick={() => onForceDelete?.(item.id, itemName)}
-                                  style={{color:'black'}}
-                                  className=" bg-gradient-to-r from-red-50  to-red-100 hover:bg-red-900 border-0 px-4 py-2 rounded-lg font-medium transition-colors duration-200 shadow-sm"
-                                >
-                                  <i className="fas fa-trash mr-2"></i>
-                                  Delete Permanently
-                                </Button>
-                              )}
-                            </div>
-                          ) : (
-                            <div className="flex items-center gap-3">
-                              {/* Active Toggle - يظهر فقط إذا كان مسموحاً به */}
-                              {item.hasOwnProperty('active') && showActiveToggle && (
-                                <div className="flex items-center gap-2">
-                                  <Switch
-                                    checked={!!item.active}
-                                    onChange={() => onToggleActive?.(item.id, itemName, !!item.active)}
-                                  />
-                                  <span className={`text-sm font-medium ${item.active ? 'text-green-600' : 'text-red-600'}`}>
-                                    {item.active ? 'Active' : 'Inactive'}
-                                  </span>
-                                </div>
-                              )}
-                              
-                              {/* زر التعديل - يظهر فقط إذا كان مسموحاً به */}
-                              {showEditButton && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => onEdit(item)}
-                                  className={`
-                                    relative
-                                    overflow-hidden
-                                    bg-gradient-to-r
-                                    from-green-50
-                                    to-green-100
-                                    text-black
-                                    dark:from-green-900/30
-                                    dark:to-green-800/30
-                                    hover:from-green-100
-                                    hover:to-green-200
-                                    dark:hover:from-green-800/40
-                                    dark:hover:to-green-700/40
-                                    dark:text-green-200
-                                    font-semibold
-                                    py-3
-                                    px-6
-                                    rounded-2xl
-                                    shadow-md
-                                    hover:shadow-lg
-                                    transform
-                                    hover:-translate-y-0.5
-                                    active:translate-y-0
-                                    transition-all
-                                    duration-250
-                                    ease-in-out
-                                    border
-                                    border-green-100
-                                    dark:border-green-900/50
-                                    group
-                                  `}
-                                >
-                                  <i className="fas fa-edit mr-2"></i>
-                                  Edit
-                                </Button>
-                              )}
-                              
-                              {/* زر الحذف - يظهر فقط إذا كان مسموحاً به */}
-                              {showDeleteButton && (
-                                <Button
-                                  variant="destructive"
-                                  size="sm"
-                                  onClick={() => onDelete(item.id, itemName)}
-                                  disabled={deleteLoading}
-                                  style={{color:'black'}}
-                                  className={`
-                                    relative
-                                    overflow-hidden
-                                    bg-gradient-to-r
-                                    from-red-50
-                                    to-red-100
-                                    dark:from-red-900/30
-                                    dark:to-red-800/30
-                                    hover:from-red-100
-                                    hover:to-red-200
-                                    dark:hover:from-red-800/40
-                                    dark:hover:to-red-700/40
-                                    text-black
-                                    dark:text-red-200
-                                    font-semibold
-                                    py-3
-                                    px-6
-                                    rounded-2xl
-                                    shadow-md
-                                    hover:shadow-lg
-                                    transform
-                                    hover:-translate-y-0.5
-                                    active:translate-y-0
-                                    transition-all
-                                    duration-250
-                                    ease-in-out
-                                    border
-                                    border-red-100
-                                    dark:border-red-900/50
-                                    group
-                                  `}
-                                >
-                                  {deleteLoading ? (
-                                    <>
-                                      <i className="fas fa-spinner fa-spin mr-2"></i>
-                                      Deleting...
-                                    </>
-                                  ) : (
-                                    <>
-                                      <i className="fas fa-trash mr-2"></i>
-                                      Delete
-                                    </>
-                                  )}
-                                </Button>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      </td>
-                    )}
-                  </tr>
-                );
-              })
-            ) : (
-              <tr>
-                <td 
-                  colSpan={
-                    columns.length + 
-                    (compactView && hasImageColumn ? 2 : 1) + 
-                    ((showEditButton || showDeleteButton || showActiveToggle) ? 1 : 0)
-                  } 
-                  className="px-6 py-8 text-center text-gray-500 dark:text-gray-400"
-                >
-                  <div className="flex flex-col items-center justify-center py-8">
-                    <i className="fas fa-inbox text-4xl text-gray-300 dark:text-gray-600 mb-4"></i>
-                    <div className="text-lg font-medium text-gray-600 dark:text-gray-400">
-                      No {title.toLowerCase()} found
-                    </div>
-                    <div className="text-sm text-gray-400 dark:text-gray-500 mt-1">
-                      {showingDeleted ? 'No deleted items available' : 'Get started by adding a new item'}
-                    </div>
-                  </div>
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-      </div>
-      </div>
+    // الشركة (إذا كان object)
+    if (item.company?.name) {
+      displayData.push({
+        field: 'company',
+        value: item.company.name,
+        icon: 'building',
+        type: 'text'
+      });
+    } else if (item.company) {
+      displayData.push({
+        field: 'company',
+        value: item.company,
+        icon: 'building',
+        type: 'text'
+      });
+    }
+
+    // الإيميل
+    if (item.email) {
+      displayData.push({
+        field: 'email',
+        value: item.email,
+        icon: 'mail',
+        type: 'email'
+      });
+    }
+
+    // الهاتف الأرضي
+    if (item.phone) {
+      displayData.push({
+        field: 'phone',
+        value: item.phone,
+        icon: 'phone',
+        type: 'phone'
+      });
+    }
+
+    return displayData;
+  };
+
+  // الحصول على الحرف الأول للصورة البديلة
+  const getInitial = (item: Entity) => {
+    const name = item.name || item.title || 'Unknown';
+    return name.charAt(0).toUpperCase();
+  };
+
+  // الحصول على الأعمدة للعرض في الجدول (كل الحقول ما عدا المدمجة)
+  const getTableColumns = () => {
+    if (!compactView) return columns;
+    
+    return columns.filter(col => 
+      ![...imageFieldKeys, ...compactDisplayFields].includes(col.key)
     );
   };
 
+  // دالة للحصول على القيمة من الحقول المتداخلة
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const getNestedValue = (obj: any, path: string) => {
+    return path.split('.').reduce((current, key) => {
+      return current && current[key] !== undefined ? current[key] : null;
+    }, obj);
+  };
+
+  // مكون الأيقونة
+  const IconComponent = ({ icon, className }: { icon: string; className?: string }) => {
+    const iconProps = { className: className || "w-3 h-3 flex-shrink-0" };
+    
+    switch (icon) {
+      case 'mail': return <Mail {...iconProps} />;
+      case 'phone': return <Phone {...iconProps} />;
+      case 'smartphone': return <Smartphone {...iconProps} />;
+      case 'map-pin': return <MapPin {...iconProps} />;
+      case 'building': return <Building {...iconProps} />;
+      case 'users': return <Users {...iconProps} />;
+      case 'briefcase': return <Briefcase {...iconProps} />;
+      case 'globe': return <Globe {...iconProps} />;
+      case 'shield': return <Shield {...iconProps} />;
+      case 'landmark': return <Landmark {...iconProps} />;
+      case 'user': return <User {...iconProps} />;
+      default: return <Circle {...iconProps} />;
+    }
+  };
+
+  // دالة للتعامل مع الضغط المزدوج
+  const handleDoubleClick = (item: Entity) => {
+    onEdit(item);
+  };
+
+  return (
+    <div className="w-full">
+      {/* Container ثابت للجدول */}
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+        
+        {/* Table Header */}
+        <div className={`${
+          showingDeleted
+          ? "bg-red-100 dark:bg-red-800 text-red-400 dark:text-red-100 border-b border-red-200 dark:border-red-700"
+          : "bg-gradient-to-r from-green-200 to-green-300 dark:from-green-900/30 dark:to-green-800/30 text-black dark:text-green-200 border-b border-green-100 dark:border-green-900/50"
+        } font-semibold text-lg px-6 py-4`}>
+          {title} Management {showingDeleted && "(Deleted Items)"}
+        </div>
+
+        {/* Table Container مع ارتفاع ثابت */}
+        <div className="overflow-hidden">
+          <div className="max-h-[500px] overflow-auto"> {/* ارتفاع ثابت مع اسكرول داخلي */}
+            <table className={`w-full divide-y ${
+              showingDeleted
+              ? "divide-red-300 dark:divide-red-700"
+              : "divide-gray-200 dark:divide-gray-700"
+            }`}>
+              <thead className="bg-gray-50 dark:bg-gray-700 sticky top-0 z-10">
+                <tr>
+                  <th className="px-4 py-3 text-center w-12">
+                    <Checkbox
+                      checked={allSelected}
+                      indeterminate={someSelected && !allSelected}
+                      onChange={onToggleSelectAll}
+                      className="h-4 w-4"
+                    />
+                  </th>
+                  {compactView && hasImageColumn ? (
+                    <>
+                      {/* Compact Data Column */}
+                      <th className="px-4 py-3 text-left text-gray-700 dark:text-gray-300 font-medium uppercase tracking-wider min-w-[300px]">
+                        Basic Info
+                      </th>
+                      {/* Regular Columns */}
+                      {getTableColumns().map((column: ColumnDefinition) => (
+                        <th key={column.key} className="px-4 py-3 text-center text-gray-700 dark:text-gray-300 font-medium uppercase tracking-wider min-w-[120px]">
+                          <div 
+                            className="flex items-center justify-center gap-1 cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors duration-200"
+                            onClick={() => onSort(column)}
+                          >
+                            {column.label}
+                            {column.sortable !== false && <ArrowUpDown className="w-4 h-4" />}
+                          </div>
+                        </th>
+                      ))}
+                    </>
+                  ) : (
+                    // Normal View
+                    columns.map((column: ColumnDefinition) => (
+                      <th key={column.key} className="px-4 py-3 text-center text-gray-700 dark:text-gray-300 font-medium uppercase tracking-wider min-w-[120px]">
+                        <div 
+                          className="flex items-center justify-center gap-1 cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors duration-200"
+                          onClick={() => onSort(column)}
+                        >
+                          {column.label}
+                          {column.sortable !== false && <ArrowUpDown className="w-4 h-4" />}
+                        </div>
+                      </th>
+                    ))
+                  )}
+                  {/* إخفاء عمود الإجراءات إذا لم يكن هناك أي أزرار مسموح بها */}
+                  {(showEditButton || showDeleteButton || showActiveToggle) && (
+                    <th className="px-4 py-3 text-center text-gray-700 dark:text-gray-300 font-medium uppercase tracking-wider min-w-[180px]">
+                      Actions
+                    </th>
+                  )}
+                </tr>
+              </thead>
+              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                {data.length ? (
+                  data.map((item: Entity) => {
+                    const itemImage = getItemImage(item);
+                    const compactData = getCompactDisplayData(item);
+                    const shouldUseCompactView = compactView && hasImageColumn;
+                    const itemName = item.name || item.title || 'Unknown';
+
+                    return (
+                      <tr 
+                        key={item.id} 
+                        className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200 cursor-pointer"
+                        onDoubleClick={() => showEditButton && handleDoubleClick(item)}
+                      >
+                        <td className="px-4 py-3">
+                          <Checkbox
+                            checked={selectedItems.has(item.id)}
+                            onChange={() => onToggleSelectItem(item.id)}
+                            className="h-4 w-4"
+                          />
+                        </td>
+                        
+                        {shouldUseCompactView ? (
+                          <>
+                            {/* Compact Cell */}
+                            <td className="px-4 py-3">
+                              <div className="flex items-start gap-3">
+                                {/* Image */}
+                                <div className="flex-shrink-0">
+                                  {itemImage ? (
+                                    <img 
+                                      src={itemImage}
+                                      alt={itemName}
+                                      className="w-12 h-12 rounded-lg object-cover border border-gray-200 dark:border-gray-600 shadow-sm"
+                                    />
+                                  ) : (
+                                    <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center border border-gray-200 dark:border-gray-600 shadow-sm">
+                                      <span className="text-white font-bold text-lg">
+                                        {getInitial(item)}
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                                
+                                {/* Basic Data */}
+                                <div className="flex-1 text-left min-w-0">
+                                  <div className="space-y-1">
+                                    {compactData.map((data, index) => (
+                                      <div key={index}>
+                                        {data.isTitle ? (
+                                          <div className="font-bold text-gray-900 dark:text-gray-100 text-base">
+                                            {data.value}
+                                          </div>
+                                        ) : (
+                                          <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
+                                            <IconComponent icon={data.icon || 'default-icon'} />
+                                            <span className="truncate">{data.value}</span>
+                                          </div>
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+                            
+                            {/* Other Columns */}
+                            {getTableColumns().map((column: ColumnDefinition) => (
+                              <td 
+                                key={column.key} 
+                                className="px-4 py-3 text-gray-700 dark:text-gray-300 text-sm"
+                                onDoubleClick={() => showEditButton && handleDoubleClick(item)}
+                              >
+                                {column.render ? column.render(item) : getNestedValue(item, column.key)}
+                              </td>
+                            ))}
+                          </>
+                        ) : (
+                          // Normal View
+                          columns.map((column: ColumnDefinition) => (
+                            <td 
+                              key={column.key} 
+                              className="px-4 py-3 text-gray-700 dark:text-gray-300 text-sm"
+                              onDoubleClick={() => showEditButton && handleDoubleClick(item)}
+                            >
+                              {column.render ? column.render(item) : getNestedValue(item, column.key)}
+                            </td>
+                          ))
+                        )}
+                        
+                        {/* إخفاء خلية الإجراءات إذا لم يكن هناك أي أزرار مسموح بها */}
+                        {(showEditButton || showDeleteButton || showActiveToggle) && (
+                          <td className="px-4 py-3">
+                            <div className="flex justify-center items-center gap-2">
+                              {showingDeleted ? (
+                                <div className="flex gap-2">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => onRestore?.(item.id, itemName)}
+                                    className="bg-green-50 hover:bg-green-100 text-green-700 border-green-200 text-xs"
+                                  >
+                                    <i className="fas fa-rotate-left mr-1"></i>
+                                    Restore
+                                  </Button>
+                                  {/* زر الحذف الدائم - يظهر فقط إذا كان مسموحاً بالحذف */}
+                                  {showDeleteButton && (
+                                    <Button
+                                      variant="destructive"
+                                      size="sm"
+                                      onClick={() => onForceDelete?.(item.id, itemName)}
+                                      className="bg-red-50 hover:bg-red-100 text-red-700 border-red-200 text-xs"
+                                    >
+                                      <i className="fas fa-trash mr-1"></i>
+                                      Delete
+                                    </Button>
+                                  )}
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-2">
+                                  {/* Active Toggle - يظهر فقط إذا كان مسموحاً به */}
+                                  {item.hasOwnProperty('active') && showActiveToggle && (
+                                    <div className="flex items-center gap-1">
+                                      <Switch
+                                        checked={!!item.active}
+                                        onChange={() => onToggleActive?.(item.id, itemName, !!item.active)}
+                                      />
+                                      <span className={`text-xs font-medium ${item.active ? 'text-green-600' : 'text-red-600'}`}>
+                                        {item.active ? 'Active' : 'Inactive'}
+                                      </span>
+                                    </div>
+                                  )}
+                                  
+                                  {/* زر التعديل - يظهر فقط إذا كان مسموحاً به */}
+                                  {showEditButton && (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => onEdit(item)}
+                                      className="bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200 text-xs"
+                                    >
+                                      <i className="fas fa-edit mr-1"></i>
+                                      Edit
+                                    </Button>
+                                  )}
+                                  
+                                  {/* زر الحذف - يظهر فقط إذا كان مسموحاً به */}
+                                  {showDeleteButton && (
+                                    <Button
+                                      variant="destructive"
+                                      size="sm"
+                                      onClick={() => onDelete(item.id, itemName)}
+                                      disabled={deleteLoading}
+                                      className="bg-red-50 hover:bg-red-100 text-red-700 border-red-200 text-xs"
+                                    >
+                                      {deleteLoading ? (
+                                        <>
+                                          <i className="fas fa-spinner fa-spin mr-1"></i>
+                                          Deleting...
+                                        </>
+                                      ) : (
+                                        <>
+                                          <i className="fas fa-trash mr-1"></i>
+                                          Delete
+                                        </>
+                                      )}
+                                    </Button>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                        )}
+                      </tr>
+                    );
+                  })
+                ) : (
+                  <tr>
+                    <td 
+                      colSpan={
+                        columns.length + 
+                        (compactView && hasImageColumn ? 2 : 1) + 
+                        ((showEditButton || showDeleteButton || showActiveToggle) ? 1 : 0)
+                      } 
+                      className="px-6 py-8 text-center text-gray-500 dark:text-gray-400"
+                    >
+                      <div className="flex flex-col items-center justify-center py-8">
+                        <i className="fas fa-inbox text-4xl text-gray-300 dark:text-gray-600 mb-4"></i>
+                        <div className="text-lg font-medium text-gray-600 dark:text-gray-400">
+                          No {title.toLowerCase()} found
+                        </div>
+                        <div className="text-sm text-gray-400 dark:text-gray-500 mt-1">
+                          {showingDeleted ? 'No deleted items available' : 'Get started by adding a new item'}
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 
 const FormModal: React.FC<FormModalProps & { compactLayout?: boolean }> = ({
