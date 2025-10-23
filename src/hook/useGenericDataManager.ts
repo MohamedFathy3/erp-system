@@ -535,78 +535,79 @@ export function useGenericDataManager({
     }
   };
 
-  return {
-    // State
-    search,
-    setSearch,
-    open,
-    setOpen,
-    editingItem,
-    setEditingItem,
-    currentPage,
-    setCurrentPage,
-    showFilter,
-    setShowFilter,
-    showingDeleted,
-    setShowingDeleted,
-    filters,
-    setFilters,
-    orderBy,
-    setOrderBy,
-    orderByDirection,
-    setOrderByDirection,
-    selectedItems,
-    setSelectedItems,
-    formData,
-    setFormData,
-    perPage,
-    setPerPage: handlePerPageChange,
+return {
+  // State
+  search,
+  setSearch,
+  open,
+  setOpen,
+  editingItem,
+  setEditingItem,
+  currentPage,
+  setCurrentPage,
+  showFilter,
+  setShowFilter,
+  showingDeleted,
+  setShowingDeleted,
+  filters,
+  setFilters,
+  orderBy,
+  setOrderBy,
+  orderByDirection,
+  setOrderByDirection,
+  selectedItems,
+  setSelectedItems,
+  formData,
+  setFormData,
+  perPage,
+  setPerPage: handlePerPageChange,
 
-    // Data
-    data,
-    pagination,
-    isLoading,
-    error,
-    additionalQueries,
+  // Data
+  data,
+  pagination,
+  isLoading,
+  error,
+  additionalQueries,
 
-    // Handlers
-    handleForceDeleteSelected,
-    handleSave,
-    handleDelete: (id: number, title: string) => deleteItemMutation.mutate({ id, title }),
-    handleBulkDelete: () => bulkDeleteMutation.mutate(Array.from(selectedItems)),
-    handleBulkRestore: () => bulkRestoreMutation.mutate(Array.from(selectedItems)),
-    handleFilter,
-    handleDeleteAll,
-    handleResetFilters,
-    handleSearch,
-    handleClearSearch,
-    toggleSelectAll: () => {
-      const pageIds = data.map(item => item.id);
-      const allSel = pageIds.every(id => selectedItems.has(id));
-      if (allSel) {
-        const newSet = new Set(selectedItems);
-        pageIds.forEach(id => newSet.delete(id));
-        setSelectedItems(newSet);
-      } else {
-        const newSet = new Set(selectedItems);
-        pageIds.forEach(id => newSet.add(id));
-        setSelectedItems(newSet);
-      }
-    },
-    toggleSelectItem: (id: number) => {
+  // Handlers
+  handleForceDeleteSelected,
+  handleSave,
+  handleDelete: (id: number, title: string) => deleteItemMutation.mutate({ id, title }),
+  handleBulkDelete: () => bulkDeleteMutation.mutate(Array.from(selectedItems)),
+  handleBulkRestore: () => bulkRestoreMutation.mutate(Array.from(selectedItems)),
+  handleFilter,
+  handleDeleteAll,
+  handleResetFilters,
+  handleSearch,
+  handleClearSearch,
+  toggleSelectAll: () => {
+    const pageIds = data.map(item => item.id);
+    const allSel = pageIds.every(id => selectedItems.has(id));
+    if (allSel) {
       const newSet = new Set(selectedItems);
-      if (newSet.has(id)) newSet.delete(id);
-      else newSet.add(id);
+      pageIds.forEach(id => newSet.delete(id));
       setSelectedItems(newSet);
-    },
-    handleRestore,
-    handleForceDelete,
-    handleToggleActive,
+    } else {
+      const newSet = new Set(selectedItems);
+      pageIds.forEach(id => newSet.add(id));
+      setSelectedItems(newSet);
+    }
+  },
+  toggleSelectItem: (id: number) => {
+    const newSet = new Set(selectedItems);
+    if (newSet.has(id)) newSet.delete(id);
+    else newSet.add(id);
+    setSelectedItems(newSet);
+  },
+  handleRestore,
+  handleForceDelete,
+  handleToggleActive,
+  handleToggleDeleted, // ✅ أضف هذا السطر
 
-    // Mutations
-    saveItemMutation,
-    deleteItemMutation,
-    bulkDeleteMutation,
-    bulkRestoreMutation,
-  };
+  // Mutations
+  saveItemMutation,
+  deleteItemMutation,
+  bulkDeleteMutation,
+  bulkRestoreMutation,
+};
 }

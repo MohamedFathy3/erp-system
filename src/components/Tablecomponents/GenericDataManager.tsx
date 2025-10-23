@@ -933,7 +933,7 @@ const DataTable: React.FC<DataTableProps & {
               ? "divide-red-300 dark:divide-red-700"
               : "divide-gray-200 dark:divide-gray-700"
             }`}>
-              <thead className="bg-gray-50 dark:bg-gray-700 sticky top-0 z-10">
+              <thead className="bg-gray-50 text-center dark:bg-gray-700 sticky top-0 z-10">
                 <tr>
                   <th className="px-4 py-3 text-center w-12">
                     <Checkbox
@@ -946,7 +946,7 @@ const DataTable: React.FC<DataTableProps & {
                   {compactView && hasImageColumn ? (
                     <>
                       {/* Compact Data Column */}
-                      <th className="px-4 py-3 text-left text-gray-700 dark:text-gray-300 font-medium uppercase tracking-wider min-w-[300px]">
+                      <th className="px-4 py-3 text-center text-gray-700 dark:text-gray-300 font-medium uppercase tracking-wider min-w-[300px]">
                         Basic Info
                       </th>
                       {/* Regular Columns */}
@@ -984,7 +984,7 @@ const DataTable: React.FC<DataTableProps & {
                   )}
                 </tr>
               </thead>
-              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+              <tbody className="bg-white text-center dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                 {data.length ? (
                   data.map((item: Entity) => {
                     const itemImage = getItemImage(item);
