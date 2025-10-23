@@ -26,7 +26,7 @@ export function useGenericDataManager({
   formFields = [],
   initialData = {},
   defaultFilters = {},
-  initialPerPage = 5
+  initialPerPage = 10
 }: GenericDataManagerProps): GenericDataManagerState & GenericDataManagerHandlers & {
   data: Entity[];
   pagination: PaginationMeta;
