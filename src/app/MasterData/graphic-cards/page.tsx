@@ -8,6 +8,7 @@ export default function TicketETAPage() {
   const lastIdRef = useRef(0);
 
   // 🔹 دالة لتوليد ID فريد
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const generateId = useCallback((item: any) => {
     const ep = "graphic-card";
     const firstLetter = ep[0]?.toUpperCase() || 'G';
