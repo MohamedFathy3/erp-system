@@ -1560,6 +1560,7 @@ export const FormFieldComponent: React.FC<FormFieldProps> = ({
     type OptionType = { value: string; label: string; image?: string; code?: string };
     
     const options: OptionType[] = field.optionsKey && additionalQueries?.[field.optionsKey]?.data 
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
       ? (additionalQueries[field.optionsKey].data as any[]).map((item: any): OptionType => ({
           value: item.id.toString(),
           label: `${item.name}${item.code ? ` (${item.code})` : ''}`,
