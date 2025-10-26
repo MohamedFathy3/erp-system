@@ -129,7 +129,7 @@ export interface ImageData {
 export interface FormField {
   name: string;
   label: string;
-  type: 'text' | 'number' | 'select' | 'email' | 'password' | 'date' |'custom-time' | 'time' | 'image' | 'switch' | 'textarea' | 'file' | 'tel' | 'url' | 'checkbox';
+  type: 'text' | 'number' | 'select' | 'email' | 'password' | 'date'| 'custom' |'datetime-local' |'custom-time' | 'time' | 'image' | 'switch' | 'textarea' | 'file' | 'tel' | 'url' | 'checkbox';
   required?: boolean;
   options?: { value: string | number; label: string }[];
   optionsKey?: string;

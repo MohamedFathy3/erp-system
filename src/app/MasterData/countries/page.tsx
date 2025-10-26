@@ -29,11 +29,12 @@ export default function DeviceModelsPage() {
           label: 'Code', 
           sortable: false 
         },
-        { 
-          key: 'key', 
-          label: 'Phone Code', 
-          sortable: false 
-        },
+     { 
+  key: 'key', 
+  label: 'Phone Code', 
+  sortable: false,
+  render: (item) => `+${item.key}`  // هنا بنضيف علامة + قبل الرقم
+},
         { 
           key: 'active', 
           label: 'Active', 

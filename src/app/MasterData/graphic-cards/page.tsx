@@ -1,11 +1,26 @@
 'use client';
-import { useRef } from "react";
+import { useRef, useCallback } from "react";
 import GenericDataManager from "@/components/Tablecomponents/GenericDataManager";
 import { smartTranslate } from '@/utils/translations';
 
 export default function TicketETAPage() {
-  // 🔹 عدّاد لتوليد أرقام متسلسلة
-  const counterRef = useRef(0);
+  // 🔹 استخدام useRef لتخزين آخر ID مستخدم
+  const lastIdRef = useRef(0);
+
+  // 🔹 دالة لتوليد ID فريد
+  const generateId = useCallback((item: any) => {
+    const ep = "graphic-card";
+    const firstLetter = ep[0]?.toUpperCase() || 'G';
+    const lastLetter = ep[ep.length - 1]?.toUpperCase() || 'C';
+    
+    const namePrefix = item.model ? item.model.slice(0, 2).toUpperCase() : "NA";
+    
+    // استخدام الـ ID الحقيقي من البيانات إذا موجود، وإلا نستخدم counter
+    const itemId = item.id || ++lastIdRef.current;
+    const num = String(itemId).padStart(3, '0');
+    
+    return `${firstLetter}${lastLetter}${namePrefix}${num}`;
+  }, []);
 
   return (
     <GenericDataManager
@@ -16,28 +31,17 @@ export default function TicketETAPage() {
           key: 'id', 
           label: 'ID', 
           sortable: true,
-          render: (item) => {
-            const ep = "graphic-card";
-            const firstLetter = ep[0]?.toUpperCase() || 'G';
-            const lastLetter = ep[ep.length - 1]?.toUpperCase() || 'D';
-
-            // 🔹 زوّد العدّاد واحد كل مرة
-            counterRef.current += 1;
-            const num = counterRef.current.toString().padStart(3, '0'); // مثل 001, 002, 003
-            
-            const namePrefix = item.name ? item.name.slice(0, 2).toUpperCase() : "NA";
-            return `${firstLetter}${lastLetter}${namePrefix}${num}`;
-          }
+          render: (item) => generateId(item)
         },
         { key: 'model', label: 'Model', sortable: true },
         { key: 'vram', label: 'VRAM', sortable: false },
-
         { 
-          key: 'Arabic', 
+          key: 'arabicName', 
           label: 'Arabic Name', 
           sortable: false,
           render: (item) => {
-            const arabicName = smartTranslate(item.name);
+            // 🔹 استخدام item.model بدل item.name
+            const arabicName = smartTranslate(item.model || '');
             return (
               <div className="flex flex-col">
                 <span className="text-gray-800 dark:text-gray-200">{arabicName}</span>
@@ -50,11 +54,21 @@ export default function TicketETAPage() {
         },
       ]}
       formFields={[
-        { name: 'Arabic', label: 'Arabic Name', type: 'text', required: false },
-        { name: 'model', label: 'Model', type: 'text', required: true },
-        { name: 'vram', label: 'VRAM', type: 'text', required: true },
+        { 
+          name: 'model', 
+          label: 'Model', 
+          type: 'text', 
+          required: true 
+        },
+        { 
+          name: 'vram', 
+          label: 'VRAM', 
+          type: 'text', 
+          required: true 
+        },
+        // 🔹 إزالة الحقل 'Arabic' إذا لم يكن موجود في الـ API
       ]}
-      initialData={{ }}
+      initialData={{}}
       defaultFilters={{}}
     />
   );

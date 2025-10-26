@@ -1281,15 +1281,15 @@ const FormModal: React.FC<FormModalProps & { compactLayout?: boolean }> = ({
 import { SelectField } from "./SelectField";
 
 interface FormFieldProps {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   field: any;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   value: any;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onChange: (val: any) => void;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   additionalQueries?: any;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   formData?: any;
   compact?: boolean;
 }
@@ -1340,6 +1340,75 @@ export const FormFieldComponent: React.FC<FormFieldProps> = ({
     );
   }
 
+  // في FormFieldComponent - بعد كل الـ if conditions
+  // أضف الـ custom types
+  if (field.type === "custom" && field.component === "checkbox-group") {
+    const selectedValues = Array.isArray(value) ? value : [];
+    
+    // ✅ التحقق من وجود بيانات قبل العرض
+    const hasOptions = field.options && field.options.length > 0;
+    
+    return (
+      <div className="space-y-3">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+          {field.label}
+        </label>
+        
+        {/* ✅ قسم مخصص للـ checkboxes - يظهر فقط إذا كان هناك بيانات */}
+        {hasOptions ? (
+          <div className="space-y-2 border border-gray-200 dark:border-gray-600 rounded-lg p-4 bg-gray-50 dark:bg-gray-700">
+            {field.options?.map((option: { value: string; label: string }) => (
+              <label key={option.value} className="flex items-center space-x-3 cursor-pointer hover:bg-white dark:hover:bg-gray-600 p-2 rounded transition-colors">
+                <input
+                  type="checkbox"
+                  value={option.value}
+                  checked={selectedValues.includes(option.value)}
+                  onChange={(e) => {
+                    const newValues = e.target.checked
+                      ? [...selectedValues, option.value]
+                      : selectedValues.filter((v: string) => v !== option.value);
+                    onChange(newValues);
+                  }}
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                />
+                <span className="text-sm text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                  {option.label}
+                </span>
+              </label>
+            ))}
+          </div>
+        ) : (
+          // ✅ رسالة تظهر عندما لا توجد بيانات
+          <div className="text-center py-4 border border-dashed border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-800">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              No options available
+            </p>
+          </div>
+        )}
+        
+        {/* ✅ عرض العناصر المختارة - يظهر فقط إذا كان هناك اختيارات */}
+        {selectedValues.length > 0 && (
+          <div className="mt-3">
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Selected port types:</p>
+            <div className="flex flex-wrap gap-2">
+              {selectedValues.map((selectedValue: string) => {
+                const selectedOption = field.options?.find((opt: { value: string; label: string }) => opt.value === selectedValue);
+                return selectedOption ? (
+                  <span 
+                    key={selectedValue}
+                    className="bg-gradient-to-r from-blue-500 to-blue-600 text-white text-xs px-3 py-1.5 rounded-full shadow-sm flex items-center gap-1"
+                  >
+                    {selectedOption.label}
+                  </span>
+                ) : null;
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   // ✅ معالجة الـ Switch
   if (field.type === "switch") {
     return (
@@ -1357,93 +1426,92 @@ export const FormFieldComponent: React.FC<FormFieldProps> = ({
   }
 
   // في FormFieldComponent - أضف هذا الشرط بعد الـ switch مباشرة
-if (field.type === "custom-time") {
-  const timeValue = value || '00:00:00';
-  const [rawHours = '00', minutes = '00', seconds = '00'] = timeValue.split(':');
+  if (field.type === "custom-time") {
+    const timeValue = value || '00:00:00';
+    const [rawHours = '00', minutes = '00', seconds = '00'] = timeValue.split(':');
 
-  // احسب الأيام من الساعات لو الساعات فوق 24
-  const totalHours = parseInt(rawHours);
-  const days = Math.floor(totalHours / 24);
-  const hours = (totalHours % 24).toString().padStart(2, '0');
+    // احسب الأيام من الساعات لو الساعات فوق 24
+    const totalHours = parseInt(rawHours);
+    const days = Math.floor(totalHours / 24);
+    const hours = (totalHours % 24).toString().padStart(2, '0');
 
-  const handleChange = (newDays: string, newHours: string, newMinutes: string, newSeconds: string) => {
-    const totalHours = (parseInt(newDays) * 24 + parseInt(newHours)).toString().padStart(2, '0');
-    const finalTime = `${totalHours}:${newMinutes}:${newSeconds}`;
-    onChange(finalTime);
-  };
+    const handleChange = (newDays: string, newHours: string, newMinutes: string, newSeconds: string) => {
+      const totalHours = (parseInt(newDays) * 24 + parseInt(newHours)).toString().padStart(2, '0');
+      const finalTime = `${totalHours}:${newMinutes}:${newSeconds}`;
+      onChange(finalTime);
+    };
 
-  return (
-    <div className="space-y-2">
-      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-        {field.label}
-        {field.required && <span className="text-red-500 ml-1">*</span>}
-      </label>
+    return (
+      <div className="space-y-2">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+          {field.label}
+          {field.required && <span className="text-red-500 ml-1">*</span>}
+        </label>
 
-      <div className="grid grid-cols-4 gap-3">
-        {/* Days */}
-        <div>
-          <label className="block text-xs text-gray-500 mb-1 text-center">Days</label>
-          <select
-            value={days.toString()}
-            onChange={(e) => handleChange(e.target.value, hours, minutes, seconds)}
-            className="w-full p-3 rounded-xl dark:bg-gray-800 dark:text-gray-100 border border-gray-300 dark:border-gray-600 text-center"
-          >
-            {Array.from({ length: 31 }, (_, i) => (
-              <option key={i} value={i.toString()}>
-                {i}
-              </option>
-            ))}
-          </select>
+        <div className="grid grid-cols-4 gap-3">
+          {/* Days */}
+          <div>
+            <label className="block text-xs text-gray-500 mb-1 text-center">Days</label>
+            <select
+              value={days.toString()}
+              onChange={(e) => handleChange(e.target.value, hours, minutes, seconds)}
+              className="w-full p-3 rounded-xl dark:bg-gray-800 dark:text-gray-100 border border-gray-300 dark:border-gray-600 text-center"
+            >
+              {Array.from({ length: 31 }, (_, i) => (
+                <option key={i} value={i.toString()}>
+                  {i}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Hours */}
+          <div>
+            <label className="block text-xs text-gray-500 mb-1 text-center">Hours</label>
+            <select
+              value={hours}
+              onChange={(e) => handleChange(days.toString(), e.target.value, minutes, seconds)}
+              className="w-full p-3 rounded-xl dark:bg-gray-800 dark:text-gray-100 border border-gray-300 dark:border-gray-600 text-center"
+            >
+              {Array.from({ length: 24 }, (_, i) => (
+                <option key={i} value={i.toString().padStart(2, '0')}>
+                  {i.toString().padStart(2, '0')}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Minutes */}
+          <div>
+            <label className="block text-xs text-gray-500 mb-1 text-center">Minutes</label>
+            <select
+              value={minutes}
+              onChange={(e) => handleChange(days.toString(), hours, e.target.value, seconds)}
+              className="w-full p-3 rounded-xl dark:bg-gray-800 dark:text-gray-100 border border-gray-300 dark:border-gray-600 text-center"
+            >
+              {Array.from({ length: 60 }, (_, i) => (
+                <option key={i} value={i.toString().padStart(2, '0')}>
+                  {i.toString().padStart(2, '0')}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Seconds */}
         </div>
 
-        {/* Hours */}
-        <div>
-          <label className="block text-xs text-gray-500 mb-1 text-center">Hours</label>
-          <select
-            value={hours}
-            onChange={(e) => handleChange(days.toString(), e.target.value, minutes, seconds)}
-            className="w-full p-3 rounded-xl dark:bg-gray-800 dark:text-gray-100 border border-gray-300 dark:border-gray-600 text-center"
-          >
-            {Array.from({ length: 24 }, (_, i) => (
-              <option key={i} value={i.toString().padStart(2, '0')}>
-                {i.toString().padStart(2, '0')}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Minutes */}
-        <div>
-          <label className="block text-xs text-gray-500 mb-1 text-center">Minutes</label>
-          <select
-            value={minutes}
-            onChange={(e) => handleChange(days.toString(), hours, e.target.value, seconds)}
-            className="w-full p-3 rounded-xl dark:bg-gray-800 dark:text-gray-100 border border-gray-300 dark:border-gray-600 text-center"
-          >
-            {Array.from({ length: 60 }, (_, i) => (
-              <option key={i} value={i.toString().padStart(2, '0')}>
-                {i.toString().padStart(2, '0')}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Seconds */}
-      
-      </div>
-
-      {/* عرض الوقت النهائي */}
-      <div className="text-center mt-2">
-        <span className="text-sm text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded-lg">
-          Selected:{" "}
-          <span className="font-mono font-bold">
-            {String(days)} day(s), {hours}:{minutes}
+        {/* عرض الوقت النهائي */}
+        <div className="text-center mt-2">
+          <span className="text-sm text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded-lg">
+            Selected:{" "}
+            <span className="font-mono font-bold">
+              {String(days)} day(s), {hours}:{minutes}
+            </span>
           </span>
-        </span>
+        </div>
       </div>
-    </div>
-  );
-}
+    );
+  }
 
   // ✅ textarea
   if (field.type === "textarea") {
@@ -1487,6 +1555,42 @@ if (field.type === "custom-time") {
     );
   }
 
+  if (field.type === "select") {
+    // تعريف النوع
+    type OptionType = { value: string; label: string; image?: string; code?: string };
+    
+    const options: OptionType[] = field.optionsKey && additionalQueries?.[field.optionsKey]?.data 
+      ? (additionalQueries[field.optionsKey].data as any[]).map((item: any): OptionType => ({
+          value: item.id.toString(),
+          label: `${item.name}${item.code ? ` (${item.code})` : ''}`,
+        }))
+      : field.options || [];
+
+    return (
+      <div className="space-y-2">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+          {field.label}
+          {field.required && <span className="text-red-500 ml-1">*</span>}
+        </label>
+        
+        <select
+          name={field.name}
+          value={value?.toString() || ""}
+          onChange={(e) => onChange(e.target.value)}
+          required={field.required}
+          className="w-full p-3 rounded-xl dark:bg-gray-800 dark:text-gray-100 border border-gray-300 dark:border-gray-600"
+        >
+          <option value="">Select {field.label}</option>
+          {options.map((option: OptionType) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </div>
+    );
+  }
+  
   // ✅ باقي الحقول العادية
   return (
     <div className="space-y-2">
@@ -1506,4 +1610,3 @@ if (field.type === "custom-time") {
     </div>
   );
 };
-
