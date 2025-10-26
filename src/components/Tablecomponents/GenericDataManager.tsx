@@ -26,6 +26,7 @@ import {
   PaginationMeta,
   FilterField,
   SaveOptions,
+    FormField,
 } from "@/types/generic-data-manager";
 
 interface ExtendedHeaderProps extends HeaderProps {
@@ -1186,97 +1187,164 @@ return (
 );
 };
 
+  import { useState, FormEvent, useCallback, useEffect } from "react";
+
 
 const FormModal: React.FC<FormModalProps & { compactLayout?: boolean }> = ({
   title, editingItem, formFields, formData, additionalQueries,
   onFormDataChange, onSave, onClose, saveLoading,
   compactLayout = false
 }) => {
-  // تجميع الحقول في صفوف إذا كان هناك أكثر من 5 حقول
-  const groupedFields = compactLayout 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ? formFields.reduce((groups: any[][], field, index) => {
-        const groupIndex = Math.floor(index / 2);
-        if (!groups[groupIndex]) groups[groupIndex] = [];
-        groups[groupIndex].push(field);
-        return groups;
-      }, [])
-    : [formFields];
+  
+  const [activeTab, setActiveTab] = useState<string>('basic');
+
+  // ✅ تقسيم الحقول ديناميكي للتابات
+  const getTabsData = () => {
+    const basicFields = formFields.filter(field => 
+      ['text', 'email', 'password', 'tel', 'url', 'number'].includes(field.type)
+    );
+    
+    const selectionFields = formFields.filter(field => 
+      ['select', 'custom'].includes(field.type)
+    );
+    
+    const settingsFields = formFields.filter(field => 
+      ['switch', 'checkbox'].includes(field.type)
+    );
+    
+    const mediaFields = formFields.filter(field => 
+      ['image', 'file'].includes(field.type)
+    );
+    
+    const advancedFields = formFields.filter(field => 
+      ['textarea', 'date', 'datetime-local', 'time'].includes(field.type)
+    );
+
+    const tabs = [
+      { id: 'basic', label: '📝 Basic', fields: basicFields, icon: 'fa-file-alt' },
+      { id: 'selection', label: '📋 Selection', fields: selectionFields, icon: 'fa-list' },
+      { id: 'settings', label: '⚡ Settings', fields: settingsFields, icon: 'fa-cog' },
+      { id: 'media', label: '🖼️ Media', fields: mediaFields, icon: 'fa-image' },
+      { id: 'advanced', label: '🔧 Advanced', fields: advancedFields, icon: 'fa-tools' },
+    ];
+
+    return tabs.filter(tab => tab.fields.length > 0);
+  };
+
+  const tabs = getTabsData();
+  const currentTab = tabs.find(tab => tab.id === activeTab) || tabs[0];
+
+  const modalSize = 'w-full max-w-5xl';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-      <div className={`bg-white dark:bg-gray-900 rounded-3xl shadow-2xl ${compactLayout ? 'w-full max-w-4xl' : 'w-full max-w-md'} p-6 relative max-h-[90vh] overflow-y-auto`}>
+      <div className={`bg-white dark:bg-gray-900 rounded-3xl shadow-2xl ${modalSize} p-6 relative max-h-[90vh] overflow-hidden`}>
         <button 
           onClick={onClose}
-          className="absolute top-3 right-3 text-gray-500 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100 text-xl font-bold z-10"
+          className="absolute top-4 right-4 text-gray-500 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100 text-xl font-bold z-10"
         >
           ✖
         </button>
-        <h2 className="text-2xl font-semibold mb-6 text-gray-900 dark:text-gray-100">
-          {editingItem ? `Edit ${title}` : `Add ${title}`}
-        </h2>
-        <form className="space-y-4" onSubmit={onSave}>
-          {groupedFields.map((fieldGroup, groupIndex) => (
-            <div 
-              key={groupIndex} 
-              className={`grid gap-4 ${compactLayout ? 'grid-cols-2' : 'grid-cols-1'}`}
-            >
-              {fieldGroup.map((field) => (
+        
+        {/* الهيدر */}
+        <div className="mb-6">
+          <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
+            {editingItem ? `Edit ${title}` : `Add ${title}`}
+          </h2>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">
+            {editingItem ? 'Update the item details' : 'Fill in the details below'}
+          </p>
+        </div>
+
+        {/* ✅ التابات */}
+        <div className="mb-6">
+          <div className="flex space-x-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-2xl">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`
+                  flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 flex-1 text-center justify-center
+                  ${activeTab === tab.id 
+                    ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-md' 
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-white/50 dark:hover:bg-gray-700/50'
+                  }
+                `}
+              >
+                <i className={`fas ${tab.icon} text-xs`}></i>
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <form className="space-y-6" onSubmit={onSave}>
+          <div className="min-h-[400px] max-h-[60vh] overflow-y-auto custom-scrollbar pr-2">
+            <div className={`grid gap-6 ${compactLayout ? 'grid-cols-2' : 'grid-cols-1'}`}>
+              {currentTab.fields.map((field) => (
                 <FormFieldComponent
                   key={field.name}
                   field={field}
                   value={formData[field.name] || ""}
-                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  onChange={(value: any) => onFormDataChange({ ...formData, [field.name]: value })}
+                  onChange={(value: unknown) => onFormDataChange({ ...formData, [field.name]: value })}
                   additionalQueries={additionalQueries}
                   formData={formData}
                   compact={compactLayout}
                 />
               ))}
             </div>
-          ))}
-<div className="flex space-x-4 mt-6">
-  <Button
-    style={{color:'black'}}
-    type="submit"
-    className="w-full bg-gradient-to-r from-green-50 to-green-100 text-black hover:bg-indigo-700 transition-all rounded-xl"
-    disabled={saveLoading}
-  >
-    {saveLoading ? "Saving..." : editingItem ? "Save" : "Save"}
-  </Button>
 
-  <Button
-    style={{color:'black'}}
-    type="button"
-    className="w-full bg-gradient-to-r from-green-50 to-green-100 text-black hover:bg-green-200 transition-all rounded-xl"
-    disabled={saveLoading}
-    onClick={() => {
-      const saveOptions: SaveOptions = { keepOpen: true };
-      onSave(saveOptions);
-    }}
-  >
-    {saveLoading ? "Saving..." : editingItem ? "Save & new" : "Save & new"}
-  </Button>
+            {currentTab.fields.length === 0 && (
+              <div className="text-center py-16">
+                <i className="fas fa-inbox text-4xl text-gray-300 dark:text-gray-600 mb-4"></i>
+                <p className="text-gray-500 dark:text-gray-400 text-lg">
+                  No fields in this section
+                </p>
+                <p className="text-gray-400 dark:text-gray-500 text-sm mt-1">
+                  Switch to another tab to see available fields
+                </p>
+              </div>
+            )}
+          </div>
 
-  {/* زر Close */}
-  <Button
-    type="button"
-    style={{background:"#fee4e4",color:'black'}}
-    className="w-full bg-gradient-to-r from-gray-50 to-gray-100 text-gray-700 hover:bg-gray-200 transition-all rounded-xl border-none"
-    onClick={onClose}
-    disabled={saveLoading}
-  >
-    Close
-  </Button>
-</div>
+          <div className="flex space-x-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <Button
+              style={{color:'black'}}
+              type="submit"
+              className="flex-1 bg-gradient-to-r from-green-50 to-green-100 text-black hover:bg-green-200 transition-all rounded-xl py-3 text-base font-medium"
+              disabled={saveLoading}
+            >
+              {saveLoading ? "Saving..." : editingItem ? "Save" : "Save"}
+            </Button>
 
+            <Button
+              style={{color:'black'}}
+              type="button"
+              className="flex-1 bg-gradient-to-r from-green-50 to-green-100 text-black hover:bg-green-200 transition-all rounded-xl py-3 text-base font-medium"
+              disabled={saveLoading}
+              onClick={() => {
+                const saveOptions: SaveOptions = { keepOpen: true };
+                onSave(saveOptions);
+              }}
+            >
+              {saveLoading ? "Saving..." : editingItem ? "Save & new" : "Save & new"}
+            </Button>
+
+            <Button
+              type="button"
+              style={{background:"#fee4e4",color:'black'}}
+              className="flex-1 bg-gradient-to-r from-gray-50 to-gray-100 text-gray-700 hover:bg-gray-200 transition-all rounded-xl border-none py-3 text-base font-medium"
+              onClick={onClose}
+              disabled={saveLoading}
+            >
+              Close
+            </Button>
+          </div>
         </form>
       </div>
     </div>
   );
 };
-
-
 
 import { SelectField } from "./SelectField";
 
@@ -1294,6 +1362,7 @@ interface FormFieldProps {
   compact?: boolean;
 }
 
+// components/GenericDataManager.tsx - جزء FormFieldComponent الكامل
 export const FormFieldComponent: React.FC<FormFieldProps> = ({
   field,
   value,
@@ -1302,6 +1371,9 @@ export const FormFieldComponent: React.FC<FormFieldProps> = ({
   formData = {},
   compact = false,
 }) => {
+  console.log('🔍 FormFieldComponent - field:', field);
+  console.log('🔍 FormFieldComponent - value:', value);
+  
   const imageFieldTypes = [
     "image",
     "avatar",
@@ -1340,69 +1412,124 @@ export const FormFieldComponent: React.FC<FormFieldProps> = ({
     );
   }
 
-  // في FormFieldComponent - بعد كل الـ if conditions
-  // أضف الـ custom types
+  // ✅ معالجة الـ checkbox group
   if (field.type === "custom" && field.component === "checkbox-group") {
+    console.log('🎯 CHECKBOX GROUP FIELD TRIGGERED!', field);
+    
     const selectedValues = Array.isArray(value) ? value : [];
-    
-    // ✅ التحقق من وجود بيانات قبل العرض
-    const hasOptions = field.options && field.options.length > 0;
-    
+    type OptionType = { value: string | number; label: string };
+
     return (
-      <div className="space-y-3">
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+      <div className="space-y-4">
+        <label className="block text-lg font-semibold text-gray-800 dark:text-gray-200">
           {field.label}
+          {field.required && <span className="text-red-500 ml-1">*</span>}
         </label>
         
-        {/* ✅ قسم مخصص للـ checkboxes - يظهر فقط إذا كان هناك بيانات */}
-        {hasOptions ? (
-          <div className="space-y-2 border border-gray-200 dark:border-gray-600 rounded-lg p-4 bg-gray-50 dark:bg-gray-700">
-            {field.options?.map((option: { value: string; label: string }) => (
-              <label key={option.value} className="flex items-center space-x-3 cursor-pointer hover:bg-white dark:hover:bg-gray-600 p-2 rounded transition-colors">
+        {/* ✅ تصميم جديد للـ checkboxes */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-6 bg-gradient-to-br from-gray-50 to-blue-50 dark:from-gray-800 dark:to-blue-900/20 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm">
+          {field.options?.map((option: OptionType) => {
+            const isSelected = selectedValues.includes(option.value);
+            return (
+              <label 
+                key={option.value.toString()} 
+                className={`
+                  relative flex items-center p-4 rounded-xl border-2 cursor-pointer transition-all duration-300 group
+                  ${isSelected 
+                    ? 'border-green-500 bg-green-50 dark:bg-green-900/20 shadow-md scale-105' 
+                    : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 hover:border-blue-400 hover:shadow-lg'
+                  }
+                  hover:scale-105 active:scale-95
+                `}
+              >
                 <input
                   type="checkbox"
                   value={option.value}
-                  checked={selectedValues.includes(option.value)}
+                  checked={isSelected}
                   onChange={(e) => {
                     const newValues = e.target.checked
                       ? [...selectedValues, option.value]
-                      : selectedValues.filter((v: string) => v !== option.value);
+                      : selectedValues.filter((v: string | number) => v !== option.value);
                     onChange(newValues);
                   }}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  className="sr-only" // إخفاء الـ checkbox الأصلي
                 />
-                <span className="text-sm text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                
+                {/* ✅ تصميم مخصص للـ checkbox */}
+                <div className={`
+                  flex items-center justify-center w-6 h-6 rounded-lg border-2 mr-4 transition-all duration-300
+                  ${isSelected 
+                    ? 'bg-green-500 border-green-500 text-white' 
+                    : 'bg-white dark:bg-gray-700 border-gray-400 group-hover:border-blue-500'
+                  }
+                `}>
+                  {isSelected && (
+                    <i className="fas fa-check text-xs font-bold transition-all duration-300"></i>
+                  )}
+                </div>
+                
+                <span className={`
+                  text-base font-medium transition-colors duration-300
+                  ${isSelected 
+                    ? 'text-green-700 dark:text-green-300' 
+                    : 'text-gray-700 dark:text-gray-300 group-hover:text-blue-600'
+                  }
+                `}>
                   {option.label}
                 </span>
+                
+                {/* ✅ تأثير عند التحديد */}
+                {isSelected && (
+                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full animate-ping"></div>
+                )}
               </label>
-            ))}
-          </div>
-        ) : (
-          // ✅ رسالة تظهر عندما لا توجد بيانات
-          <div className="text-center py-4 border border-dashed border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-800">
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              No options available
-            </p>
-          </div>
-        )}
+            );
+          })}
+        </div>
         
-        {/* ✅ عرض العناصر المختارة - يظهر فقط إذا كان هناك اختيارات */}
+        {/* ✅ عرض العناصر المختارة بشكل جميل */}
         {selectedValues.length > 0 && (
-          <div className="mt-3">
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Selected port types:</p>
-            <div className="flex flex-wrap gap-2">
-              {selectedValues.map((selectedValue: string) => {
-                const selectedOption = field.options?.find((opt: { value: string; label: string }) => opt.value === selectedValue);
+          <div className="mt-6 p-4 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm">
+            <div className="flex items-center gap-3 mb-3">
+              <i className="fas fa-check-circle text-green-500 text-lg"></i>
+              <span className="text-lg font-semibold text-gray-800 dark:text-gray-200">
+                Selected {field.label} ({selectedValues.length})
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              {selectedValues.map((selectedValue: string | number) => {
+                const selectedOption = field.options?.find((opt: OptionType) => opt.value === selectedValue);
                 return selectedOption ? (
                   <span 
-                    key={selectedValue}
-                    className="bg-gradient-to-r from-blue-500 to-blue-600 text-white text-xs px-3 py-1.5 rounded-full shadow-sm flex items-center gap-1"
+                    key={selectedValue.toString()}
+                    className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 py-2.5 rounded-full shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 group"
                   >
-                    {selectedOption.label}
+                    <span className="font-semibold">{selectedOption.label}</span>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const newValues = selectedValues.filter(v => v !== selectedValue);
+                        onChange(newValues);
+                      }}
+                      className="w-5 h-5 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors"
+                    >
+                      <i className="fas fa-times text-xs"></i>
+                    </button>
                   </span>
                 ) : null;
               })}
             </div>
+          </div>
+        )}
+        
+        {/* ✅ رسالة إذا مفيش اختيارات */}
+        {selectedValues.length === 0 && (
+          <div className="text-center py-6 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-2xl bg-gray-50/50 dark:bg-gray-800/50">
+            <i className="fas fa-mouse-pointer text-3xl text-gray-400 mb-3"></i>
+            <p className="text-gray-500 dark:text-gray-400 font-medium">
+              Select {field.label.toLowerCase()} by clicking on the options above
+            </p>
           </div>
         )}
       </div>
@@ -1425,89 +1552,92 @@ export const FormFieldComponent: React.FC<FormFieldProps> = ({
     );
   }
 
-  // في FormFieldComponent - أضف هذا الشرط بعد الـ switch مباشرة
+  // ✅ معالجة الـ custom-time
   if (field.type === "custom-time") {
+    console.log('🎯 CUSTOM-TIME FIELD TRIGGERED!', field);
+    
     const timeValue = value || '00:00:00';
-    const [rawHours = '00', minutes = '00', seconds = '00'] = timeValue.split(':');
+    const [hours = '00', minutes = '00', seconds = '00'] = timeValue.split(':');
 
     // احسب الأيام من الساعات لو الساعات فوق 24
-    const totalHours = parseInt(rawHours);
+    const totalHours = parseInt(hours);
     const days = Math.floor(totalHours / 24);
-    const hours = (totalHours % 24).toString().padStart(2, '0');
+    const displayHours = (totalHours % 24).toString().padStart(2, '0');
 
-    const handleChange = (newDays: string, newHours: string, newMinutes: string, newSeconds: string) => {
+    const handleChange = (newDays: string, newHours: string, newMinutes: string) => {
       const totalHours = (parseInt(newDays) * 24 + parseInt(newHours)).toString().padStart(2, '0');
-      const finalTime = `${totalHours}:${newMinutes}:${newSeconds}`;
+      const finalTime = `${totalHours}:${newMinutes}:00`;
       onChange(finalTime);
     };
 
     return (
-      <div className="space-y-2">
+      <div className="space-y-4">
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
           {field.label}
           {field.required && <span className="text-red-500 ml-1">*</span>}
         </label>
 
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-3 gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
           {/* Days */}
-          <div>
-            <label className="block text-xs text-gray-500 mb-1 text-center">Days</label>
+          <div className="text-center">
+            <label className="block text-xs text-gray-500 mb-2 font-medium">Days</label>
             <select
               value={days.toString()}
-              onChange={(e) => handleChange(e.target.value, hours, minutes, seconds)}
-              className="w-full p-3 rounded-xl dark:bg-gray-800 dark:text-gray-100 border border-gray-300 dark:border-gray-600 text-center"
+              onChange={(e) => handleChange(e.target.value, displayHours, minutes)}
+              className="w-full p-3 rounded-lg dark:bg-gray-700 dark:text-gray-100 border border-gray-300 dark:border-gray-600 text-center focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               {Array.from({ length: 31 }, (_, i) => (
                 <option key={i} value={i.toString()}>
-                  {i}
+                  {i} Day{i !== 1 ? 's' : ''}
                 </option>
               ))}
             </select>
           </div>
 
           {/* Hours */}
-          <div>
-            <label className="block text-xs text-gray-500 mb-1 text-center">Hours</label>
+          <div className="text-center">
+            <label className="block text-xs text-gray-500 mb-2 font-medium">Hours</label>
             <select
-              value={hours}
-              onChange={(e) => handleChange(days.toString(), e.target.value, minutes, seconds)}
-              className="w-full p-3 rounded-xl dark:bg-gray-800 dark:text-gray-100 border border-gray-300 dark:border-gray-600 text-center"
+              value={displayHours}
+              onChange={(e) => handleChange(days.toString(), e.target.value, minutes)}
+              className="w-full p-3 rounded-lg dark:bg-gray-700 dark:text-gray-100 border border-gray-300 dark:border-gray-600 text-center focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               {Array.from({ length: 24 }, (_, i) => (
                 <option key={i} value={i.toString().padStart(2, '0')}>
-                  {i.toString().padStart(2, '0')}
+                  {i.toString().padStart(2, '0')}h
                 </option>
               ))}
             </select>
           </div>
 
           {/* Minutes */}
-          <div>
-            <label className="block text-xs text-gray-500 mb-1 text-center">Minutes</label>
+          <div className="text-center">
+            <label className="block text-xs text-gray-500 mb-2 font-medium">Minutes</label>
             <select
               value={minutes}
-              onChange={(e) => handleChange(days.toString(), hours, e.target.value, seconds)}
-              className="w-full p-3 rounded-xl dark:bg-gray-800 dark:text-gray-100 border border-gray-300 dark:border-gray-600 text-center"
+              onChange={(e) => handleChange(days.toString(), displayHours, e.target.value)}
+              className="w-full p-3 rounded-lg dark:bg-gray-700 dark:text-gray-100 border border-gray-300 dark:border-gray-600 text-center focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               {Array.from({ length: 60 }, (_, i) => (
                 <option key={i} value={i.toString().padStart(2, '0')}>
-                  {i.toString().padStart(2, '0')}
+                  {i.toString().padStart(2, '0')}m
                 </option>
               ))}
             </select>
           </div>
-
-          {/* Seconds */}
         </div>
 
         {/* عرض الوقت النهائي */}
-        <div className="text-center mt-2">
-          <span className="text-sm text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded-lg">
-            Selected:{" "}
-            <span className="font-mono font-bold">
-              {String(days)} day(s), {hours}:{minutes}
-            </span>
+        <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+          <span className="text-sm text-gray-600 dark:text-gray-400">Selected Time: </span>
+          <span className="font-mono font-bold text-blue-600 dark:text-blue-400">
+            {days > 0 ? `${days} day${days !== 1 ? 's' : ''}, ` : ''}
+            {parseInt(displayHours) > 0 ? `${parseInt(displayHours)} hour${parseInt(displayHours) !== 1 ? 's' : ''}, ` : ''}
+            {parseInt(minutes) > 0 ? `${parseInt(minutes)} minute${parseInt(minutes) !== 1 ? 's' : ''}` : '0 minutes'}
           </span>
+          <div className="text-xs text-gray-500 mt-1">
+            Total: {totalHours.toString().padStart(2, '0')}:{minutes}:00
+          </div>
         </div>
       </div>
     );
@@ -1533,6 +1663,96 @@ export const FormFieldComponent: React.FC<FormFieldProps> = ({
     );
   }
 
+  // في FormFieldComponent - أضف هذا الكود بعد الـ switch
+if (field.type === "custom" && field.component === "time-selector") {
+  console.log('🎯 CUSTOM TIME FIELD TRIGGERED!', field);
+  
+  const timeValue = value || '00:00:00';
+  const [hours = '00', minutes = '00', seconds = '00'] = timeValue.split(':');
+
+  // احسب الأيام من الساعات لو الساعات فوق 24
+  const totalHours = parseInt(hours);
+  const days = Math.floor(totalHours / 24);
+  const displayHours = (totalHours % 24).toString().padStart(2, '0');
+
+  const handleChange = (newDays: string, newHours: string, newMinutes: string) => {
+    const totalHours = (parseInt(newDays) * 24 + parseInt(newHours)).toString().padStart(2, '0');
+    const finalTime = `${totalHours}:${newMinutes}:00`;
+    onChange(finalTime);
+  };
+
+  return (
+    <div className="space-y-4">
+      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+        {field.label}
+        {field.required && <span className="text-red-500 ml-1">*</span>}
+      </label>
+
+      <div className="grid grid-cols-3 gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
+        {/* Days */}
+        <div className="text-center">
+          <label className="block text-xs text-gray-500 mb-2 font-medium">Days</label>
+          <select
+            value={days.toString()}
+            onChange={(e) => handleChange(e.target.value, displayHours, minutes)}
+            className="w-full p-3 rounded-lg dark:bg-gray-700 dark:text-gray-100 border border-gray-300 dark:border-gray-600 text-center focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          >
+            {Array.from({ length: 31 }, (_, i) => (
+              <option key={i} value={i.toString()}>
+                {i} Day{i !== 1 ? 's' : ''}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Hours */}
+        <div className="text-center">
+          <label className="block text-xs text-gray-500 mb-2 font-medium">Hours</label>
+          <select
+            value={displayHours}
+            onChange={(e) => handleChange(days.toString(), e.target.value, minutes)}
+            className="w-full p-3 rounded-lg dark:bg-gray-700 dark:text-gray-100 border border-gray-300 dark:border-gray-600 text-center focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          >
+            {Array.from({ length: 24 }, (_, i) => (
+              <option key={i} value={i.toString().padStart(2, '0')}>
+                {i.toString().padStart(2, '0')}h
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Minutes */}
+        <div className="text-center">
+          <label className="block text-xs text-gray-500 mb-2 font-medium">Minutes</label>
+          <select
+            value={minutes}
+            onChange={(e) => handleChange(days.toString(), displayHours, e.target.value)}
+            className="w-full p-3 rounded-lg dark:bg-gray-700 dark:text-gray-100 border border-gray-300 dark:border-gray-600 text-center focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          >
+            {Array.from({ length: 60 }, (_, i) => (
+              <option key={i} value={i.toString().padStart(2, '0')}>
+                {i.toString().padStart(2, '0')}m
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* عرض الوقت النهائي */}
+      <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+        <span className="text-sm text-gray-600 dark:text-gray-400">Selected Time: </span>
+        <span className="font-mono font-bold text-blue-600 dark:text-blue-400">
+          {days > 0 ? `${days} day${days !== 1 ? 's' : ''}, ` : ''}
+          {parseInt(displayHours) > 0 ? `${parseInt(displayHours)} hour${parseInt(displayHours) !== 1 ? 's' : ''}, ` : ''}
+          {parseInt(minutes) > 0 ? `${parseInt(minutes)} minute${parseInt(minutes) !== 1 ? 's' : ''}` : '0 minutes'}
+        </span>
+        <div className="text-xs text-gray-500 mt-1">
+          Total: {totalHours.toString().padStart(2, '0')}:{minutes}:00
+        </div>
+      </div>
+    </div>
+  );
+}
   // ✅ file input
   if (field.type === "file") {
     return (
@@ -1555,43 +1775,6 @@ export const FormFieldComponent: React.FC<FormFieldProps> = ({
     );
   }
 
-  if (field.type === "select") {
-    // تعريف النوع
-    type OptionType = { value: string; label: string; image?: string; code?: string };
-    
-    const options: OptionType[] = field.optionsKey && additionalQueries?.[field.optionsKey]?.data 
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ? (additionalQueries[field.optionsKey].data as any[]).map((item: any): OptionType => ({
-          value: item.id.toString(),
-          label: `${item.name}${item.code ? ` (${item.code})` : ''}`,
-        }))
-      : field.options || [];
-
-    return (
-      <div className="space-y-2">
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-          {field.label}
-          {field.required && <span className="text-red-500 ml-1">*</span>}
-        </label>
-        
-        <select
-          name={field.name}
-          value={value?.toString() || ""}
-          onChange={(e) => onChange(e.target.value)}
-          required={field.required}
-          className="w-full p-3 rounded-xl dark:bg-gray-800 dark:text-gray-100 border border-gray-300 dark:border-gray-600"
-        >
-          <option value="">Select {field.label}</option>
-          {options.map((option: OptionType) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-      </div>
-    );
-  }
-  
   // ✅ باقي الحقول العادية
   return (
     <div className="space-y-2">

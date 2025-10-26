@@ -167,13 +167,13 @@ export default function TicketETAPage() {
           ],
           placeholder: "Select priority level",
         },
-        { 
-          name: 'time', 
-          label: 'Time', 
-          type: 'custom-time',
-          required: true,
-          placeholder: 'HH:MM',
-        },
+{ 
+  name: 'time', 
+  label: 'ETA Time', 
+  type: 'custom' as const, // ✅ type يكون custom
+  component: 'time-selector' as const, // ✅ component يكون time-selector
+  required: true,
+},
         { 
           name: 'short_description', 
           label: 'Short Description', 

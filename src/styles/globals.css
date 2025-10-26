@@ -155,3 +155,35 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+
+/* في ملف global.css أو tailwind.config.js */
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal-enter {
+  animation: slideInUp 0.4s ease-out;
+}
+
+.overlay-enter {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* تحسين السكرولبار */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 #f1f5f9;
+}

@@ -139,6 +139,7 @@ export interface FormField {
   accept?: string;
   placeholder?: string;
   rows?: number;
+  component?: 'checkbox-group' | 'time-selector'; 
 }
 
 export interface MutationResult {
@@ -217,6 +218,7 @@ export interface FormFieldProps {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
   formData?: Record<string, any>;
   compact?: boolean;
+  
 }
 
 export interface FormModalProps {
