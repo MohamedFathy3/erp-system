@@ -29,10 +29,7 @@ import {
     FormField,
 } from "@/types/generic-data-manager";
 
-interface ExtendedHeaderProps extends HeaderProps {
-  showFilter: boolean;
-  searchTerm?: string;
-}
+
 
 const defaultPagination: PaginationMeta = {
   current_page: 1,
@@ -509,17 +506,15 @@ export default function GenericDataManager(props: GenericDataManagerProps): Reac
 }
 
 
+
+interface ExtendedHeaderProps extends HeaderProps {
+  showFilter: boolean;
+  searchTerm?: string;
+}
+
+
 // Sub-components
-const Header: React.FC<ExtendedHeaderProps & { 
-  onDeleteAll?: () => void; 
-  dataLength: number;
-  showAddButton?: boolean;
-  showEditButton?: boolean;
-  showDeleteButton?: boolean;
-  showActiveToggle?: boolean;
-  showBulkActions?: boolean;
-  showDeletedToggle?: boolean;
-}> = ({ 
+const Header = ({ 
   title, currentPage, pagination, selectedItems, showingDeleted, showFilter, searchTerm,
   onBulkAction, onToggleFilter, onToggleDeleted, onAddItem, onDeleteAll, dataLength,
   bulkLoading,  
@@ -530,6 +525,11 @@ const Header: React.FC<ExtendedHeaderProps & {
   showBulkActions = true,
   showDeletedToggle = true,
   onForceDeleteSelected,
+
+}:ExtendedHeaderProps & { 
+  onDeleteAll?: () => void; 
+  dataLength: number;
+
 }) => {
   const startItem = ((currentPage - 1) * pagination.per_page) + 1;
   const endItem = Math.min(currentPage * pagination.per_page, pagination.total);
@@ -708,6 +708,11 @@ const Header: React.FC<ExtendedHeaderProps & {
     </div>
   );
 };
+
+
+
+
+
 
 const DataTable: React.FC<DataTableProps & { 
   showingDeleted?: boolean;
@@ -1201,7 +1206,7 @@ const FormModal: React.FC<FormModalProps & { compactLayout?: boolean }> = ({
   // ✅ تقسيم الحقول ديناميكي للتابات
   const getTabsData = () => {
     const basicFields = formFields.filter(field => 
-      ['text', 'email', 'password', 'tel', 'url', 'number'].includes(field.type)
+      ['text', 'email', 'password', 'tel', 'url', 'number','switch'].includes(field.type)
     );
     
     const selectionFields = formFields.filter(field => 
@@ -1209,7 +1214,7 @@ const FormModal: React.FC<FormModalProps & { compactLayout?: boolean }> = ({
     );
     
     const settingsFields = formFields.filter(field => 
-      ['switch', 'checkbox'].includes(field.type)
+      [ 'checkbox'].includes(field.type)
     );
     
     const mediaFields = formFields.filter(field => 
@@ -1413,7 +1418,7 @@ export const FormFieldComponent: React.FC<FormFieldProps> = ({
   }
 
   // ✅ معالجة الـ checkbox group
-  if (field.type === "custom" && field.component === "checkbox-group") {
+if (field.type === "custom" && field.component === "checkbox-group") {
     console.log('🎯 CHECKBOX GROUP FIELD TRIGGERED!', field);
     
     const selectedValues = Array.isArray(value) ? value : [];
@@ -1436,7 +1441,7 @@ export const FormFieldComponent: React.FC<FormFieldProps> = ({
                 className={`
                   relative flex items-center p-4 rounded-xl border-2 cursor-pointer transition-all duration-300 group
                   ${isSelected 
-                    ? 'border-green-500 bg-green-50 dark:bg-green-900/20 shadow-md scale-105' 
+                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 shadow-md scale-105' 
                     : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 hover:border-blue-400 hover:shadow-lg'
                   }
                   hover:scale-105 active:scale-95
@@ -1457,71 +1462,61 @@ export const FormFieldComponent: React.FC<FormFieldProps> = ({
                 
                 {/* ✅ تصميم مخصص للـ checkbox */}
                 <div className={`
-                  flex items-center justify-center w-6 h-6 rounded-lg border-2 mr-4 transition-all duration-300
+                  flex items-center justify-center w-6 h-6 rounded border-2 mr-4 transition-all duration-300
                   ${isSelected 
-                    ? 'bg-green-500 border-green-500 text-white' 
+                    ? 'bg-blue-500 border-blue-500 text-white' 
                     : 'bg-white dark:bg-gray-700 border-gray-400 group-hover:border-blue-500'
                   }
                 `}>
                   {isSelected && (
-                    <i className="fas fa-check text-xs font-bold transition-all duration-300"></i>
+                    <svg 
+                      className="w-3 h-3" 
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                    >
+                      <path 
+                        strokeLinecap="round" 
+                        strokeLinejoin="round" 
+                        strokeWidth={3} 
+                        d="M5 13l4 4L19 7" 
+                      />
+                    </svg>
                   )}
                 </div>
                 
                 <span className={`
                   text-base font-medium transition-colors duration-300
                   ${isSelected 
-                    ? 'text-green-700 dark:text-green-300' 
+                    ? 'text-blue-700 dark:text-blue-300' 
                     : 'text-gray-700 dark:text-gray-300 group-hover:text-blue-600'
                   }
                 `}>
                   {option.label}
                 </span>
                 
-                {/* ✅ تأثير عند التحديد */}
+                {/* ✅ علامة اختيار صغيرة بدل الوميض */}
                 {isSelected && (
-                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full animate-ping"></div>
+                  <div className="absolute -top-2 -right-2 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center shadow-lg">
+                    <svg 
+                      className="w-3 h-3 text-white" 
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                    >
+                      <path 
+                        strokeLinecap="round" 
+                        strokeLinejoin="round" 
+                        strokeWidth={3} 
+                        d="M5 13l4 4L19 7" 
+                      />
+                    </svg>
+                  </div>
                 )}
               </label>
             );
           })}
         </div>
-        
-        {/* ✅ عرض العناصر المختارة بشكل جميل */}
-        {selectedValues.length > 0 && (
-          <div className="mt-6 p-4 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm">
-            <div className="flex items-center gap-3 mb-3">
-              <i className="fas fa-check-circle text-green-500 text-lg"></i>
-              <span className="text-lg font-semibold text-gray-800 dark:text-gray-200">
-                Selected {field.label} ({selectedValues.length})
-              </span>
-            </div>
-            <div className="flex flex-wrap gap-3">
-              {selectedValues.map((selectedValue: string | number) => {
-                const selectedOption = field.options?.find((opt: OptionType) => opt.value === selectedValue);
-                return selectedOption ? (
-                  <span 
-                    key={selectedValue.toString()}
-                    className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 py-2.5 rounded-full shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 group"
-                  >
-                    <span className="font-semibold">{selectedOption.label}</span>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        const newValues = selectedValues.filter(v => v !== selectedValue);
-                        onChange(newValues);
-                      }}
-                      className="w-5 h-5 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors"
-                    >
-                      <i className="fas fa-times text-xs"></i>
-                    </button>
-                  </span>
-                ) : null;
-              })}
-            </div>
-          </div>
-        )}
         
         {/* ✅ رسالة إذا مفيش اختيارات */}
         {selectedValues.length === 0 && (
@@ -1535,7 +1530,6 @@ export const FormFieldComponent: React.FC<FormFieldProps> = ({
       </div>
     );
   }
-
   // ✅ معالجة الـ Switch
   if (field.type === "switch") {
     return (

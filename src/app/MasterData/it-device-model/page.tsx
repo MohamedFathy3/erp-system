@@ -1,5 +1,6 @@
 // app/device-models/page.tsx
 'use client';
+
 import GenericDataManager from "@/components/Tablecomponents/GenericDataManager";
 
 export default function DeviceModelsPage() {
