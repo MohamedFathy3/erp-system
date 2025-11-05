@@ -20,7 +20,7 @@ export default function DeviceModelsPage() {
           }
         },
         { 
-          key: 'name', 
+          key: 'name',  
           label: 'Name', 
           sortable: true 
         },

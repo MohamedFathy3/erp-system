@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from "@/lib/api";
 import MainLayout from "@/components/MainLayout";
@@ -9,8 +9,10 @@ import { Input } from "@/components/ui/input";
 import { Eye } from "lucide-react";
 import toast from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
-import '@/styles/ticit.css';
 import AddTicketModal from '@/components/dashboard/AddTicketModal';
+import Pagination from "@/components/Tablecomponents/Pagination";
+import FilterSearch from "@/components/Tablecomponents/FilterSearch/FilterSearch";
+import { FilterField } from '@/types/generic-data-manager';
 
 interface Ticket {
   id: number;
@@ -46,18 +48,60 @@ interface CheckboxProps {
   className?: string;
 }
 
+// تعريف الفلاتر المتاحة للتذاكر
+const availableFilters: FilterField[] = [
+  {
+    key: 'status',
+    label: 'Status',
+    type: 'select',
+    options: [
+      { value: 'open', label: 'Open' },
+      { value: 'closed', label: 'Closed' },
+      { value: 'pending', label: 'Pending' },
+      { value: 'transfered', label: 'Transfered' }
+    ]
+  },
+  {
+    key: 'priority',
+    label: 'Priority',
+    type: 'select',
+    options: [
+      { value: 'high', label: 'High' },
+      { value: 'medium', label: 'Medium' },
+      { value: 'low', label: 'Low' },
+      { value: 'urgent', label: 'Urgent' }
+    ]
+  },
+  {
+    key: 'ticketNumber',
+    label: 'Ticket Number',
+    type: 'text',
+    placeholder: 'Search by ticket number...'
+  },
+  {
+    key: 'title',
+    label: 'Title',
+    type: 'text',
+    placeholder: 'Search by title...'
+  }
+];
+
 export default function Page() {
   const router = useRouter();
   const queryClient = useQueryClient();
   
+  // States
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [showFilter] = useState(false);
-  const [perPage] = useState(15);
-  const [orderBy] = useState('id');
-  const [orderByDirection] = useState('asc');
+  const [showFilter, setShowFilter] = useState(false);
+  const [perPage, setPerPage] = useState(15);
+  const [orderBy, setOrderBy] = useState('id');
+  const [orderByDirection, setOrderByDirection] = useState<'asc' | 'desc'>('desc');
   const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set());
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  
+  // Filter states
+  const [filters, setFilters] = useState<Record<string, string>>({});
 
   // استخدام React Query لجلب البيانات
   const {
@@ -66,7 +110,7 @@ export default function Page() {
     isLoading,
     isError,
   } = useQuery({
-    queryKey: ['tickets', currentPage, perPage, orderBy, orderByDirection, showFilter],
+    queryKey: ['tickets', currentPage, perPage, orderBy, orderByDirection, filters, search],
     queryFn: async (): Promise<ApiResponse> => {
       console.log('🔄 Fetching tickets for page:', currentPage);
       
@@ -76,7 +120,7 @@ export default function Page() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          filters: {},                
+          filters: filters,                
           orderBy: orderBy,           
           orderByDirection: orderByDirection,
           perPage: perPage,
@@ -93,9 +137,9 @@ export default function Page() {
       
       return response;
     },
-    staleTime: 5 * 60 * 1000, // البيانات تظل "طازجة" لمدة 5 دقائق
-    gcTime: 10 * 60 * 1000, // وقت التخزين المؤقت 10 دقائق
-    retry: 2, // عدد المحاولات في حالة الفشل
+    staleTime: 2 * 60 * 1000, // البيانات تظل "طازجة" لمدة 2 دقائق
+    gcTime: 5 * 60 * 1000, // وقت التخزين المؤقت 5 دقائق
+    retry: 2,
   });
 
   const data = apiResponse?.data || [];
@@ -107,6 +151,22 @@ export default function Page() {
     links: []
   };
 
+  // Filter data locally based on search
+  const filteredData = useMemo(() => {
+    return data.filter((item) =>
+      search === "" || 
+      item.title.toLowerCase().includes(search.toLowerCase()) ||
+      item.ticketNumber.toLowerCase().includes(search.toLowerCase()) ||
+      item.status.toLowerCase().includes(search.toLowerCase()) ||
+      item.priority.toLowerCase().includes(search.toLowerCase())
+    );
+  }, [data, search]);
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filters, orderBy, orderByDirection, search]);
+
   // معالجة الأخطاء
   if (isError) {
     const errorMessage = error instanceof Error ? error.message : "An error occurred";
@@ -114,7 +174,6 @@ export default function Page() {
   }
 
   const handleTicketAdded = () => {
-    // إبطال جميع الاستعلامات المتعلقة بالتذاكر وإعادة جلبها
     queryClient.invalidateQueries({ queryKey: ['tickets'] });
     toast.success('Ticket added successfully!');
   };
@@ -124,59 +183,21 @@ export default function Page() {
     try {
       console.log(`🔄 Fetching ticket details for ID: ${ticketId}`);
       
-      // استخدام React Query للبيانات المسبقة (prefetching)
       await queryClient.prefetchQuery({
         queryKey: ['ticket', ticketId],
         queryFn: async () => {
           const ticketData = await apiFetch(`/ticket/${ticketId}`);
           return ticketData;
         },
-        staleTime: 2 * 60 * 1000, // 2 دقائق
+        staleTime: 2 * 60 * 1000,
       });
 
-      // الانتقال إلى صفحة التذكرة
       router.push(`/It_module/ticket/${ticketId}`);
       
     } catch (err) {
       console.error('❌ Error fetching ticket details:', err);
       const errorMessage = err instanceof Error ? err.message : "Failed to fetch ticket details";
       toast.error(errorMessage);
-    }
-  };
-
-  // دالة لتغيير الحالة مع تحديث cache
-  const handleChangeStatus = async (id: number, newStatus: string) => {
-    try {
-      const responseData = await apiFetch(`/ticket/${id}/status`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ status: newStatus }),
-      });
-
-      console.log('✅ Status change response:', responseData);
-      
-      // تحديث الـ cache يدوياً
-      queryClient.setQueryData(['tickets', currentPage], (oldData: ApiResponse | undefined) => {
-        if (!oldData) return oldData;
-        
-        return {
-          ...oldData,
-          data: oldData.data.map(ticket => 
-            ticket.id === id 
-              ? { ...ticket, status: newStatus }
-              : ticket
-          )
-        };
-      });
-
-      toast.success(`Status changed successfully to ${newStatus}!`);
-      
-    } catch (err) {
-      console.error('❌ Error changing status:', err);
-      const message = err instanceof Error ? err.message : 'An unknown error occurred';
-      toast.error(`Failed to change ticket status: ${message}`);
     }
   };
 
@@ -221,28 +242,23 @@ export default function Page() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'open': return 'bg-blue-100 text-blue-800';
-      case 'closed': return 'bg-green-100 text-green-800';
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'transfered': return 'bg-purple-100 text-purple-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'open': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
+      case 'closed': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+      case 'pending': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
+      case 'transfered': return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200';
+      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
     }
   };
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'high': return 'bg-red-100 text-red-800';
-      case 'medium': return 'bg-orange-100 text-orange-800';
-      case 'low': return 'bg-green-100 text-green-800';
-      case 'urgent': return 'bg-purple-100 text-purple-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'high': return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
+      case 'medium': return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200';
+      case 'low': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+      case 'urgent': return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200';
+      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
     }
   };
-
-  const filteredData = data.filter((item) =>
-    item.title.toLowerCase().includes(search.toLowerCase()) ||
-    item.ticketNumber.toLowerCase().includes(search.toLowerCase())
-  );
 
   const allSelected = filteredData.length > 0 && filteredData.every(item => selectedItems.has(item.id));
   const someSelected = filteredData.some(item => selectedItems.has(item.id));
@@ -251,205 +267,194 @@ export default function Page() {
     setIsAddModalOpen(true);
   };
 
+  const handleApplyFilter = () => {
+    console.log("Filters applied:", filters);
+  };
+
+  const handleResetFilters = () => {
+    setFilters({});
+    setOrderBy('id');
+    setOrderByDirection('desc');
+    setSearch("");
+  };
+
+  const handleSearch = () => {
+    console.log("Search performed:", search);
+  };
+
   return (
     <MainLayout>
-      <div className="space-y-8 p-6">
+      <div className="space-y-6 p-6">
         {/* Header */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Tickets</h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-1">
-              {isLoading ? 'Loading...' : `Showing ${filteredData.length} tickets`}
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+              🎫 Tickets Management
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400">
+              Manage and track all support tickets
             </p>
           </div>
+          <Button 
+            onClick={handleAddTicket}
+            className="bg-green-600 hover:bg-green-700"
+          >
+            ➕ Add Ticket
+          </Button>
         </div>
+
+        {/* FilterSearch Component */}
+        <FilterSearch
+          search={search}
+          onSearchChange={setSearch}
+          onSearch={handleSearch}
+          filters={filters}
+          onFiltersChange={setFilters}
+          orderBy={orderBy}
+          onOrderByChange={setOrderBy}
+          orderByDirection={orderByDirection}
+          onOrderByDirectionChange={setOrderByDirection}
+          onApplyFilter={handleApplyFilter}
+          onResetFilters={handleResetFilters}
+          showFilter={showFilter}
+          onToggleFilter={() => setShowFilter(!showFilter)}
+          showSearch={true}
+          showFilterSection={true}
+          availableFilters={availableFilters}
+        />
 
         {/* Debug Info */}
         {isError && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded dark:bg-red-900 dark:border-red-700 dark:text-red-200">
             Error: {error instanceof Error ? error.message : 'Unknown error'}
           </div>
         )}
 
-        {/* Search */}
-        <Input
-          placeholder="Search tickets..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="max-w-md text-black dark:text-gray-100 rounded-xl border border-gray-300 dark:border-gray-600 shadow-sm focus:ring-2 focus:ring-indigo-400 dark:bg-gray-800 dark:placeholder-gray-400"
-        />
+        {/* Table Container */}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+          
+          {/* Table Header */}
+          <div className="bg-gradient-to-r from-blue-200 to-blue-300 dark:from-blue-900/30 dark:to-blue-800/30 text-black dark:text-blue-200 border-b border-blue-100 dark:border-blue-900/50 font-semibold text-lg px-6 py-4">
+            Tickets Management
+          </div>
 
-        {/* Table */}
-        {!isLoading && (
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-md border border-gray-100 dark:border-gray-700 overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-              <thead className="bg-gray-50 dark:bg-gray-800">
-                <tr>
-                  <th className="px-6 py-3 text-left">
-                    <Checkbox
-                      checked={allSelected}
-                      indeterminate={someSelected && !allSelected}
-                      onChange={toggleSelectAll}
-                      className="h-4 w-4"
-                    />
-                  </th>
-                  {["ID", "Ticket #", "Title", "Status", "Priority", "Actions"].map((header) => (
-                    <th key={header} className="px-6 py-3 text-center text-gray-700 dark:text-gray-300 font-medium uppercase tracking-wider">
-                      {header}
+          {/* Table Info Bar */}
+          <div className="p-4 flex items-center justify-between bg-white dark:bg-gray-800">
+            <div className="flex items-center gap-4">
+              <span className="text-sm text-gray-600 dark:text-gray-400">
+                {isLoading ? 'Loading...' : `Showing ${filteredData.length} of ${pagination.total} tickets`}
+              </span>
+            </div>
+          </div>
+
+          {/* Table */}
+          {!isLoading && (
+            <div className="overflow-x-auto">
+              <table className="w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead className="bg-gray-50 dark:bg-gray-700">
+                  <tr>
+                    <th className="px-6 py-3 text-left w-12">
+                      <Checkbox
+                        checked={allSelected}
+                        indeterminate={someSelected && !allSelected}
+                        onChange={toggleSelectAll}
+                        className="h-4 w-4"
+                      />
                     </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="bg-white text-center dark:bg-gray-900 divide-y divide-gray-100 dark:divide-gray-700">
-                {filteredData.length ? (
-                  filteredData.map((item) => (
-                    <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                      <td className="px-6 py-4">
-                        <Checkbox
-                          checked={selectedItems.has(item.id)}
-                          onChange={() => toggleSelectItem(item.id)}
-                          className="h-4 w-4"
-                        />
-                      </td>
-                      <td className="px-6 py-4 font-medium text-gray-900 dark:text-gray-100">{item.id}</td>
-                      <td className="px-6 py-4 font-mono text-gray-700 dark:text-gray-300">{item.ticketNumber}</td>
-                      <td className="px-6 py-4 text-gray-700 dark:text-gray-300">{item.title}</td>
-                      <td className="px-6 py-4">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(item.status)}`}>
-                          {item.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(item.priority)}`}>
-                          {item.priority}
-                        </span>
-                      </td>
-                     
-                      <td className="px-6 py-4 flex justify-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleViewTicket(item.id)}
-                          className="flex items-center gap-2 relative"
-                        >
-                          {/* تأثير الـ Ping */}
-                          {item.dailyStatus === true && (
-                            <span className="animate-ping absolute inline-flex h-6 w-6 rounded-full bg-red-400 opacity-75 -top-1 -left-1"></span>
-                          )}
-                          
-                          <Eye className="w-4 h-4 relative z-10" />
-                          View
-                        </Button>
+                    {["ID", "Ticket #", "Status", "Priority", "Actions"].map((header) => (
+                      <th key={header} className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        {header}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                  {filteredData.length ? (
+                    filteredData.map((item) => (
+                      <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                        <td className="px-6 py-4">
+                          <Checkbox
+                            checked={selectedItems.has(item.id)}
+                            onChange={() => toggleSelectItem(item.id)}
+                            className="h-4 w-4"
+                          />
+                        </td>
+                        <td className="px-6 py-4 font-mono text-sm text-gray-700 dark:text-gray-300">{item.ticketNumber}</td>
+                        <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300 max-w-xs truncate" title={item.title}>
+                          {item.title}
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(item.status)}`}>
+                            {item.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(item.priority)}`}>
+                            {item.priority}
+                          </span>
+                        </td>
+                      
+                        <td className="px-6 py-4">
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleViewTicket(item.id)}
+                              className="flex items-center gap-2 relative bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200 text-xs"
+                            >
+                              {/* تأثير الـ Ping */}
+                              {item.dailyStatus === true && (
+                                <span className="animate-ping absolute inline-flex h-6 w-6 rounded-full bg-red-400 opacity-75 -top-1 -left-1"></span>
+                              )}
+                              
+                              <Eye className="w-4 h-4 relative z-10" />
+                              View
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={8} className="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
+                        <div className="flex flex-col items-center justify-center py-8">
+                          <i className="fas fa-inbox text-4xl text-gray-300 dark:text-gray-600 mb-4"></i>
+                          <div className="text-lg font-medium text-gray-600 dark:text-gray-400">
+                            No tickets found
+                          </div>
+                          <div className="text-sm text-gray-400 dark:text-gray-500 mt-1">
+                            {search || Object.keys(filters).length > 0 ? 'No tickets match your search criteria' : 'Get started by adding a new ticket'}
+                          </div>
+                        </div>
                       </td>
                     </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={8} className="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
-                      {search ? 'No tickets match your search' : 'No tickets found'}
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {/* Loading State */}
-        {isLoading && (
-          <div className="flex justify-center items-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-          </div>
-        )}
-
-        {/* Pagination Controls */}
-        {!isLoading && filteredData.length > 0 && (
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4 mt-6">
-            <div className="text-sm text-gray-600 dark:text-gray-400">
-              Page {pagination.current_page} of {pagination.last_page} • Total {pagination.total} tickets
+                  )}
+                </tbody>
+              </table>
             </div>
-            
-            <div className="flex items-center space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={currentPage === 1}
-                onClick={() => setCurrentPage(1)}
-              >
-                First
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={currentPage === 1}
-                onClick={() => setCurrentPage(currentPage - 1)}
-              >
-                Previous
-              </Button>
-              
-              {/* Page Numbers */}
-              {Array.from({ length: Math.min(5, pagination.last_page) }, (_, i) => {
-                let pageNum;
-                if (pagination.last_page <= 5) {
-                  pageNum = i + 1;
-                } else if (currentPage <= 3) {
-                  pageNum = i + 1;
-                } else if (currentPage >= pagination.last_page - 2) {
-                  pageNum = pagination.last_page - 4 + i;
-                } else {
-                  pageNum = currentPage - 2 + i;
-                }
-                
-                return (
-                  <Button
-                    key={pageNum}
-                    variant={currentPage === pageNum ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setCurrentPage(pageNum)}
-                    className={currentPage === pageNum ? "bg-indigo-600 text-white" : ""}
-                  >
-                    {pageNum}
-                  </Button>
-                );
-              })}
-              
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={currentPage === pagination.last_page}
-                onClick={() => setCurrentPage(currentPage + 1)}
-              >
-                Next
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={currentPage === pagination.last_page}
-                onClick={() => setCurrentPage(pagination.last_page)}
-              >
-                Last
-              </Button>
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <span className="text-sm text-gray-600 dark:text-gray-400">Go to page:</span>
-              <Input
-                type="number"
-                min="1"
-                max={pagination.last_page}
-                defaultValue={currentPage}
-                onChange={(e) => {
-                  const page = parseInt(e.target.value);
-                  if (page >= 1 && page <= pagination.last_page) {
-                    setCurrentPage(page);
-                  }
-                }}
-                className="w-20 text-black dark:text-gray-100 rounded-xl border border-gray-300 dark:border-gray-600 shadow-sm focus:ring-2 focus:ring-indigo-400 dark:bg-gray-800"
-              />
-            </div>
-          </div>
-        )}
+          )}
 
+          {/* Loading State */}
+          {isLoading && (
+            <div className="flex justify-center items-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+              <span className="ml-4 text-gray-600 dark:text-gray-300">Loading tickets...</span>
+            </div>
+          )}
+
+          {/* Pagination */}
+    
+        </div>
+      {!isLoading && filteredData.length > 0 && (
+            <Pagination
+              currentPage={currentPage}
+              lastPage={pagination.last_page}
+              total={pagination.total}
+              perPage={perPage}
+              onPageChange={setCurrentPage}
+              className="mt-0"
+            />
+          )}
         {/* Add Ticket Modal */}
         <AddTicketModal 
           isOpen={isAddModalOpen}

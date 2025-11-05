@@ -42,6 +42,7 @@ const EditDeviceModal: React.FC<EditDeviceModalProps> = ({
     active: 1,
   });
 
+console.log(EditDeviceModal)
   const [showAddModal, setShowAddModal] = useState<string | null>(null);
 
   // Fetch all data
@@ -101,33 +102,36 @@ const EditDeviceModal: React.FC<EditDeviceModalProps> = ({
 
   // Set form data when device changes or modal opens
 // Set form data when device changes or modal opens
+// Set form data when device changes or modal opens
 useEffect(() => {
   if (isOpen && device) {
+    console.log("Loading device data:", device);
+    
     setFormData({
       type: device.type || '',
       serialNumber: device.serialNumber || '',
       condition: device.condition || 'used',
       note: device.note || '',
       purchaseDate: device.purchaseDate ? new Date(device.purchaseDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-      warrantyExpireDate: device.warrantyExpireDate || '',
+warrantyExpireDate: device.warrantyExpireDate || '',
       memoryId: device.memory?.id,
-      graphicCardId: device.graphicCard?.id,
+      graphicCardId: device.gpu?.id, 
       processorId: device.cpu?.id,
       brandId: device.brand?.id,
-      device_status_id: device.device_status?.id || 1,
+      device_status_id: device.deviceStatus || device.device_status?.id || 1, 
       employee: device.employee,
       deviceModelId: device.deviceModel?.id,
-      // التصحيح هنا - استخدام الـ storages الفعلية من الجهاز
-      storages: device.storages && device.storages.length > 0 
+       storages: device.storages && device.storages.length > 0 
         ? device.storages.map(storage => ({
             type: storage.type || 'primary',
             storageId: storage.storageId || 0
           }))
         : [{ type: 'primary', storageId: 0 }],
-      active: device.active ? 1 : 0,
     });
   }
-}, [isOpen, device]);
+}, [isOpen, device,storages]);
+
+
 
   // Filter device models based on selected brand
   const filteredDeviceModels = useMemo(() => {
@@ -164,17 +168,23 @@ const updateDeviceMutation = useMutation({
   },
 });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Validate required fields
-    if (!formData.serialNumber || !formData.type) {
-      toast.error('Please fill in all required fields');
-      return;
-    }
+const handleSubmit = (e: React.FormEvent) => {
+  e.preventDefault();
+  
+  // Validate required fields
+  if (!formData.serialNumber || !formData.type) {
+    toast.error('Please fill in all required fields');
+    return;
+  }
 
-    updateDeviceMutation.mutate(formData);
-  };
+  // تحقق إضافي للـ Laptop
+  if (showLaptopOnlyFields && (!formData.memoryId || formData.storages?.some(s => s.storageId === 0))) {
+    toast.error('Please select memory and storage for laptop');
+    return;
+  }
+
+  updateDeviceMutation.mutate(formData);
+};
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
@@ -545,13 +555,13 @@ const updateDeviceMutation = useMutation({
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Warranty Expire Date
                 </label>
-                <input
-                  type="datetime-local"
-                  name="warrantyExpireDate"
-                  value={formData.warrantyExpireDate}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
-                />
+            <input
+  type="date" // تغيير إلى date
+  name="warrantyExpireDate"
+  value={formData.warrantyExpireDate?.split('T')[0]} 
+  onChange={handleChange}
+  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+/>
               </div>
             </div>
 

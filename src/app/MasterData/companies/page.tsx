@@ -93,7 +93,6 @@ export default function DeviceModelsPage() {
       ]}
      
       formFields={[
-        // حقل الصورة في الأول
         { 
           name: 'avatar', 
           label: 'Company Logo/Avatar', 
@@ -178,13 +177,9 @@ export default function DeviceModelsPage() {
         }
       ]}
       
-      // ممكن تضيف initial data لو عاوز قيم افتراضية
       initialData={{ 
-        type: 'branch',
-        // أي قيم افتراضية تانيه
+        // type: 'branch',
       }}
-      
-      // لمنع الفلترز
       availableFilters={[]}
     />
   );

@@ -77,7 +77,6 @@ export default function TicketDetailPage() {
         })
       });
 
-      console.log('✅ Reply response:', responseData);
 
       if (!responseData) {
         throw new Error('Failed to add reply');
@@ -299,155 +298,298 @@ export default function TicketDetailPage() {
           </div>
 
           {/* Right Column - Sidebar */}
-          <div className="space-y-6">
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 md:p-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Ticket Details</h3>
-              
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">Device Type:</span>
-                  <span className="font-medium text-gray-900 dark:text-gray-100">
-                    {ticket.device?.type || 'N/A'}
-                  </span>
-                </div>
-                
-                <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">Device:</span>
-                  <span className="font-medium text-gray-900 dark:text-gray-100">
-                    {ticket.device?.name || 'N/A'}
-                  </span>
-                </div>
-                
-                <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">Category:</span>
-                  <span className="font-medium text-gray-900 dark:text-gray-100">{ticket.category?.name || 'N/A'}</span>
-                </div>
-                
-                <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">Time:</span>
-                  <span className="font-medium text-gray-900 dark:text-gray-100">{ticket.category?.time || 'N/A'}</span>
-                </div>
-                
-                <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">Daily Status:</span>
-                  <span className={`font-medium ${getDailyStatusColor(ticket.dailyStatus)}`}>
-                    {getDailyStatus(ticket.dailyStatus)}
-                  </span>
-                </div>
-                
-                <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">Status:</span>
-                  <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(ticket.status)}`}>
-                    {ticket.status}
-                  </span>
-                </div>
-                
-                <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">Created By:</span>
-                  <span className="font-medium text-gray-900 dark:text-gray-100">{ticket.createdByName || 'N/A'}</span>
-                </div>
-                
-                <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">Created At:</span>
-                  <span className="font-medium text-gray-900 dark:text-gray-100">
-                    {new Date(ticket.createdAt).toLocaleString()}
-                  </span>
-                </div>
-              </div>
+         <div className="space-y-6">
+
+  {/* Ticket Details */}
+  <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 md:p-6">
+    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+      Ticket Details
+    </h3>
+
+    <div className="space-y-3">
+      <div className="flex justify-between items-center">
+        <span className="text-gray-600 dark:text-gray-400">Device Type:</span>
+        <span className="font-medium text-gray-900 dark:text-gray-100">
+          {ticket.employee.latestDevice?.type || "N/A"}
+        </span>
+      </div>
+
+      <div className="flex justify-between items-center">
+        <span className="text-gray-600 dark:text-gray-400">Serial Number:</span>
+        <span className="font-medium text-gray-900 dark:text-gray-100">
+          {ticket.employee.latestDevice?.serialNumber || "N/A"}
+        </span>
+      </div>
+
+      <div className="border-t border-gray-200 dark:border-gray-700 my-3" />
+
+      <div className="flex justify-between items-center">
+        <span className="text-gray-600 dark:text-gray-400">Category:</span>
+        <span className="font-medium text-gray-900 dark:text-gray-100">
+          {ticket.category?.name || "N/A"}
+        </span>
+      </div>
+
+      <div className="flex justify-between items-center">
+        <span className="text-gray-600 dark:text-gray-400">Time:</span>
+        <span className="font-medium text-gray-900 dark:text-gray-100">
+          {ticket.category?.time || "N/A"}
+        </span>
+      </div>
+
+      <div className="border-t border-gray-200 dark:border-gray-700 my-3" />
+
+      <div className="flex justify-between items-center">
+        <span className="text-gray-600 dark:text-gray-400">Daily Status:</span>
+        <span className={`font-medium ${getDailyStatusColor(ticket.dailyStatus)}`}>
+          {getDailyStatus(ticket.dailyStatus)}
+        </span>
+      </div>
+
+      <div className="flex justify-between items-center">
+        <span className="text-gray-600 dark:text-gray-400">Status:</span>
+        <span
+          className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(
+            ticket.status
+          )}`}
+        >
+          {ticket.status}
+        </span>
+      </div>
+
+      <div className="border-t border-gray-200 dark:border-gray-700 my-3" />
+
+      <div className="flex justify-between items-center">
+        <span className="text-gray-600 dark:text-gray-400">Created By:</span>
+        <span className="font-medium text-gray-900 dark:text-gray-100">
+          {ticket.createdByName || "N/A"}
+        </span>
+      </div>
+
+      <div className="flex justify-between items-center">
+        <span className="text-gray-600 dark:text-gray-400">Created At:</span>
+        <span className="font-medium text-gray-900 dark:text-gray-100">
+          {new Date(ticket.createdAt).toLocaleString()}
+        </span>
+      </div>
+    </div>
+  </div>
+
+  {/* Device Specifications */}
+  <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 md:p-6">
+    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+      Device Specifications
+    </h3>
+
+    <div className="space-y-3">
+      <div className="flex justify-between">
+        <span className="text-gray-600 dark:text-gray-400">Brand:</span>
+        <span className="font-medium text-gray-900 dark:text-gray-100">
+          {ticket.employee.latestDevice?.brand?.name || "N/A"}
+        </span>
+      </div>
+
+      <div className="flex justify-between">
+        <span className="text-gray-600 dark:text-gray-400">Model:</span>
+        <span className="font-medium text-gray-900 dark:text-gray-100">
+          {ticket.employee.latestDevice?.deviceModel?.name || "N/A"}
+        </span>
+      </div>
+
+      <div className="flex justify-between">
+        <span className="text-gray-600 dark:text-gray-400">Processor:</span>
+        <span className="font-medium text-gray-900 dark:text-gray-100">
+          {ticket.employee.latestDevice?.cpu?.name || "N/A"}
+        </span>
+      </div>
+
+      <div className="flex justify-between">
+        <span className="text-gray-600 dark:text-gray-400">Graphic Card:</span>
+        <span className="font-medium text-gray-900 dark:text-gray-100">
+          {ticket.employee.latestDevice?.gpu
+            ? `${ticket.employee.latestDevice.gpu.model} (${ticket.employee.latestDevice.gpu.vram})`
+            : "N/A"}
+        </span>
+      </div>
+
+      <div className="flex justify-between">
+        <span className="text-gray-600 dark:text-gray-400">Memory (RAM):</span>
+        <span className="font-medium text-gray-900 dark:text-gray-100">
+          {ticket.employee.latestDevice?.memory
+            ? `${ticket.employee.latestDevice.memory.size} GB ${ticket.employee.latestDevice.memory.type}`
+            : "N/A"}
+        </span>
+      </div>
+
+      <div className="flex justify-between">
+        <span className="text-gray-600 dark:text-gray-400">Primary Storage:</span>
+        <span className="font-medium text-gray-900 dark:text-gray-100">
+      {ticket.employee.latestDevice?.hdDriver?.find((h: { type: string; size: number }) => h.type === "HDD")?.size
+  ? `${ticket.employee.latestDevice.hdDriver.find((h: { type: string; size: number }) => h.type === "HDD")?.size} GB HDD`
+  : "N/A"}
+        </span>
+      </div>
+
+      <div className="flex justify-between">
+        <span className="text-gray-600 dark:text-gray-400">Additional Storage:</span>
+        <span className="font-medium text-gray-900 dark:text-gray-100">
+        {ticket.employee.latestDevice?.hdDriver?.find((h: { type: string; size: number }) => h.type !== "HDD")
+  ? `${ticket.employee.latestDevice.hdDriver.find((h: { type: string; size: number }) => h.type !== "HDD")?.size} GB ${ticket.employee.latestDevice.hdDriver.find((h: { type: string; size: number }) => h.type !== "HDD")?.type}`
+  : "N/A"}
+
+        </span>
+      </div>
+
+      <div className="border-t border-gray-200 dark:border-gray-700 my-3" />
+
+      <div className="flex justify-between">
+        <span className="text-gray-600 dark:text-gray-400">Condition:</span>
+        <span className="font-medium text-gray-900 dark:text-gray-100">
+          {ticket.employee.latestDevice?.condition || "N/A"}
+        </span>
+      </div>
+
+      <div className="flex justify-between">
+        <span className="text-gray-600 dark:text-gray-400">Purchase Date:</span>
+        <span className="font-medium text-gray-900 dark:text-gray-100">
+          {ticket.employee.latestDevice?.purchaseDateFormatted || "N/A"}
+        </span>
+      </div>
+
+      <div className="flex justify-between">
+        <span className="text-gray-600 dark:text-gray-400">Warranty Expiry:</span>
+        <span className="font-medium text-gray-900 dark:text-gray-100">
+          {ticket.employee.latestDevice?.warrantyExpireDateFormatted || "N/A"}
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <StatusUpdate
+    ticketId={ticketId}
+    currentStatus={ticket.status}
+    currentResponsibleId={ticket.responsibleId}
+  />
+
+  {/* Assigned HelpDesk */}
+  <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 md:p-6">
+    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+      Assigned HelpDesk
+    </h3>
+
+    <div className="space-y-3">
+      <div className="flex justify-between">
+        <span className="text-gray-600 dark:text-gray-400">Responsible:</span>
+        <span className="font-medium text-gray-900 dark:text-gray-100">
+          {ticket.responsibleName || "Unassigned"}
+        </span>
+      </div>
+
+      <div className="flex justify-between">
+        <span className="text-gray-600 dark:text-gray-400">Job Title:</span>
+        <span className="font-medium text-gray-900 dark:text-gray-100">
+          {ticket.responsibleJobTitle || "N/A"}
+        </span>
+      </div>
+
+      <div className="flex justify-between">
+        <span className="text-gray-600 dark:text-gray-400">Email:</span>
+        <span className="font-medium text-gray-900 dark:text-gray-100">
+          {ticket.responsibleEmail || "N/A"}
+        </span>
+      </div>
+    </div>
+  </div>
+
+  {/* Employee Details */}
+  <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 md:p-6">
+    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+      Employee Details
+    </h3>
+
+    <div className="space-y-3">
+      <div className="flex justify-between">
+        <span className="text-gray-600 dark:text-gray-400">Name:</span>
+        <span className="font-medium text-gray-900 dark:text-gray-100">
+          {ticket.employee?.name || "N/A"}
+        </span>
+      </div>
+
+      <div className="flex justify-between">
+        <span className="text-gray-600 dark:text-gray-400">Job Position:</span>
+        <span className="font-medium text-gray-900 dark:text-gray-100">
+          {ticket.employee?.position || "N/A"}
+        </span>
+      </div>
+
+      <div className="flex justify-between">
+        <span className="text-gray-600 dark:text-gray-400">Email:</span>
+        <span className="font-medium text-gray-900 dark:text-gray-100">
+          {ticket.employee?.email || "N/A"}
+        </span>
+      </div>
+
+
+       <div className="flex justify-between">
+        <span className="text-gray-600 dark:text-gray-400">company:</span>
+        <span className="font-medium text-gray-900 dark:text-gray-100">
+          {ticket.employee?.company.name || "N/A"}
+        </span>
+          <span className="font-medium text-gray-900 dark:text-gray-100">
+          {ticket.employee?.company.type || "N/A"}
+        </span>
+      </div>
+    </div>
+  </div>
+
+  {/* Ticket History */}
+  <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 md:p-6">
+    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+      Ticket History
+    </h3>
+
+    <div className="space-y-3 max-h-80 overflow-y-auto">
+      {ticket.statuses?.length > 0 ? (
+        ticket.statuses.map((status, index) => (
+          <div key={status.id} className="flex items-start gap-3">
+            <div className="flex flex-col items-center">
+              <div
+                className={`w-3 h-3 rounded-full ${
+                  index === 0 ? "bg-indigo-500" : "bg-gray-300"
+                }`}
+              />
+              {index < ticket.statuses.length - 1 && (
+                <div className="w-0.5 h-8 bg-gray-300" />
+              )}
             </div>
 
-            <StatusUpdate 
-              ticketId={ticketId} 
-              currentStatus={ticket.status} 
-              currentResponsibleId={ticket.responsibleId}
-            />
-
-            {/* Assigned HelpDesk */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 md:p-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Assigned HelpDesk</h3>
-              
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">Responsible:</span>
-                  <span className="font-medium text-gray-900 dark:text-gray-100">
-                    {ticket.responsibleName || 'Unassigned'}
-                  </span>
-                </div>
-                
-                <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">Job Title:</span>
-                  <span className="font-medium text-gray-900 dark:text-gray-100">
-                    {ticket.responsibleJobTitle || 'N/A'}
-                  </span>
-                </div>
-                
-                <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">Email:</span>
-                  <span className="font-medium text-gray-900 dark:text-gray-100">
-                    {ticket.responsibleEmail || 'N/A'}
-                  </span>
-                </div>
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="font-medium text-gray-900 dark:text-gray-100">
+                  {status.updatedBy}
+                </span>
               </div>
-            </div>
-
-            {/* Employee Details */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 md:p-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Employee Details</h3>
-              
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">Name:</span>
-                  <span className="font-medium text-gray-900 dark:text-gray-100">{ticket.employee?.name || 'N/A'}</span>
-                </div>
-                
-                <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">Job Title:</span>
-                  <span className="font-medium text-gray-900 dark:text-gray-100">
-                    {ticket.employee?.job_title || 'N/A'}
-                  </span>
-                </div>
-                
-                <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">Email:</span>
-                  <span className="font-medium text-gray-900 dark:text-gray-100">{ticket.employee?.email || 'N/A'}</span>
-                </div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                Changed status to {status.status} •{" "}
+                {new Date(status.createdAt).toLocaleString()}
               </div>
-            </div>
-
-            {/* Ticket History */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 md:p-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Ticket History</h3>
-              
-              <div className="space-y-3 max-h-80 overflow-y-auto">
-                {ticket.statuses?.map((status, index) => (
-                  <div key={status.id} className="flex items-start gap-3">
-                    <div className="flex flex-col items-center">
-                      <div className={`w-3 h-3 rounded-full ${
-                        index === 0 ? 'bg-indigo-500' : 'bg-gray-300'
-                      }`} />
-                      {index < ticket.statuses.length - 1 && (
-                        <div className="w-0.5 h-8 bg-gray-300" />
-                      )}
-                    </div>
-                    
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-medium text-gray-900 dark:text-gray-100">{status.updatedBy}</span>
-                      </div>
-                      <div className="text-sm text-gray-600 dark:text-gray-400">
-                        Changed status to {status.status} • {new Date(status.createdAt).toLocaleString()}
-                      </div>
-                      {status.duration && (
-                        <div className="text-xs text-gray-500">Duration: {status.duration}</div>
-                      )}
-                    </div>
-                  </div>
-                )) || (
-                  <p className="text-gray-500 text-center py-4">No status history available</p>
-                )}
-              </div>
+              {status.duration && (
+                <div className="text-xs text-gray-500">
+                  Duration: {status.duration}
+                </div>
+              )}
             </div>
           </div>
+        ))
+      ) : (
+        <p className="text-gray-500 text-center py-4">
+          No status history available
+        </p>
+      )}
+    </div>
+  </div>
+</div>
+
         </div>
       </div>
     </MainLayout>

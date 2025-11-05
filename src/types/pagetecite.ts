@@ -23,11 +23,8 @@ export interface Reply {
 }
 
 export interface Employee {
-  id: number;
-  name: string;
-  email: string;
-  job_title: string | null;
-  role :string
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   [key: string]: any;
 }
 
 export interface TicketDetails {
@@ -68,4 +65,6 @@ export interface TicketDetails {
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
+  position:string;
+  
 }
