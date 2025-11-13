@@ -9,15 +9,10 @@ export default function DeviceModelsPage() {
       title="Branches"
       columns={[
         { 
-          key: 'id', 
-          label: 'ID', 
+          key: 'code', 
+          label: 'code', 
           sortable: true,
-          render: (item) => {
-            const ep = "Branches";
-            const firstLetter = ep[0]?.toUpperCase() || 'D';
-            const lastLetter = ep[ep.length - 1]?.toUpperCase() || 'D';
-            return `${firstLetter}${lastLetter}${String(item.id).padStart(3, '0')}`;
-          }
+          
         },
         { 
           key: 'name',  
@@ -78,6 +73,13 @@ export default function DeviceModelsPage() {
       ]}
      
       formFields={[
+          { 
+          name: 'code', 
+          label: 'code', 
+          type: 'text', 
+          required: true,
+          placeholder: 'Enter code '
+        },
         { 
           name: 'name', 
           label: 'Name', 

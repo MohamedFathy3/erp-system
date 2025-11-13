@@ -12,20 +12,10 @@ export default function TicketETAPage() {
       title="IT Processors"
       columns={[
         { 
-          key: 'id', 
-          label: 'ID', 
+          key: 'code', 
+          label: 'code', 
           sortable: true,
-          render: (item) => {
-            const ep = "processor";
-            const firstLetter = ep[0]?.toUpperCase() || 'P';
-            const lastLetter = ep[ep.length - 1]?.toUpperCase() || 'R';
-
-            counterRef.current += 1;
-            const num = counterRef.current.toString().padStart(3, '0'); // مثل 001, 002, 003
-            
-            const namePrefix = item.name ? item.name.slice(0, 2).toUpperCase() : "NA";
-            return `${firstLetter}${lastLetter}${namePrefix}${num}`;
-          }
+     
         },
         { key: 'name', label: 'Name', sortable: true },
         { 
@@ -47,9 +37,14 @@ export default function TicketETAPage() {
         },
       ]}
       formFields={[
+              { 
+          name: 'code', 
+          label: 'code', 
+          type: 'text', 
+          required: true 
+        },
         { name: 'name', label: 'Name', type: 'text', required: true },
         { name: 'Arabic', label: 'Arabic Name', type: 'text', required: false },
-        { name: 'type', label: 'Type', type: 'text', required: true },
       ]}
       initialData={{ }}
       defaultFilters={{  }}

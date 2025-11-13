@@ -9,15 +9,10 @@ export default function DeviceModelsPage() {
       title="City"
       columns={[
         { 
-          key: 'id', 
-          label: 'ID', 
+          key: 'code', 
+          label: 'code', 
           sortable: true,
-          render: (item) => {
-            const ep = "city";
-            const firstLetter = ep[0]?.toUpperCase() || 'C';
-            const lastLetter = ep[ep.length - 1]?.toUpperCase() || 'Y';
-            return `${firstLetter}${lastLetter}${String(item.id).padStart(3, '0')}`;
-          }
+       
         },
         { 
           key: 'name', 
@@ -144,6 +139,13 @@ export default function DeviceModelsPage() {
       
       // ✅ إضافة حقول الفورم
       formFields={[
+           {
+          name: "coed",
+          label: "code ",
+          type: "text" as const,
+          required: true,
+          placeholder: "Enter code "
+        },
         {
           name: "name",
           label: "City Name",

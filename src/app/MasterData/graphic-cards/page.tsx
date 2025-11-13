@@ -29,10 +29,9 @@ export default function TicketETAPage() {
       title="Graphic Cards"
       columns={[
         { 
-          key: 'id', 
-          label: 'ID', 
+          key: 'code', 
+          label: 'code', 
           sortable: true,
-          render: (item) => generateId(item)
         },
         { key: 'model', label: 'Model', sortable: true },
         { key: 'vram', label: 'VRAM', sortable: false },
@@ -55,6 +54,12 @@ export default function TicketETAPage() {
         },
       ]}
       formFields={[
+              { 
+          name: 'code', 
+          label: 'code', 
+          type: 'text', 
+          required: true 
+        },
         { 
           name: 'model', 
           label: 'Model', 

@@ -13,21 +13,10 @@ export default function TicketETAPage() {
       title="Memory"
       columns={[
         { 
-          key: 'id', 
-          label: 'ID', 
+          key: 'code', 
+          label: 'code', 
           sortable: true,
-          render: (item) => {
-            const ep = "memory";
-            const firstLetter = ep[0]?.toUpperCase() || 'M';
-            const lastLetter = ep[ep.length - 1]?.toUpperCase() || 'Y';
-
-            // 🔹 زوّد العدّاد واحد كل مرة
-            counterRef.current += 1;
-            const num = counterRef.current.toString().padStart(3, '0'); // مثل 001, 002, 003
-            
-            const namePrefix = item.name ? item.name.slice(0, 2).toUpperCase() : "NA";
-            return `${firstLetter}${lastLetter}${namePrefix}${num}`;
-          }
+    
         },
         { key: 'size', label: 'Size', sortable: true },
         { key: 'type', label: 'Type ID', sortable: false },
@@ -50,6 +39,12 @@ export default function TicketETAPage() {
         },
       ]}
       formFields={[
+              { 
+          name: 'code', 
+          label: 'code', 
+          type: 'text', 
+          required: true 
+        },
         { name: 'Arabic', label: 'Arabic Name', type: 'text', required: false },
         { name: 'size', label: 'Size', type: 'text', required: true },
         { name: 'type', label: 'Type', type: 'text', required: true },

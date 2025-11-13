@@ -9,16 +9,10 @@ export default function DeviceModelsPage() {
       title="Department"
       columns={[
         { 
-          key: 'id', 
-          label: 'ID', 
+          key: 'code', 
+          label: 'code', 
           sortable: true,
-          render: (item) => {
-            const ep = "Department";
-            const firstLetter = ep[0]?.toUpperCase() || 'D';
-            const lastLetter = ep[ep.length - 1]?.toUpperCase() || 'D';
-            const id = item.id.toString().padStart(3, '0');
-            return `${firstLetter}${lastLetter}${id}`;
-          }
+       
         },
         { key: 'name', label: 'Name', sortable: true },
         { key: 'ArabicName', label: 'Arabic Name', sortable: false },
@@ -26,6 +20,12 @@ export default function DeviceModelsPage() {
 
       ]}
       formFields={[
+            { 
+          name: 'code', 
+          label: 'code', 
+          type: 'text', 
+          required: true 
+        },
         { 
           name: 'name', 
           label: 'Name', 

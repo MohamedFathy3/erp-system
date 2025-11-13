@@ -10,11 +10,11 @@ export default function TicketETAPage() {
   return (
     <GenericDataManager
       endpoint="storage"
-      title="storage-driver"
+      title="Storage-Driver"
       columns={[
         { 
-          key: 'id', 
-          label: 'ID', 
+          key: 'code', 
+          label: 'code', 
           sortable: true,
           render: (item) => {
             const ep = "storage-driver";
@@ -49,6 +49,12 @@ export default function TicketETAPage() {
         { key: 'type', label: 'Type ID', sortable: false },
       ]}
       formFields={[
+              { 
+          name: 'code', 
+          label: 'code', 
+          type: 'text', 
+          required: true 
+        },
         { name: 'name', label: 'Name', type: 'text', required: true },
         { name: 'Arabic', label: 'Arabic Name', type: 'text', required: false },
         { name: 'size', label: 'Size', type: 'text', required: true },

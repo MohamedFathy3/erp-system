@@ -9,8 +9,8 @@ export default function DeviceModelsPage() {
       title="Company"
       columns={[
         { 
-          key: 'id', 
-          label: 'ID', 
+          key: 'code', 
+          label: 'code', 
           sortable: true,
           render: (item) => {
             const ep = "Company";
@@ -93,6 +93,13 @@ export default function DeviceModelsPage() {
       ]}
      
       formFields={[
+          { 
+          name: 'code', 
+          label: 'code', 
+          type: 'text', 
+          required: true,
+          placeholder: 'Enter code '
+        },
         { 
           name: 'avatar', 
           label: 'Company Logo/Avatar', 

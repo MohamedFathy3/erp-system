@@ -8,17 +8,10 @@ export default function DeviceModelsPage() {
       title="Users"
       columns={[
         { 
-          key: 'id', 
-          label: 'ID', 
+          key: 'code', 
+          label: 'code', 
           sortable: true,
-          render: (item) => {
-            const ep = "user";
-            const firstLetter = ep[0]?.toUpperCase() || 'U';
-            const lastLetter = ep[ep.length - 1]?.toUpperCase() || 'R';
-            
-            const randomId = Math.floor(1 + Math.random() * 999).toString().padStart(3, '0');
-            return `${firstLetter}${lastLetter}${randomId}`;
-          }
+       
         },
        { 
   key: 'image', 
@@ -80,6 +73,12 @@ export default function DeviceModelsPage() {
       availableFilters={[]}
       
       formFields={[
+              { 
+          name: 'code', 
+          label: 'code', 
+          type: 'text', 
+          required: true 
+        },
         { 
           name: 'image', 
           label: 'Profile Picture', 
